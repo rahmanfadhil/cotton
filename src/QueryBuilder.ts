@@ -26,7 +26,7 @@ export class QueryBuilder {
         break;
 
       case "boolean":
-        value = `${value}`;
+        value = value ? "1" : "0";
 
       case "number":
         value = value.toString();
@@ -89,7 +89,7 @@ export class QueryBuilder {
 
         case QueryStackType.NotWhere:
           const isWhereExist = this.stacks.find(
-            (item) => item.type == QueryStackType.Where
+            (item) => item.type == QueryStackType.Where,
           );
           queryString += isWhereExist
             ? `NOT ${stack.data} `
