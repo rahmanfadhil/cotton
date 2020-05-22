@@ -18,13 +18,26 @@ export class QueryBuilder {
     this.tableName = tableName;
   }
 
-  private whereStack(filter: string, value?: string | number): QueryStack {
-    // TODO: clean value to prevent SQL injection
-    const cleanedValue = value;
+  private whereStack(filter: string, value: any): QueryStack {
+    switch (typeof value) {
+      case "string":
+        // TODO: clean value to prevent SQL injection
+        value = `'${value}'`;
+        break;
+
+      case "boolean":
+        value = `${value}`;
+
+      case "number":
+        value = value.toString();
+
+      default:
+        break;
+    }
 
     return {
       type: QueryStackType.Where,
-      data: filter.replace("?", cleanedValue.toString()),
+      data: filter.replace("?", value),
     };
   }
 

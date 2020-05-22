@@ -7,7 +7,7 @@ describe("QueryBuilder", () => {
       "a@b.com"
     );
     expect(queryBuilder.getSQL()).toBe(
-      "SELECT * FROM users WHERE email = a@b.com;"
+      "SELECT * FROM users WHERE email = 'a@b.com';"
     );
   });
 
@@ -16,7 +16,7 @@ describe("QueryBuilder", () => {
       .where("email = ?", "a@b.com")
       .andWhere("name = ?", "John");
     expect(queryBuilder.getSQL()).toBe(
-      "SELECT * FROM users WHERE email = a@b.com AND name = John;"
+      "SELECT * FROM users WHERE email = 'a@b.com' AND name = 'John';"
     );
   });
 
@@ -25,7 +25,7 @@ describe("QueryBuilder", () => {
       .where("email = ?", "a@b.com")
       .notWhere("name = ?", "John");
     expect(queryBuilder.getSQL()).toBe(
-      "SELECT * FROM users WHERE email = a@b.com NOT name = John;"
+      "SELECT * FROM users WHERE email = 'a@b.com' NOT name = 'John';"
     );
   });
 
@@ -35,7 +35,7 @@ describe("QueryBuilder", () => {
       "a@b.com"
     );
     expect(queryBuilder.getSQL()).toBe(
-      "SELECT * FROM users WHERE NOT email = a@b.com;"
+      "SELECT * FROM users WHERE NOT email = 'a@b.com';"
     );
   });
 
@@ -44,7 +44,7 @@ describe("QueryBuilder", () => {
       .where("email = ?", "a@b.com")
       .first();
     expect(queryBuilder.getSQL()).toBe(
-      "SELECT * FROM users WHERE email = a@b.com LIMIT 1;"
+      "SELECT * FROM users WHERE email = 'a@b.com' LIMIT 1;"
     );
   });
 
@@ -53,7 +53,7 @@ describe("QueryBuilder", () => {
       .where("email = ?", "a@b.com")
       .limit(5);
     expect(queryBuilder.getSQL()).toBe(
-      "SELECT * FROM users WHERE email = a@b.com LIMIT 5;"
+      "SELECT * FROM users WHERE email = 'a@b.com' LIMIT 5;"
     );
   });
 });
