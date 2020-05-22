@@ -1,70 +1,45 @@
-import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import { QueryBuilder } from "./querybuilder.ts";
+import {
+  assertEquals,
+  assertThrows,
+} from "https://deno.land/std/testing/asserts.ts";
 
-Deno.test("QueryBuilder.where", () => {
-  const queryBuilder = new QueryBuilder("users").where(
-    "email = ?",
-    "a@b.com",
-  );
-  assertEquals(
-    queryBuilder.getSQL(),
-    "SELECT * FROM users WHERE email = 'a@b.com';",
+Deno.test("basic query", () => {
+  const query = new QueryBuilder("users").where("email", "=", "a@b.com")
+    .toSQL();
+  assertEquals(query, "SELECT * FROM users WHERE email = 'a@b.com';");
+});
+
+Deno.test("should validate where operation", () => {
+  assertThrows(
+    () => {
+      new QueryBuilder("users").where(
+        "email",
+        "invalid operation" as any,
+        "a@b.com",
+      );
+    },
+    Error,
+    "Invalid operation!",
   );
 });
 
-Deno.test("QueryBuilder.andWhere", () => {
-  const queryBuilder = new QueryBuilder("users")
-    .where("email = ?", "a@b.com")
-    .andWhere("name = ?", "john");
-  assertEquals(
-    queryBuilder.getSQL(),
-    "SELECT * FROM users WHERE email = 'a@b.com' AND name = 'john';",
-  );
+Deno.test("limit query", () => {
+  const query = new QueryBuilder("users").limit(5)
+    .toSQL();
+  assertEquals(query, "SELECT * FROM users LIMIT 5;");
 });
 
-Deno.test("QueryBuilder.notWhere with where", () => {
-  const queryBuilder = new QueryBuilder("users")
-    .where("email = ?", "a@b.com")
-    .notWhere("name = ?", "john");
-  assertEquals(
-    queryBuilder.getSQL(),
-    "SELECT * FROM users WHERE email = 'a@b.com' NOT name = 'john';",
-  );
+Deno.test("limit query with offset", () => {
+  const query = new QueryBuilder("users").limit(5).offset(5)
+    .toSQL();
+  assertEquals(query, "SELECT * FROM users LIMIT 5 OFFSET 5;");
 });
 
-Deno.test("QueryBuilder.notWhere without where", () => {
-  const queryBuilder = new QueryBuilder("users")
-    .notWhere("email = ?", "a@b.com");
-  assertEquals(
-    queryBuilder.getSQL(),
-    "SELECT * FROM users WHERE NOT email = 'a@b.com';",
-  );
-});
-
-Deno.test("QueryBuilder.first", () => {
-  const queryBuilder = new QueryBuilder("users")
-    .where("email = ?", "a@b.com")
-    .first();
-  assertEquals(
-    queryBuilder.getSQL(),
-    "SELECT * FROM users WHERE email = 'a@b.com' LIMIT 1;",
-  );
-});
-
-Deno.test("QueryBuilder.limit", () => {
-  const queryBuilder = new QueryBuilder("users")
-    .where("email = ?", "a@b.com")
-    .limit(5);
-  assertEquals(
-    queryBuilder.getSQL(),
-    "SELECT * FROM users WHERE email = 'a@b.com' LIMIT 5;",
-  );
-});
-
-Deno.test("QueryBuilder.orderBy", () => {
-  const queryBuilder = new QueryBuilder("users").orderBy("name", "DESC");
-  assertEquals(
-    queryBuilder.getSQL(),
-    "SELECT * FROM users ORDER BY name DESC;",
-  );
+Deno.test("limit query with where", () => {
+  const query = new QueryBuilder("users").where("email", "=", "a@b.com").limit(
+    5,
+  )
+    .toSQL();
+  assertEquals(query, "SELECT * FROM users WHERE email = 'a@b.com' LIMIT 5;");
 });
