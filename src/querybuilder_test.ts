@@ -41,7 +41,7 @@ Deno.test("QueryBuilder.notWhere without where", () => {
   );
 });
 
-Deno.test("QueryBuilder.first first", () => {
+Deno.test("QueryBuilder.first", () => {
   const queryBuilder = new QueryBuilder("users")
     .where("email = ?", "a@b.com")
     .first();
@@ -51,12 +51,20 @@ Deno.test("QueryBuilder.first first", () => {
   );
 });
 
-Deno.test("QueryBuilder.limit limit", () => {
+Deno.test("QueryBuilder.limit", () => {
   const queryBuilder = new QueryBuilder("users")
     .where("email = ?", "a@b.com")
     .limit(5);
   assertEquals(
     queryBuilder.getSQL(),
     "SELECT * FROM users WHERE email = 'a@b.com' LIMIT 5;",
+  );
+});
+
+Deno.test("QueryBuilder.orderBy", () => {
+  const queryBuilder = new QueryBuilder("users").orderBy("name", "DESC");
+  assertEquals(
+    queryBuilder.getSQL(),
+    "SELECT * FROM users ORDER BY name DESC;",
   );
 });
