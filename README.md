@@ -1,7 +1,5 @@
 # cotton
 
-> This library is in the very early stage, any [contribution](CONTRIBUTING.md) means a lot!
-
 SQL Database Toolkit for Deno.
 
 ## Features
