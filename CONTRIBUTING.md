@@ -8,3 +8,4 @@ In this early stage, our focus is to implement the basic features of the query b
 - Left join
 - Inner join
 - Input sanitization (Prevent SQL injection)
+- Connect via URL

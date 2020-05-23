@@ -42,6 +42,7 @@ export class SqliteAdapter implements DatabaseAdapter {
     for (const record of result) {
       let data: any = {};
 
+      // Assign each known fields to `data`
       (record as any[]).forEach((value, index) => {
         const fieldName = columns[index].name;
         data[fieldName] = value;

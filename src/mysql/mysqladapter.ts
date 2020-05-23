@@ -1,7 +1,5 @@
 import { Client, ClientConfig } from "https://deno.land/x/mysql/mod.ts";
-import { DatabaseAdapter } from "../adapter.ts";
-
-interface MysqlConnectionOptions extends ClientConfig {}
+import { DatabaseAdapter, ConnectionOptions } from "../adapter.ts";
 
 export class MysqlAdapter implements DatabaseAdapter {
   /**
@@ -10,13 +8,19 @@ export class MysqlAdapter implements DatabaseAdapter {
   private client: Client;
 
   /**
-   * Connection configurations
+   * MySQL client configurations
    */
-  private options: MysqlConnectionOptions;
+  private options: ClientConfig;
 
-  constructor(options: MysqlConnectionOptions) {
+  constructor(options: ConnectionOptions) {
     this.client = new Client();
-    this.options = options;
+    this.options = {
+      db: options.database,
+      username: options.username,
+      hostname: options.hostname,
+      port: options.port,
+      password: options.password,
+    };
   }
 
   async connect(): Promise<void> {

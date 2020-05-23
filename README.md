@@ -6,8 +6,8 @@ SQL Database Toolkit for Deno.
 
 - Database Adapter
   - ✅ SQLite3
-  - 🚧 MySQL & MariaDB
-  - ❌ PostgresQL
+  - ✅ MySQL & MariaDB
+  - 🚧 PostgresQL
 - 🚧 Query Builder
 - ❌ Migrations
 - ❌ Object-Relational Mapper

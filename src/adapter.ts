@@ -1,3 +1,11 @@
+export interface ConnectionOptions {
+  database?: string;
+  username?: string;
+  port?: number;
+  hostname?: string;
+  password?: string;
+}
+
 export interface DatabaseAdapter {
   /**
    * Run SQL query and get the result
