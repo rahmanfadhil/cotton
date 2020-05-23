@@ -5,9 +5,21 @@ import {
 } from "https://deno.land/std/testing/asserts.ts";
 
 Deno.test("basic query", () => {
-  const query = new QueryBuilder("users").where("email", "=", "a@b.com")
+  const query = new QueryBuilder("users")
+    .where("email", "=", "a@b.com")
     .toSQL();
   assertEquals(query, "SELECT * FROM users WHERE email = 'a@b.com';");
+});
+
+Deno.test("multiple where query", () => {
+  const query = new QueryBuilder("users")
+    .where("email", "=", "a@b.com")
+    .where("name", "=", "john")
+    .toSQL();
+  assertEquals(
+    query,
+    "SELECT * FROM users WHERE email = 'a@b.com' AND name = 'john';",
+  );
 });
 
 Deno.test("should validate where operation", () => {
