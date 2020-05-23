@@ -14,23 +14,23 @@ export class SqliteAdapter implements DatabaseAdapter {
   /**
    * SQLite library database instance
    */
-  private db?: DB;
+  private client?: DB;
 
   constructor(options: SqliteConnectionOptions) {
     this.fileLocation = options.database;
   }
 
   public async connect(): Promise<void> {
-    this.db = await open(this.fileLocation);
+    this.client = await open(this.fileLocation);
   }
 
   public async disconnect(): Promise<void> {
-    this.db!.close();
+    this.client!.close();
   }
 
   public async query<T>(query: string, values: any[] = []): Promise<T[]> {
     // Execute query
-    const result = this.db!.query(query, values);
+    const result = this.client!.query(query, values);
 
     // Get columns information
     const columns = result.columns();
@@ -55,9 +55,9 @@ export class SqliteAdapter implements DatabaseAdapter {
 
   public async execute(query: string, values: any[] = []) {
     // Execute SQL statement
-    this.db!.query(query, values);
+    this.client!.query(query, values);
 
     // Save changes to database file
-    await save(this.db!);
+    await save(this.client!);
   }
 }
