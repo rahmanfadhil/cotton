@@ -1,7 +1,7 @@
 import { Client } from "https://deno.land/x/postgres/mod.ts";
-import { DatabaseAdapter, ConnectionOptions } from "../adapter.ts";
+import { BaseAdapter, ConnectionOptions } from "../baseadapter.ts";
 
-export class PostgresAdapter implements DatabaseAdapter {
+export class PostgresAdapter implements BaseAdapter {
   /**
    * Postgres client
    */

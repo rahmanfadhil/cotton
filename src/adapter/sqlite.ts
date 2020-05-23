@@ -1,11 +1,11 @@
-import { DatabaseAdapter } from "../adapter.ts";
+import { BaseAdapter } from "../baseadapter.ts";
 import { open, save, DB } from "https://deno.land/x/sqlite/mod.ts";
 
 interface SqliteConnectionOptions {
   database: string;
 }
 
-export class SqliteAdapter implements DatabaseAdapter {
+export class SqliteAdapter implements BaseAdapter {
   /**
    * Database file location
    */

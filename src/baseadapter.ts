@@ -6,7 +6,7 @@ export interface ConnectionOptions {
   password?: string;
 }
 
-export interface DatabaseAdapter {
+export interface BaseAdapter {
   /**
    * Run SQL query and get the result
    * 
