@@ -40,9 +40,11 @@ for (user in users) {
 ### Execute SQL statement
 
 ```ts
-await adapter.execute(
-  "INSERT INTO users (email, name) VALUES ('a@b.com', 'john doe');"
-);
+// Bind values to prevent SQL injection
+await adapter.execute("INSERT INTO users (email, name) VALUES (?, ?);", [
+  "a@b.com",
+  "john doe",
+]);
 ```
 
 ## Query Builder
