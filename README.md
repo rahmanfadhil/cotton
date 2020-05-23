@@ -1,4 +1,4 @@
-# cotton
+# Cotton
 
 SQL Database Toolkit for Deno.
 
@@ -14,10 +14,14 @@ SQL Database Toolkit for Deno.
 
 ## Database Adapter
 
+Currently, Cotton supports three popular databases which includes SQLite3, MysQL / MariaDB, and PostgresQL.
+
 ### Creating adapter
 
 ```ts
-import { SqliteAdapter } from "https://deno.land/x/cotton/sqliteadapter.ts";
+import { SqliteAdapter } from "https://deno.land/x/cotton/src/sqlite/adapter.ts";
+// import { PostgresAdapter } from "https://deno.land/x/cotton/src/postgres/adapter.ts";
+// import { MysqlAdapter } from "https://deno.land/x/cotton/src/mysql/adapter.ts";
 
 const adapter = new SqliteAdapter({ database: "./test.db" });
 ```
