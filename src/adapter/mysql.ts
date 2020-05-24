@@ -23,6 +23,7 @@ export class MysqlAdapter implements BaseAdapter {
     };
   }
 
+  // FIXME: doesn't throw an error if the connection failed
   async connect(): Promise<void> {
     await this.client.connect(this.options);
   }

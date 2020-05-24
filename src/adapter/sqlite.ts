@@ -1,9 +1,5 @@
-import { BaseAdapter } from "../baseadapter.ts";
+import { BaseAdapter, ConnectionOptions } from "../baseadapter.ts";
 import { open, save, DB } from "https://deno.land/x/sqlite/mod.ts";
-
-interface SqliteConnectionOptions {
-  database: string;
-}
 
 export class SqliteAdapter implements BaseAdapter {
   /**
@@ -16,16 +12,23 @@ export class SqliteAdapter implements BaseAdapter {
    */
   private client?: DB;
 
-  constructor(options: SqliteConnectionOptions) {
-    this.fileLocation = options.database;
+  constructor(options: ConnectionOptions) {
+    if (typeof options.database !== "string") {
+      throw new Error("SQLite adapter needs 'database' property!");
+    }
+
+    this.fileLocation = options.database!;
   }
 
   public async connect(): Promise<void> {
     this.client = await open(this.fileLocation);
   }
 
-  public async disconnect(): Promise<void> {
-    this.client!.close();
+  public disconnect(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.client!.close();
+      resolve();
+    });
   }
 
   public async query<T>(query: string, values: any[] = []): Promise<T[]> {

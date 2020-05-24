@@ -19,6 +19,10 @@ interface OrderBinding {
 }
 
 export class QueryBuilder {
+  // --------------------------------------------------------------------------------
+  // QUERY CONSTRAINTS
+  // --------------------------------------------------------------------------------
+
   /**
    * Table columns that are going to be fetched
    */

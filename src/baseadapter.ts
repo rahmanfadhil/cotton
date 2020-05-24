@@ -24,7 +24,12 @@ export interface BaseAdapter {
   execute(query: string, values?: any[]): Promise<void>;
 
   /**
-   * Connect to database
+   * Connect database
    */
   connect(): Promise<void>;
+
+  /**
+   * Disconnect database
+   */
+  disconnect(): Promise<void>;
 }
