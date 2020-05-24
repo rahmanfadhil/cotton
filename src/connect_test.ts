@@ -23,6 +23,7 @@ Deno.test("connect() postgres", async () => {
     database: env.TEST_POSTGRES_DATABASE,
     hostname: env.TEST_POSTGRES_HOSTNAME,
     username: env.TEST_POSTGRES_USERNAME,
+    password: env.TEST_POSTGRES_PASSWORD,
   });
   assertEquals(db instanceof PostgresAdapter, true);
   await db.disconnect();
@@ -34,6 +35,7 @@ Deno.test("connect() mysql", async () => {
     database: env.TEST_MYSQL_DATABASE,
     hostname: env.TEST_MYSQL_HOSTNAME,
     username: env.TEST_MYSQL_USERNAME,
+    password: env.TEST_MYSQL_PASSWORD,
   });
   assertEquals(db instanceof MysqlAdapter, true);
   await db.disconnect();
