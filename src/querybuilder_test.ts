@@ -1,8 +1,5 @@
 import { QueryBuilder } from "./querybuilder.ts";
-import {
-  assertEquals,
-  assertThrows,
-} from "https://deno.land/std/testing/asserts.ts";
+import { assertEquals, assertThrows } from "../deps.ts";
 
 Deno.test("basic query", () => {
   const query = new QueryBuilder("users")

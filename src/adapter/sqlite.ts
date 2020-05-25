@@ -1,5 +1,5 @@
 import { BaseAdapter, ConnectionOptions } from "../baseadapter.ts";
-import { open, save, DB } from "https://deno.land/x/sqlite/mod.ts";
+import { sqliteOpen, sqliteSave, SqliteDB } from "../../deps.ts";
 
 export class SqliteAdapter extends BaseAdapter {
   /**
@@ -10,7 +10,7 @@ export class SqliteAdapter extends BaseAdapter {
   /**
    * SQLite library database instance
    */
-  private client?: DB;
+  private client?: SqliteDB;
 
   constructor(options: ConnectionOptions) {
     super();
@@ -23,7 +23,7 @@ export class SqliteAdapter extends BaseAdapter {
   }
 
   public async connect(): Promise<void> {
-    this.client = await open(this.fileLocation);
+    this.client = await sqliteOpen(this.fileLocation);
   }
 
   public disconnect(): Promise<void> {
@@ -64,6 +64,6 @@ export class SqliteAdapter extends BaseAdapter {
     this.client!.query(query, values);
 
     // Save changes to database file
-    await save(this.client!);
+    await sqliteSave(this.client!);
   }
 }

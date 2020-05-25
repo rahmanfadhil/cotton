@@ -1,12 +1,11 @@
-import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
-import { config } from "https://deno.land/x/dotenv/mod.ts";
+import { dotenv, assertEquals } from "../deps.ts";
 
 import { connect } from "./connect.ts";
 import { SqliteAdapter } from "./adapter/sqlite.ts";
 import { PostgresAdapter } from "./adapter/postgres.ts";
 import { MysqlAdapter } from "./adapter/mysql.ts";
 
-const env = config({ path: ".env.test" });
+const env = dotenv({ path: ".env.test" });
 
 Deno.test("connect() sqlite", async () => {
   const db = await connect({

@@ -1,21 +1,21 @@
-import { Client, ClientConfig } from "https://deno.land/x/mysql/mod.ts";
+import { MysqlClient, MysqlClientConfig } from "../../deps.ts";
 import { BaseAdapter, ConnectionOptions } from "../baseadapter.ts";
 
 export class MysqlAdapter extends BaseAdapter {
   /**
    * MySQL library database client
    */
-  private client: Client;
+  private client: MysqlClient;
 
   /**
    * MySQL client configurations
    */
-  private options: ClientConfig;
+  private options: MysqlClientConfig;
 
   constructor(options: ConnectionOptions) {
     super();
 
-    this.client = new Client();
+    this.client = new MysqlClient();
     this.options = {
       db: options.database,
       username: options.username,
