@@ -1,4 +1,4 @@
-# Contribute to Jungle ORM
+# Contribute to Cotton
 
 In this early stage, our focus is to implement the basic features of the query builder (`src/querybuilder.ts`). Here are some features that are not implemented yet:
 
@@ -10,7 +10,15 @@ In this early stage, our focus is to implement the basic features of the query b
 - Input sanitization (Prevent SQL injection)
 - Connect via URL
 
-## Running tests
+## Testing
+
+We need a more tests!
+
+- [querybuilder_test.ts](./src/querybuilder_test.ts)
+- [connect_test.ts](./src/connect_test.ts)
+- [adapter/mysql_test.ts](./src/adapter/mysql_test.ts)
+- [adapter/sqlite_test.ts](./src/adapter/sqlite_test.ts)
+- [adapter/postgres_test.ts](./src/adapter/postgres_test.ts)
 
 To run tests, you need to add `.env.test` file on the project root folder (don't commit!).
 
