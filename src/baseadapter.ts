@@ -1,3 +1,5 @@
+import { QueryBuilder } from "./querybuilder.ts";
+
 export interface ConnectionOptions {
   database?: string;
   username?: string;
@@ -6,14 +8,14 @@ export interface ConnectionOptions {
   password?: string;
 }
 
-export interface BaseAdapter {
+export abstract class BaseAdapter {
   /**
    * Run SQL query and get the result
    * 
    * @param query SQL query to run (ex: "SELECT * FROM users;")
    * @param values Bind values to query to prevent SQL injection
    */
-  query<T>(query: string, values?: any[]): Promise<T[]>;
+  public abstract query<T>(query: string, values?: any[]): Promise<T[]>;
 
   /**
    * Execute SQL statement and save changes to database
@@ -21,15 +23,24 @@ export interface BaseAdapter {
    * @param query SQL query to run (ex: "INSERT INTO users (email) VALUES ('a@b.com');")
    * @param values Bind values to query to prevent SQL injection
    */
-  execute(query: string, values?: any[]): Promise<void>;
+  public abstract execute(query: string, values?: any[]): Promise<void>;
 
   /**
    * Connect database
    */
-  connect(): Promise<void>;
+  public abstract connect(): Promise<void>;
 
   /**
    * Disconnect database
    */
-  disconnect(): Promise<void>;
+  public abstract disconnect(): Promise<void>;
+
+  /**
+   * Query builder
+   * 
+   * @param tableName The table name which the query is targetting
+   */
+  public table(tableName: string): QueryBuilder {
+    return new QueryBuilder(tableName, this);
+  }
 }

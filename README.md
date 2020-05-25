@@ -12,74 +12,87 @@ SQL Database Toolkit for Deno.
 - ❌ Migrations
 - ❌ Object-Relational Mapper
 
-## Database Adapter
+## Connect to database
 
-Currently, Cotton supports three popular databases which includes SQLite3, MysQL / MariaDB, and PostgresQL.
-
-### Creating adapter
+Currently, Cotton supports SQLite3, MySQL, and PostgreSQL. To create a connection, use `cotton` and pass the connection configurations.
 
 ```ts
-import { SqliteAdapter } from "https://deno.land/x/cotton/src/sqlite/adapter.ts";
-// import { PostgresAdapter } from "https://deno.land/x/cotton/src/postgres/adapter.ts";
-// import { MysqlAdapter } from "https://deno.land/x/cotton/src/mysql/adapter.ts";
+import { connect } from "https://deno.land/x/cotton/mod.ts";
 
-const adapter = new SqliteAdapter({ database: "./test.db" });
+const db = await connect({
+  type: "sqlite", // available type: 'mysql', 'postgres', and 'sqlite'
+  database: "db.sqlite",
+  // other...
+});
 ```
 
-### Making queries
+You can run an SQL statement using the `execute` method.
 
 ```ts
-interface User {
-  email: string;
-  name: string;
+await db.execute(`
+  CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email VARCHAR(255),
+  );
+`);
+```
+
+Cotton provides an easy-to-use query builder which allows you to perform queries without writing raw SQL.
+
+```ts
+// Execute "SELECT * FROM users;"
+const users = await db.table("users").execute();
+
+for (const user in users) {
+  console.log(user.email);
 }
+```
 
-const users = await adapter.query<User>("SELECT email, name FROM users;");
+However, you can still use raw SQL via `query` method.
 
-for (user in users) {
-  console.log(`Hello ${user.name}`);
+```ts
+const users = await db.query("SELECT * FROM users;");
+
+for (const user in users) {
+  console.log(user.email);
 }
 ```
 
-### Execute SQL statement
+Once, you've finished using the database, disconnect to prevent memory leaks.
 
 ```ts
-// Bind values to prevent SQL injection
-await adapter.execute("INSERT INTO users (email, name) VALUES (?, ?);", [
-  "a@b.com",
-  "john doe",
-]);
+await db.disconnect();
 ```
 
-## Query Builder
+## Query bulder
 
-### Select all
-
-```ts
-import { QueryBuilder } from "https://deno.land/x/cotton/mod.ts";
-
-const queryBuilder = new QueryBuilder("users");
-const query = queryBuilder.where("email = ?", "a@b.com").first().getSQL();
-// SELECT * FROM users WHERE email = 'a@b.com';
-```
-
-### Limit result
+### Basic query
 
 ```ts
-import { QueryBuilder } from "https://deno.land/x/cotton/mod.ts";
-const queryBuilder = new QueryBuilder("users");
-const query = queryBuilder.where("email = ?", "a@b.com").limit(5).getSQL();
-// SELECT * FROM users WHERE email = 'a@b.com';
-```
-
-### Multiple where clause
-
-```ts
-import { QueryBuilder } from "https://deno.land/x/cotton/mod.ts";
-const queryBuilder = new QueryBuilder("users");
-const query = queryBuilder
-  .where("email = ?", "a@b.com")
-  .where("name = ?", "john")
-  .getSQL();
+await db
+  .table("users")
+  .where("email", "a@b.com")
+  .where("name", "john")
+  .execute();
 // SELECT * FROM users WHERE email = 'a@b.com' AND name = 'john';
+```
+
+### Select columns
+
+```ts
+await db.table("users").select("email").execute();
+// SELECT (email) FROM users;
+
+await db.table("users").select("id", "email").execute();
+// SELECT (id, email) FROM users;
+
+await db.table("users").select("id").select("email").execute();
+// SELECT (id, email) FROM users;
+```
+
+### Pagination
+
+```ts
+await db.table("users").limit(5).offset(5).execute(); // Skip 5 row and take 5
+// SELECT * FROM users LIMIT 5 OFFSET 5;
 ```

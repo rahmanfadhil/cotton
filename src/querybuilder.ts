@@ -1,5 +1,6 @@
 import { OrderBy, WhereOperators } from "./types.ts";
 import { validWhereOperations } from "./constants.ts";
+import { BaseAdapter } from "./baseadapter.ts";
 
 /**
  * WHERE clause informations
@@ -48,18 +49,16 @@ export class QueryBuilder {
    */
   private queryOffset?: number;
 
-  /**
-   * The table which the query is targeting
-   */
-  private tableName: string;
-
   // --------------------------------------------------------------------------------
   // CONSTRUCTOR
   // --------------------------------------------------------------------------------
 
-  constructor(tableName: string) {
-    this.tableName = tableName;
-  }
+  constructor(
+    /** The table which the query is targeting */
+    private tableName: string,
+    /** The database adapter to perform query */
+    private adapter?: BaseAdapter,
+  ) {}
 
   // --------------------------------------------------------------------------------
   // PUBLIC QUERY METHODS
@@ -92,21 +91,14 @@ export class QueryBuilder {
     return this;
   }
 
-  public select(fieldName: string | string[]): QueryBuilder {
-    // If the `fieldName` parameter is an array of string, merge the content
-    // with `this.columns` without any duplicate.
-    if (Array.isArray(fieldName)) {
-      fieldName.forEach((item) => {
+  public select(...fields: string[]): QueryBuilder {
+    // Merge the `fields` array with `this.columns` without any duplicate.
+    if (Array.isArray(fields)) {
+      fields.forEach((item) => {
         if (!this.columns.includes(item)) {
           this.columns.push(item);
         }
       });
-    }
-
-    // If the `fieldName` is string, add field to `this.columns` if it
-    // doesn't exist yet
-    if (typeof fieldName === "string" && !this.columns.includes(fieldName)) {
-      this.columns.push(fieldName);
     }
 
     return this;
@@ -138,7 +130,7 @@ export class QueryBuilder {
   }
 
   /**
-   * Get the first record of the query, shortcut for `take(1)`
+   * Get the first record of the query, shortcut for `limit(1)`
    */
   public first(): QueryBuilder {
     return this.limit(1);
@@ -179,6 +171,23 @@ export class QueryBuilder {
     }
 
     return query.join(" ") + ";";
+  }
+
+  // --------------------------------------------------------------------------------
+  // PERFORM QUERY
+  // --------------------------------------------------------------------------------
+
+  public async execute(): Promise<any[]> {
+    if (!this.adapter) {
+      // TODO: improve error message
+      throw new Error("Adapter is not provided!");
+    }
+
+    // get SQL query
+    const query = this.toSQL();
+
+    // perform query
+    return this.adapter.query(query);
   }
 
   // --------------------------------------------------------------------------------

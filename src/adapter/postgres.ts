@@ -1,13 +1,15 @@
 import { Client } from "https://deno.land/x/postgres/mod.ts";
 import { BaseAdapter, ConnectionOptions } from "../baseadapter.ts";
 
-export class PostgresAdapter implements BaseAdapter {
+export class PostgresAdapter extends BaseAdapter {
   /**
    * Postgres client
    */
   private client: Client;
 
   constructor(options: ConnectionOptions) {
+    super();
+
     this.client = new Client({
       database: options.database,
       port: options.port || 5432,

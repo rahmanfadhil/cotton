@@ -1,7 +1,7 @@
 import { BaseAdapter, ConnectionOptions } from "../baseadapter.ts";
 import { open, save, DB } from "https://deno.land/x/sqlite/mod.ts";
 
-export class SqliteAdapter implements BaseAdapter {
+export class SqliteAdapter extends BaseAdapter {
   /**
    * Database file location
    */
@@ -13,6 +13,8 @@ export class SqliteAdapter implements BaseAdapter {
   private client?: DB;
 
   constructor(options: ConnectionOptions) {
+    super();
+
     if (typeof options.database !== "string") {
       throw new Error("SQLite adapter needs 'database' property!");
     }
