@@ -22,10 +22,12 @@ export class SqliteAdapter extends BaseAdapter {
     this.fileLocation = options.database!;
   }
 
+  // TODO: handle connection error with custom error
   public async connect(): Promise<void> {
     this.client = await sqliteOpen(this.fileLocation);
   }
 
+  // TODO: throw an error if the user try to disconnect before they even connected
   public disconnect(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.client!.close();
@@ -35,6 +37,7 @@ export class SqliteAdapter extends BaseAdapter {
 
   public async query<T>(query: string, values: any[] = []): Promise<T[]> {
     // Execute query
+    // TODO: handle error with custom error
     const result = this.client!.query(query, values);
 
     // Get columns information
@@ -59,6 +62,7 @@ export class SqliteAdapter extends BaseAdapter {
     return records;
   }
 
+  // TODO: handle error with custom error
   public async execute(query: string, values: any[] = []) {
     // Execute SQL statement
     this.client!.query(query, values);

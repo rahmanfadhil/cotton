@@ -19,16 +19,19 @@ export class PostgresAdapter extends BaseAdapter {
     });
   }
 
+  // TODO: handle connection error with custom error
   public connect(): Promise<void> {
     return this.client.connect();
   }
 
+  // TODO: throw custom error if the user try to disconnect before they even connected
   public disconnect(): Promise<void> {
     return this.client.end();
   }
 
   public async query<T>(query: string, values: any[] = []): Promise<T[]> {
     // Run query
+    // TODO: handle error with custom error
     const result = await this.client.query(query, ...values);
 
     // Map query result
@@ -44,6 +47,7 @@ export class PostgresAdapter extends BaseAdapter {
     });
   }
 
+  // TODO: handle error with custom error
   public async execute(query: string, values: any[] = []): Promise<void> {
     await this.client.query(query, ...values);
   }

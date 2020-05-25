@@ -26,18 +26,22 @@ export class MysqlAdapter extends BaseAdapter {
   }
 
   // FIXME: doesn't throw an error if the connection failed
+  // TODO: handle connection error with custom error
   async connect(): Promise<void> {
     await this.client.connect(this.options);
   }
 
   async disconnect(): Promise<void> {
+    // TODO: handle connection error with custom error
     await this.client.close();
   }
 
+  // TODO: handle connection error with custom error
   async query<T>(query: string, values: any[] = []): Promise<T[]> {
     return this.client.query(query, values);
   }
 
+  // TODO: handle connection error with custom error
   async execute(query: string, values: any[] = []): Promise<void> {
     await this.client.execute(query, values);
   }
