@@ -9,12 +9,16 @@ jobs:
       postgres:
         image: postgres
         env:
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: cotton_test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
       - name: Clone repo
@@ -31,9 +35,9 @@ jobs:
       - name: Run tests
         env:
           SQLITE_DATABASE: ./db.sqlite3
-          POSTGRES_DATABASE: postgres
+          POSTGRES_DATABASE: cotton_test
           POSTGRES_HOSTNAME: postgres
           POSTGRES_PORT: 5432
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USERNAME: postgres
+          POSTGRES_PASSWORD: test
+          POSTGRES_USERNAME: test
         run: deno test --allow-read --allow-net --allow-env test.ts
