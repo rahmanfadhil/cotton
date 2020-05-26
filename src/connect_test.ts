@@ -26,7 +26,6 @@ Deno.test("connect: postgres", async () => {
   const db = await connect({
     type: "postgres",
     database: Deno.env.get("POSTGRES_DATABASE"),
-    applicationName: Deno.env.get("POSTGRES_DATABASE"),
     hostname: Deno.env.get("POSTGRES_HOSTNAME"),
     username: Deno.env.get("POSTGRES_USERNAME"),
     password: Deno.env.get("POSTGRES_PASSWORD"),
