@@ -1,4 +1,4 @@
-export const validWhereOperations = [
+export const VALID_WHERE_OPERATIONS = [
   "=",
   "<",
   ">",

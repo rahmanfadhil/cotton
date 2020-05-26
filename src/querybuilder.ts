@@ -1,5 +1,5 @@
 import { OrderBy, WhereOperators } from "./types.ts";
-import { validWhereOperations } from "./constants.ts";
+import { VALID_WHERE_OPERATIONS } from "./constants.ts";
 import { BaseAdapter } from "./baseadapter.ts";
 
 /**
@@ -81,7 +81,7 @@ export class QueryBuilder {
     if (typeof value === "undefined") {
       this.addWhereClause(fieldName, "=", operator);
     } else {
-      if (!validWhereOperations.includes(operator)) {
+      if (!VALID_WHERE_OPERATIONS.includes(operator)) {
         throw new Error("Invalid operation!");
       } else {
         this.addWhereClause(fieldName, operator, value);
