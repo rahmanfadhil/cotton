@@ -7,6 +7,7 @@ export interface ConnectionOptions {
   port?: number;
   hostname?: string;
   password?: string;
+  applicationName?: string;
 }
 
 export abstract class BaseAdapter {

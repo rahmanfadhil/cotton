@@ -12,10 +12,11 @@ export class PostgresAdapter extends BaseAdapter {
 
     this.client = new PostgresClient({
       database: options.database,
-      port: options.port || 5432,
+      port: options.port,
       hostname: options.hostname,
       password: options.password,
       user: options.username,
+      applicationName: options.applicationName,
     });
   }
 
