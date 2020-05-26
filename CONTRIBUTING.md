@@ -20,7 +20,7 @@ We need a more tests!
 - [adapter/sqlite_test.ts](./src/adapter/sqlite_test.ts)
 - [adapter/postgres_test.ts](./src/adapter/postgres_test.ts)
 
-To run tests, you need to add `.env.test` file on the project root folder (don't commit!).
+To run tests, you need to add `.env` file on the project root folder (don't commit!).
 
 ```
 SQLITE_DATABASE=db.sqlite
