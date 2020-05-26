@@ -6,11 +6,11 @@ SQL Database Toolkit for Deno.
 
 ## Features
 
-- Database Adapter
-  - ✅ SQLite3 (via [sqlite](https://github.com/dyedgreen/deno-sqlite))
-  - ✅ MySQL (via [deno_mysql](https://manyuanrong/deno_mysql))
-  - 🚧 MariaDB (wait for [deno_mysql](https://github.com/manyuanrong/deno_mysql) to support it)
-  - ✅ (PostgresQL)(via [postgres](https://github.com/deno-postgres/deno-postgres))
+- Database Adapters
+  - ✅ **SQLite3** (via [sqlite](https://github.com/dyedgreen/deno-sqlite))
+  - ✅ **MySQL** (via [deno_mysql](https://manyuanrong/deno_mysql))
+  - 🚧 **MariaDB** (wait for [deno_mysql](https://github.com/manyuanrong/deno_mysql) to support it)
+  - ✅ **PostgresQL** (via [postgres](https://github.com/deno-postgres/deno-postgres))
 - 🚧 Query Builder
 - 🚧 Object-Relational Mapper
   - 🚧 Model Manager
