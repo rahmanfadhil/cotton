@@ -1,4 +1,5 @@
 import { QueryBuilder } from "./querybuilder.ts";
+import { Manager } from "./manager.ts";
 
 export interface ConnectionOptions {
   database?: string;
@@ -9,6 +10,12 @@ export interface ConnectionOptions {
 }
 
 export abstract class BaseAdapter {
+  public manager: Manager;
+
+  constructor() {
+    this.manager = new Manager(this);
+  }
+
   /**
    * Run SQL query and get the result
    * 
@@ -40,7 +47,7 @@ export abstract class BaseAdapter {
    * 
    * @param tableName The table name which the query is targetting
    */
-  public table(tableName: string): QueryBuilder {
+  public queryBuilder(tableName: string): QueryBuilder {
     return new QueryBuilder(tableName, this);
   }
 }

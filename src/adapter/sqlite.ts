@@ -40,14 +40,14 @@ export class SqliteAdapter extends BaseAdapter {
     // TODO: handle error with custom error
     const result = this.client!.query(query, values);
 
-    // Get columns information
-    const columns = result.columns();
-
     // Store fetch records temporarily
     const records: T[] = [];
 
     // Populate `records` variable with fetched data
     for (const record of result) {
+      // Get columns information
+      const columns = result.columns();
+
       let data: any = {};
 
       // Assign each known fields to `data`

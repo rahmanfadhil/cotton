@@ -177,17 +177,25 @@ export class QueryBuilder {
   // PERFORM QUERY
   // --------------------------------------------------------------------------------
 
-  public async execute(): Promise<any[]> {
-    if (!this.adapter) {
+  /**
+   * Execute query and get the result
+   * 
+   * @param adapter Custom database adapter
+   */
+  public async execute(adapter?: BaseAdapter): Promise<any[]> {
+    let queryResult: any[];
+
+    // If user pass a custom adapter, use the it. Otherwise, use the default adapter from the class.
+    if (adapter !== undefined) {
+      queryResult = await adapter.query(this.toSQL());
+    } else if (this.adapter) {
+      queryResult = await this.adapter.query(this.toSQL());
+    } else {
       // TODO: improve error message
       throw new Error("Adapter is not provided!");
     }
 
-    // get SQL query
-    const query = this.toSQL();
-
-    // perform query
-    return this.adapter.query(query);
+    return queryResult;
   }
 
   // --------------------------------------------------------------------------------

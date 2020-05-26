@@ -1,0 +1,24 @@
+name: ci
+
+on: [push, pull_request, release]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@master
+
+      - name: Install deno
+        uses: denolib/setup-deno@master
+        with:
+          deno-version: 1.0.0
+
+      - name: Check formatting
+        run: deno fmt --check
+
+      - name: Run tests
+        env:
+          TEST_SQLITE_DATABASE: ./db.sqlite3
+        run: deno test --allow-read --allow-env test.ts

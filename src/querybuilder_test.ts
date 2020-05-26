@@ -1,14 +1,14 @@
 import { QueryBuilder } from "./querybuilder.ts";
 import { assertEquals, assertThrows } from "../deps.ts";
 
-Deno.test("basic query", () => {
+Deno.test("QueryBuilder: basic query", () => {
   const query = new QueryBuilder("users")
     .where("email", "=", "a@b.com")
     .toSQL();
   assertEquals(query, "SELECT * FROM users WHERE email = 'a@b.com';");
 });
 
-Deno.test("multiple where query", () => {
+Deno.test("QueryBuilder: multiple where query", () => {
   const query = new QueryBuilder("users")
     .where("email", "=", "a@b.com")
     .where("name", "=", "john")
@@ -19,7 +19,7 @@ Deno.test("multiple where query", () => {
   );
 });
 
-Deno.test("should validate where operation", () => {
+Deno.test("QueryBuilder: should validate where operation", () => {
   assertThrows(
     () => {
       new QueryBuilder("users").where(
@@ -33,22 +33,20 @@ Deno.test("should validate where operation", () => {
   );
 });
 
-Deno.test("limit query", () => {
-  const query = new QueryBuilder("users").limit(5)
-    .toSQL();
+Deno.test("QueryBuilder: limit query", () => {
+  const query = new QueryBuilder("users").limit(5).toSQL();
   assertEquals(query, "SELECT * FROM users LIMIT 5;");
 });
 
-Deno.test("limit query with offset", () => {
-  const query = new QueryBuilder("users").limit(5).offset(5)
-    .toSQL();
+Deno.test("QueryBuilder: limit query with offset", () => {
+  const query = new QueryBuilder("users").limit(5).offset(5).toSQL();
   assertEquals(query, "SELECT * FROM users LIMIT 5 OFFSET 5;");
 });
 
-Deno.test("limit query with where", () => {
-  const query = new QueryBuilder("users").where("email", "=", "a@b.com").limit(
-    5,
-  )
+Deno.test("QueryBuilder: limit query with where", () => {
+  const query = new QueryBuilder("users")
+    .where("email", "=", "a@b.com")
+    .limit(5)
     .toSQL();
   assertEquals(query, "SELECT * FROM users WHERE email = 'a@b.com' LIMIT 5;");
 });

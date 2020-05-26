@@ -8,6 +8,11 @@ interface ConnectionConfig extends ConnectionOptions {
   type: "mysql" | "postgres" | "sqlite";
 }
 
+/**
+ * Connect to database and automatically chose the driver
+ * 
+ * @param options Connection options
+ */
 export async function connect(
   options: ConnectionConfig,
 ): Promise<BaseAdapter> {
