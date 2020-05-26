@@ -1,5 +1,7 @@
 # Cotton
 
+![ci](https://github.com/rahmanfadhil/cotton/workflows/ci/badge.svg?branch=master)
+
 SQL Database Toolkit for Deno.
 
 ## Features
