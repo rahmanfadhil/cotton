@@ -69,7 +69,7 @@ for (const user in users) {
 }
 ```
 
-Once, you've finished using the database, disconnect to prevent memory leaks.
+Once, you've finished using the database, disconnect it.
 
 ```ts
 await db.disconnect();
