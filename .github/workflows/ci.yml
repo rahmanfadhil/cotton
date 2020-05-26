@@ -5,6 +5,16 @@ on: [push, pull_request, release]
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Clone repo
@@ -20,5 +30,10 @@ jobs:
 
       - name: Run tests
         env:
-          TEST_SQLITE_DATABASE: ./db.sqlite3
-        run: deno test --allow-read --allow-env test.ts
+          SQLITE_DATABASE: ./db.sqlite3
+          POSTGRES_DATABASE: postgres
+          POSTGRES_HOSTNAME: postgres
+          POSTGRES_PORT: 5432
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USERNAME: postgres
+        run: deno test --allow-read --allow-net --allow-env test.ts

@@ -12,4 +12,3 @@ export {
   save as sqliteSave,
   DB as SqliteDB,
 } from "https://deno.land/x/sqlite@v1.0.0/mod.ts";
-export { config as dotenv } from "https://deno.land/x/dotenv@v0.4.0/mod.ts";
