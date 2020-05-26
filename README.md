@@ -5,12 +5,21 @@ SQL Database Toolkit for Deno.
 ## Features
 
 - Database Adapter
-  - ✅ SQLite3
-  - ✅ MySQL & MariaDB
-  - 🚧 PostgresQL
+  - ✅ SQLite3 (via [sqlite](https://github.com/dyedgreen/deno-sqlite))
+  - ✅ MySQL (via [deno_mysql](https://manyuanrong/deno_mysql))
+  - 🚧 MariaDB (wait for [deno_mysql](https://github.com/manyuanrong/deno_mysql) to support it)
+  - ✅ (PostgresQL)(via [postgres](https://github.com/deno-postgres/deno-postgres))
 - 🚧 Query Builder
+- 🚧 Object-Relational Mapper
+  - 🚧 Model Manager
+  - ❌ Relationship
+  - ❌ Data Validators
+  - ❌ Model Factory
+  - ❌ Hooks
 - ❌ Migrations
-- ❌ Object-Relational Mapper
+- ❌ Data Seeder
+- ❌ Model Factory
+- ❌ Caching
 
 ## Connect to database
 
@@ -64,7 +73,38 @@ Once, you've finished using the database, disconnect to prevent memory leaks.
 await db.disconnect();
 ```
 
-## Query bulder
+## Model
+
+A model is nothing more than a class that extends `Model`.
+
+```ts
+import { Model } from "https://deno.land/x/cotton/mod.ts";
+
+class User extends Model {
+  static tableName = "users";
+  static primaryKey = "id"; // optional
+
+  email: string;
+  // Other fields here...
+}
+```
+
+To do CRUD operations to our model, we can use the database manager provided by connection. Here are some basic examples:
+
+```ts
+const user = await db.manager.findOne(User, 1); // find user by id
+console.log(user instanceof User); // true
+```
+
+```ts
+const users = await db.manager.find(User); // find all users
+
+for (const user in users) {
+  console.log(user.email);
+}
+```
+
+## Query Builder
 
 ### Basic query
 
