@@ -12,3 +12,5 @@ export {
   save as sqliteSave,
   DB as SqliteDB,
 } from "https://deno.land/x/sqlite@v1.0.0/mod.ts";
+export { exists as fileExists } from "https://deno.land/std@0.53.0/fs/exists.ts";
+export { config as dotenv } from "https://deno.land/x/dotenv@v0.4.0/mod.ts";

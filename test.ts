@@ -1,7 +1,11 @@
 #! /usr/bin/env deno test --allow-read --allow-net --allow-env test.ts
 
+import { fileExists, dotenv } from "./deps.ts";
+
 // Load .env file for database configurations
-import "https://deno.land/x/dotenv@v0.4.0/load.ts";
+if (await fileExists("./.env")) {
+  dotenv({ export: true });
+}
 
 import "./src/connect_test.ts";
 import "./src/querybuilder_test.ts";

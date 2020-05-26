@@ -21,6 +21,7 @@ Deno.test("connect: postgres", async () => {
     hostname: Deno.env.get("POSTGRES_HOSTNAME"),
     username: Deno.env.get("POSTGRES_USERNAME"),
     password: Deno.env.get("POSTGRES_PASSWORD"),
+    port: Number(Deno.env.get("POSTGRES_PORT")),
   });
   assertEquals(db instanceof PostgresAdapter, true);
   await db.disconnect();
