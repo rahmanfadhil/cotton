@@ -16,12 +16,8 @@ SQL Database Toolkit for Deno.
   - 🚧 Model Manager
   - ❌ Relationship
   - ❌ Data Validators
-  - ❌ Model Factory
   - ❌ Hooks
 - ❌ Migrations
-- ❌ Data Seeder
-- ❌ Model Factory
-- ❌ Caching
 
 ## Connect to database
 
