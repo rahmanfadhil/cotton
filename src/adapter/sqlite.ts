@@ -49,7 +49,7 @@ export class SqliteAdapter extends BaseAdapter {
 
       // If the `result.columns` method throws an error, it means the there is no record found
       try {
-        columns = result.columns().map((column) => column.name);
+        columns = result.columns().map((column: any) => column.name);
       } catch {
         resolve([]);
       }
