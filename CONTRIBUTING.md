@@ -33,7 +33,7 @@ POSTGRES_PASSWORD=
 MYSQL_DATABASE=test
 MYSQL_HOSTNAME=127.0.0.1
 MYSQL_USERNAME=
-POSTGRES_PASSWORD=
+MYSQL_PASSWORD=
 ```
 
 The password fields are optional. If you don't set any password to your database, you don't need to define it.
