@@ -44,4 +44,4 @@ jobs:
           POSTGRES_PORT: 5432
           POSTGRES_PASSWORD: test
           POSTGRES_USERNAME: test
-        run: deno test --allow-read --allow-net --allow-env test.ts
+        run: deno test --allow-read --allow-net --allow-env -c tsconfig.json test.ts

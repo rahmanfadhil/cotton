@@ -1,6 +1,7 @@
 import { OrderBy, WhereOperators } from "./types.ts";
 import { VALID_WHERE_OPERATIONS } from "./constants.ts";
 import { BaseAdapter } from "./baseadapter.ts";
+import { DateUtils } from "./utils/date.ts";
 
 /**
  * WHERE clause informations
@@ -223,6 +224,10 @@ export class QueryBuilder {
 
     if (typeof value === "number") {
       cleanedValue = value.toString();
+    }
+
+    if (value instanceof Date) {
+      cleanedValue = `'${DateUtils.formatDate(value)}'`;
     }
 
     this.wheres.push({ fieldName, operator, value: cleanedValue });

@@ -20,10 +20,10 @@ We need a more tests!
 - [adapter/sqlite_test.ts](./src/adapter/sqlite_test.ts)
 - [adapter/postgres_test.ts](./src/adapter/postgres_test.ts)
 
-To run tests, you need to add `.env` file on the project root folder (don't commit!).
+Before you get started, you need to add `.env` file on the project root folder (don't commit!).
 
 ```
-SQLITE_DATABASE=db.sqlite
+SQLITE_DATABASE=db.sqlite3
 
 POSTGRES_DATABASE=test
 POSTGRES_HOSTNAME=localhost
@@ -37,3 +37,10 @@ POSTGRES_PASSWORD=
 ```
 
 The password fields are optional. If you don't set any password to your database, you don't need to define it.
+
+To run the tests, execute the following command.
+
+```
+$ deno test --allow-net --allow-read --allow-write --allow-env -c tsconfig.json test.ts # long version (but safer)
+$ deno test -A -c tsconfig.json test.ts # short version
+```

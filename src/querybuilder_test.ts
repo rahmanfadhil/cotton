@@ -1,5 +1,5 @@
 import { QueryBuilder } from "./querybuilder.ts";
-import { assertEquals, assertThrows } from "../deps.ts";
+import { assertEquals, assertThrows } from "../testdeps.ts";
 
 Deno.test("QueryBuilder: basic query", () => {
   const query = new QueryBuilder("users")

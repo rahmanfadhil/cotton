@@ -1,4 +1,4 @@
-import { assertEquals } from "../deps.ts";
+import { assertEquals } from "../testdeps.ts";
 
 import { connect } from "./connect.ts";
 import { SqliteAdapter } from "./adapter/sqlite.ts";
@@ -15,14 +15,6 @@ Deno.test("connect: sqlite", async () => {
 });
 
 Deno.test("connect: postgres", async () => {
-  console.log({
-    type: "postgres",
-    database: Deno.env.get("POSTGRES_DATABASE"),
-    hostname: Deno.env.get("POSTGRES_HOSTNAME"),
-    username: Deno.env.get("POSTGRES_USERNAME"),
-    password: Deno.env.get("POSTGRES_PASSWORD"),
-    port: Number(Deno.env.get("POSTGRES_PORT")),
-  });
   const db = await connect({
     type: "postgres",
     database: Deno.env.get("POSTGRES_DATABASE"),

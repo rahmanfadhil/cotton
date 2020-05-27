@@ -31,8 +31,8 @@ export class MysqlAdapter extends BaseAdapter {
     await this.client.connect(this.options);
   }
 
+  // TODO: handle connection error with custom error
   async disconnect(): Promise<void> {
-    // TODO: handle connection error with custom error
     await this.client.close();
   }
 
