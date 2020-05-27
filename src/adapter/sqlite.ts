@@ -35,31 +35,40 @@ export class SqliteAdapter extends BaseAdapter {
     });
   }
 
-  public async query<T>(query: string, values: any[] = []): Promise<T[]> {
-    // Execute query
-    // TODO: handle error with custom error
-    const result = this.client!.query(query, values);
+  public query<T>(query: string, values: any[] = []): Promise<T[]> {
+    return new Promise((resolve, reject) => {
+      // Execute query
+      // TODO: handle error with custom error
+      const result = this.client!.query(query, values);
 
-    // Store fetch records temporarily
-    const records: T[] = [];
+      // Store fetch records temporarily
+      const records: T[] = [];
 
-    // Populate `records` variable with fetched data
-    for (const record of result) {
-      // Get columns information
-      const columns = result.columns();
+      // Columns information
+      let columns: string[] = [];
 
-      let data: any = {};
+      // If the `result.columns` method throws an error, it means the there is no record found
+      try {
+        columns = result.columns().map((column) => column.name);
+      } catch {
+        resolve([]);
+      }
 
-      // Assign each known fields to `data`
-      (record as any[]).forEach((value, index) => {
-        const fieldName = columns[index].name;
-        data[fieldName] = value;
-      });
+      // Populate `records` variable with fetched data
+      for (const record of result) {
+        let data: any = {};
 
-      records.push(data);
-    }
+        // Assign each known fields to `data`
+        (record as any[]).forEach((value, index) => {
+          const fieldName = columns[index];
+          data[fieldName] = value;
+        });
 
-    return records;
+        records.push(data);
+      }
+
+      resolve(records);
+    });
   }
 
   // TODO: handle error with custom error
