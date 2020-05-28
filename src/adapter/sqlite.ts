@@ -50,24 +50,24 @@ export class SqliteAdapter extends BaseAdapter {
       // If the `result.columns` method throws an error, it means the there is no record found
       try {
         columns = result.columns().map((column: any) => column.name);
+
+        // Populate `records` variable with fetched data
+        for (const record of result) {
+          let data: any = {};
+
+          // Assign each known fields to `data`
+          (record as any[]).forEach((value, index) => {
+            const fieldName = columns[index];
+            data[fieldName] = value;
+          });
+
+          records.push(data);
+        }
+
+        resolve(records);
       } catch {
         resolve([]);
       }
-
-      // Populate `records` variable with fetched data
-      for (const record of result) {
-        let data: any = {};
-
-        // Assign each known fields to `data`
-        (record as any[]).forEach((value, index) => {
-          const fieldName = columns[index];
-          data[fieldName] = value;
-        });
-
-        records.push(data);
-      }
-
-      resolve(records);
     });
   }
 
