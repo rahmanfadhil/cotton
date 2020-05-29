@@ -37,6 +37,8 @@ export class QueryBuilder {
 
   /**
    * The orderings for the query. 
+   * 
+   * TODO: implement the method!
    */
   private orders: OrderBinding[] = [];
 
