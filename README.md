@@ -60,7 +60,7 @@ However, you can still use raw SQL via `query` method.
 ```ts
 const users = await db.query("SELECT * FROM users;");
 
-for (const user in users) {
+for (const user of users) {
   console.log(user.email);
 }
 ```
