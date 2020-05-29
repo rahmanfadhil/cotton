@@ -1,6 +1,46 @@
-import { BaseAdapter } from "./baseadapter.ts";
+import { BaseAdapter, ConnectionOptions } from "./baseadapter.ts";
 import { connect } from "./connect.ts";
-import { fileExistsSync } from "../testdeps.ts";
+import { dotenv, fileExistsSync } from "../testdeps.ts";
+
+// Load .env file if exists
+if (fileExistsSync("./.env")) {
+  dotenv({ export: true });
+}
+
+// Flush SQLite database
+const dbFile = Deno.env.get("SQLITE_DATABASE") || "./.db.sqlite3";
+if (fileExistsSync(dbFile)) {
+  await Deno.remove(dbFile);
+}
+
+/**
+ * Postgres connection options
+ */
+export const postgresOptions: ConnectionOptions = {
+  database: Deno.env.get("POSTGRES_DATABASE"),
+  hostname: Deno.env.get("POSTGRES_HOSTNAME"),
+  username: Deno.env.get("POSTGRES_USERNAME"),
+  password: Deno.env.get("POSTGRES_PASSWORD"),
+  port: Number(Deno.env.get("POSTGRES_PORT")) || 5432,
+};
+
+/**
+ * MySQL connection options
+ */
+export const mysqlOptions: ConnectionOptions = {
+  database: Deno.env.get("MYSQL_DATABASE"),
+  hostname: Deno.env.get("MYSQL_HOSTNAME"),
+  username: Deno.env.get("MYSQL_USERNAME"),
+  password: Deno.env.get("MYSQL_PASSWORD"),
+  port: Number(Deno.env.get("MYSQL_PORT")) || 3306,
+};
+
+/**
+ * SQLite connection options
+ */
+export const sqliteOptions: ConnectionOptions = {
+  database: Deno.env.get("SQLITE_DATABASE"),
+};
 
 /**
  * Create test with database client
@@ -17,13 +57,10 @@ export async function testDB(
   Deno.test({
     name,
     fn: async () => {
-      // Database file location
-      const dbFile = Deno.env.get("SQLITE_DATABASE") || "./db.sqlite3";
-
       // Connect to database
       const db = await connect({
         type: "sqlite",
-        database: dbFile,
+        ...sqliteOptions,
       });
 
       // Run the actual test
@@ -33,8 +70,8 @@ export async function testDB(
       await db.disconnect();
 
       // Flush database
-      if (fileExistsSync(dbFile)) {
-        await Deno.remove(dbFile);
+      if (sqliteOptions.database && fileExistsSync(sqliteOptions.database)) {
+        await Deno.remove(sqliteOptions.database);
       }
     },
   });

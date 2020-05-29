@@ -1,5 +1,5 @@
 import { QueryBuilder } from "./querybuilder.ts";
-import { Manager } from "./manager.ts";
+import { Model } from "./model.ts";
 
 export interface ConnectionOptions {
   database?: string;
@@ -11,12 +11,6 @@ export interface ConnectionOptions {
 }
 
 export abstract class BaseAdapter {
-  public manager: Manager;
-
-  constructor() {
-    this.manager = new Manager(this);
-  }
-
   /**
    * Run SQL query and get the result
    * 
@@ -50,5 +44,14 @@ export abstract class BaseAdapter {
    */
   public queryBuilder(tableName: string): QueryBuilder {
     return new QueryBuilder(tableName, this);
+  }
+
+  /**
+   * Register a model
+   * 
+   * @param model The model to be registered
+   */
+  public addModel(model: typeof Model): void {
+    model.adapter = this;
   }
 }

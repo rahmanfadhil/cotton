@@ -15,11 +15,11 @@ export class SqliteAdapter extends BaseAdapter {
   constructor(options: ConnectionOptions) {
     super();
 
-    if (typeof options.database !== "string") {
+    if (options.database) {
+      this.fileLocation = options.database;
+    } else {
       throw new Error("SQLite adapter needs 'database' property!");
     }
-
-    this.fileLocation = options.database!;
   }
 
   // TODO: handle connection error with custom error

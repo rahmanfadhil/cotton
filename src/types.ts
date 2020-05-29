@@ -1,5 +1,3 @@
-export type ObjectType<T> = { new (): T };
-
 export type OrderBy = "ASC" | "DESC";
 
 export type WhereOperators =
