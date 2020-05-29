@@ -83,19 +83,18 @@ class User extends Model {
   static primaryKey = "id"; // optional
 
   email: string;
-  // Other fields here...
 }
 ```
 
-To do CRUD operations to our model, we can use the database manager provided by connection. Here are some basic examples:
+To do CRUD operations to our model, we can use the provided method in our model:
 
 ```ts
-const user = await db.manager.findOne(User, 1); // find user by id
+const user = await User.findOne(1); // find user by id
 console.log(user instanceof User); // true
 ```
 
 ```ts
-const users = await db.manager.find(User); // find all users
+const users = await User.find(User); // find all users
 
 for (const user in users) {
   console.log(user.email);

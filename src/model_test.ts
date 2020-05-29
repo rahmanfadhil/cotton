@@ -9,7 +9,6 @@ testDB("Model: find", async (client) => {
       email: String,
     };
 
-    id: number;
     email: string;
   }
 
@@ -37,7 +36,6 @@ testDB("Model: findOne", async (client) => {
       email: String,
     };
 
-    id: number;
     email: string;
   }
 
