@@ -94,7 +94,7 @@ console.log(user instanceof User); // true
 ```
 
 ```ts
-const users = await User.find(User); // find all users
+const users = await User.find(); // find all users
 
 for (const user in users) {
   console.log(user.email);
