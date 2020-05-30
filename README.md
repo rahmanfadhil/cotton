@@ -4,7 +4,7 @@
 
 SQL Database Toolkit for Deno.
 
-## Connect to database
+## How to use
 
 Currently, Cotton supports SQLite3, MySQL, and PostgreSQL. To create a connection, use `connect` and pass the connection configurations.
 
