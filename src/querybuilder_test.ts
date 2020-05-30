@@ -9,6 +9,49 @@ Deno.test("QueryBuilder: basic query", () => {
   assertEquals(query, "SELECT * FROM users WHERE email = 'a@b.com';");
 });
 
+Deno.test("QueryBuilder: basic query with default operation", () => {
+  const query = new QueryBuilder("users")
+    .where("email", "a@b.com")
+    .toSQL();
+  assertEquals(query, "SELECT * FROM users WHERE email = 'a@b.com';");
+});
+
+Deno.test("QueryBuilder: query with number value", () => {
+  const query = new QueryBuilder("users")
+    .where("age", "=", 13)
+    .toSQL();
+  assertEquals(query, "SELECT * FROM users WHERE age = 13;");
+});
+
+Deno.test("QueryBuilder: query with boolean true value", () => {
+  const query = new QueryBuilder("users")
+    .where("age", "=", true)
+    .toSQL();
+  assertEquals(query, "SELECT * FROM users WHERE age = 1;");
+});
+
+Deno.test("QueryBuilder: query with boolean true value", () => {
+  const query = new QueryBuilder("users")
+    .where("age", "=", false)
+    .toSQL();
+  assertEquals(query, "SELECT * FROM users WHERE age = 0;");
+});
+
+Deno.test("QueryBuilder: query with date value", () => {
+  const date = new Date("14 January, 2004");
+  const dateString = DateUtils.formatDate(date);
+
+  const query = new QueryBuilder("users")
+    .where("email", "a@b.com")
+    .where("created_at", date)
+    .toSQL();
+
+  assertEquals(
+    query,
+    `SELECT * FROM users WHERE email = 'a@b.com' AND created_at = '${dateString}';`,
+  );
+});
+
 Deno.test("QueryBuilder: multiple where query", () => {
   const query = new QueryBuilder("users")
     .where("email", "=", "a@b.com")
@@ -103,6 +146,28 @@ Deno.test("QueryBuilder: basic insert with number value", () => {
   assertEquals(
     query,
     "INSERT INTO users (email, age) VALUES ('a@b.com', 16);",
+  );
+});
+
+Deno.test("QueryBuilder: basic insert with boolean true value", () => {
+  const query = new QueryBuilder("users")
+    .insert({ email: "a@b.com", is_active: true })
+    .toSQL();
+
+  assertEquals(
+    query,
+    "INSERT INTO users (email, is_active) VALUES ('a@b.com', 1);",
+  );
+});
+
+Deno.test("QueryBuilder: basic insert with boolean false value", () => {
+  const query = new QueryBuilder("users")
+    .insert({ email: "a@b.com", is_active: false })
+    .toSQL();
+
+  assertEquals(
+    query,
+    "INSERT INTO users (email, is_active) VALUES ('a@b.com', 0);",
   );
 });
 
