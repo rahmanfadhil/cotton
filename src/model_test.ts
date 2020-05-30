@@ -51,7 +51,6 @@ testDB("Model: findOne", async (client) => {
 
   const user = await User.findOne(1);
   assertEquals(user instanceof User, true);
-  console.log(user);
-  // assertEquals(user?.id, 1);
-  // assertEquals(user?.email, "a@b.com");
+  assertEquals(user?.id, 1);
+  assertEquals(user?.email, "a@b.com");
 });
