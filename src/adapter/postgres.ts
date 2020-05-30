@@ -38,17 +38,8 @@ export class PostgresAdapter extends BaseAdapter {
     // TODO: handle error with custom error
     const result = await this.client.query(query, ...values);
 
-    // Map query result
-    return result.rows.map((rowValues): T => {
-      const data: any = {};
-
-      // Assign each known fields to `data`
-      result.rowDescription.columns.forEach((item, index) => {
-        data[item.name] = rowValues[index];
-      });
-
-      return data;
-    });
+    // Get query results as JavaScript objects
+    return result.rowsOfObjects() as T[];
   }
 
   // TODO: handle error with custom error
