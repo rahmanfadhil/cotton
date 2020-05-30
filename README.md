@@ -118,3 +118,10 @@ await db.queryBuilder("users").select("id").select("email").execute();
 await db.queryBuilder("users").limit(5).offset(5).execute(); // Skip 5 row and take 5
 // SELECT * FROM users LIMIT 5 OFFSET 5;
 ```
+
+### Insert data
+
+```ts
+await db.queryBuilder("users").insert({ email: "a@b.com", age: 16 }).execute();
+// INSERT INTO users (email, age) VALUES ('a@b.com', 16);
+```
