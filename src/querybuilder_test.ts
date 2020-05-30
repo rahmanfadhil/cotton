@@ -82,3 +82,14 @@ Deno.test("QueryBuilder: multiple orderBy", () => {
     "SELECT * FROM users ORDER BY created_at ASC, name DESC;",
   );
 });
+
+Deno.test("QueryBuilder: basic insert", () => {
+  const query = new QueryBuilder("users")
+    .insert({ email: "a@b.com", password: "12345" })
+    .toSQL();
+
+  assertEquals(
+    query,
+    "INSERT INTO users (email, password) VALUES ('a@b.com', '12345');",
+  );
+});

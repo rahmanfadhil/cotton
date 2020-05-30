@@ -20,6 +20,13 @@ interface OrderBinding {
   order: OrderBy;
 }
 
+enum QueryType {
+  Select = "select",
+  Insert = "insert",
+}
+
+export type QueryValues = { [key: string]: number | string | boolean | Date };
+
 /**
  * Allows to build complex SQL queries and execute those queries.
  */
@@ -29,9 +36,19 @@ export class QueryBuilder {
   // --------------------------------------------------------------------------------
 
   /**
+   * Query type
+   */
+  private type: QueryType = QueryType.Select;
+
+  /**
    * Table columns that are going to be fetched
    */
   private columns: string[] = [];
+
+  /**
+   * Query values for INSERT and UPDATE
+   */
+  private values: QueryValues;
 
   /**
    * The where constraints of the query
@@ -67,6 +84,23 @@ export class QueryBuilder {
   // --------------------------------------------------------------------------------
   // PUBLIC QUERY METHODS
   // --------------------------------------------------------------------------------
+
+  public insert(data: QueryValues): QueryBuilder {
+    // Change the query type from `select` (default) to `insert`
+    this.type = QueryType.Insert;
+
+    // Holds the cleaned data
+    let cleanedData: QueryValues = {};
+
+    // Transform values to the format that the database can understand and store it to `cleanedData`
+    for (const [key, value] of Object.entries(data)) {
+      cleanedData[key] = this.toDatabaseValue(value);
+    }
+
+    this.values = cleanedData;
+
+    return this;
+  }
 
   /**
    * Add basic where clause to query
@@ -160,9 +194,41 @@ export class QueryBuilder {
   // --------------------------------------------------------------------------------
 
   /**
-   * Generate executable SQL query string
+   * Generate executable SQL statement
    */
   public toSQL(): string {
+    switch (this.type) {
+      case QueryType.Select:
+        return this.toSelectSQL();
+      case QueryType.Insert:
+        return this.toInsertSQL();
+      default:
+        throw new Error(`Query type '${this.type}' is invalid!`);
+    }
+  }
+
+  /**
+   * Generate `INSERT` query string
+   */
+  private toInsertSQL(): string {
+    // Initial query
+    let query: string[] = [`INSERT INTO ${this.tableName}`];
+
+    if (this.values) {
+      const fields = `(${Object.keys(this.values).join(", ")})`;
+      const values = `(${Object.values(this.values).join(", ")})`;
+      query.push(fields, "VALUES", values);
+    } else {
+      throw new Error("Cannot perform insert query without values!");
+    }
+
+    return query.join(" ") + ";";
+  }
+
+  /**
+   * Generate `SELECT` query string
+   */
+  private toSelectSQL(): string {
     // Initial query
     let query: string[] = [`SELECT`];
 
@@ -254,10 +320,24 @@ export class QueryBuilder {
     operator: WhereOperators,
     value: any,
   ) {
-    let cleanedValue: string = "";
+    this.wheres.push({
+      fieldName,
+      operator,
+      value: this.toDatabaseValue(value),
+    });
+  }
+
+  /**
+   * Transform value to a format that the database can understand
+   * 
+   * @param value The value to be sanitized
+   * 
+   * TODO: Sanitize value to prevent SQL injection
+   */
+  private toDatabaseValue(value: any): string {
+    let cleanedValue = "";
 
     if (typeof value === "string") {
-      // TODO: Sanitize value to prevent SQL injection
       cleanedValue = `'${value}'`;
     }
 
@@ -273,6 +353,6 @@ export class QueryBuilder {
       cleanedValue = `'${DateUtils.formatDate(value)}'`;
     }
 
-    this.wheres.push({ fieldName, operator, value: cleanedValue });
+    return cleanedValue;
   }
 }
