@@ -50,3 +50,13 @@ Deno.test("QueryBuilder: limit query with where", () => {
     .toSQL();
   assertEquals(query, "SELECT * FROM users WHERE email = 'a@b.com' LIMIT 5;");
 });
+
+Deno.test("QueryBuilder: select a column", () => {
+  const query = new QueryBuilder("users").select("email").toSQL();
+  assertEquals(query, "SELECT (email) FROM users;");
+});
+
+Deno.test("QueryBuilder: select multiple columns", () => {
+  const query = new QueryBuilder("users").select("email", "password").toSQL();
+  assertEquals(query, "SELECT (email, password) FROM users;");
+});

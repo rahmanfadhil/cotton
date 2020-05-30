@@ -147,7 +147,17 @@ export class QueryBuilder {
    */
   public toSQL(): string {
     // Initial query
-    let query: string[] = [`SELECT * FROM ${this.tableName}`];
+    let query: string[] = [`SELECT`];
+
+    // Select table columns
+    if (this.columns.length > 0) {
+      query.push(`(${this.columns.join(", ")})`);
+    } else {
+      query.push("*");
+    }
+
+    // Add table name
+    query.push(`FROM ${this.tableName}`);
 
     // Add where clauses if exists
     if (this.wheres.length > 0) {

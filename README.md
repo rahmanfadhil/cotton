@@ -4,21 +4,6 @@
 
 SQL Database Toolkit for Deno.
 
-## Features
-
-- Database Adapters
-  - ✅ SQLite3 _(via [sqlite](https://github.com/dyedgreen/deno-sqlite))_
-  - ✅ MySQL _(via [deno_mysql](https://manyuanrong/deno_mysql))_
-  - 🚧 MariaDB _(wait for [deno_mysql](https://github.com/manyuanrong/deno_mysql) to support it)_
-  - ✅ PostgresQL _(via [postgres](https://github.com/deno-postgres/deno-postgres))_
-- 🚧 Query Builder
-- 🚧 Object-Relational Mapper
-  - 🚧 Model Manager
-  - ❌ Relationship
-  - ❌ Data Validators
-  - ❌ Hooks
-- ❌ Migrations
-
 ## Connect to database
 
 Currently, Cotton supports SQLite3, MySQL, and PostgreSQL. To create a connection, use `connect` and pass the connection configurations.
