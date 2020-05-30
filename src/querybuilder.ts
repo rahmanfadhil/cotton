@@ -20,6 +20,9 @@ interface OrderBinding {
   order: OrderBy;
 }
 
+/**
+ * Allows to build complex SQL queries and execute those queries.
+ */
 export class QueryBuilder {
   // --------------------------------------------------------------------------------
   // QUERY CONSTRAINTS

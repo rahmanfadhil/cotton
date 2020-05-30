@@ -1,6 +1,9 @@
 import { PostgresClient } from "../../deps.ts";
 import { BaseAdapter, ConnectionOptions } from "../baseadapter.ts";
 
+/**
+ * PostgreSQL database adapter
+ */
 export class PostgresAdapter extends BaseAdapter {
   /**
    * Postgres client

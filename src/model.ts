@@ -2,6 +2,9 @@ import { BaseAdapter } from "./baseadapter.ts";
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 
+/**
+ * Database model
+ */
 export abstract class Model {
   static tableName: string;
   static primaryKey: string = "id";

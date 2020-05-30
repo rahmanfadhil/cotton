@@ -1,6 +1,9 @@
 import { QueryBuilder } from "./querybuilder.ts";
 import { Model } from "./model.ts";
 
+/**
+ * Database connection options
+ */
 export interface ConnectionOptions {
   database?: string;
   username?: string;
@@ -10,6 +13,9 @@ export interface ConnectionOptions {
   applicationName?: string;
 }
 
+/**
+ * The parent class for all database adapters
+ */
 export abstract class BaseAdapter {
   /**
    * Run SQL query and get the result
