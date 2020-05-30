@@ -40,8 +40,6 @@ export class QueryBuilder {
 
   /**
    * The orderings for the query. 
-   * 
-   * TODO: implement the method!
    */
   private orders: OrderBinding[] = [];
 
@@ -84,9 +82,13 @@ export class QueryBuilder {
     operator: WhereOperators,
     value?: any,
   ): QueryBuilder {
+    // If the third parameter is undefined, we assume the user want to use the
+    // Default operation, which is `=`. Otherwise, it will use the custom
+    // operation defined by the user.
     if (typeof value === "undefined") {
       this.addWhereClause(fieldName, "=", operator);
     } else {
+      // Check wether the custom WHERE operation is valid
       if (!VALID_WHERE_OPERATIONS.includes(operator)) {
         throw new Error("Invalid operation!");
       } else {
