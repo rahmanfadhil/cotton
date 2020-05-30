@@ -1,5 +1,6 @@
 import { QueryBuilder } from "./querybuilder.ts";
 import { assertEquals, assertThrows } from "../testdeps.ts";
+import { DateUtils } from "./utils/date.ts";
 
 Deno.test("QueryBuilder: basic query", () => {
   const query = new QueryBuilder("users")
@@ -91,5 +92,30 @@ Deno.test("QueryBuilder: basic insert", () => {
   assertEquals(
     query,
     "INSERT INTO users (email, password) VALUES ('a@b.com', '12345');",
+  );
+});
+
+Deno.test("QueryBuilder: basic insert with number value", () => {
+  const query = new QueryBuilder("users")
+    .insert({ email: "a@b.com", age: 16 })
+    .toSQL();
+
+  assertEquals(
+    query,
+    "INSERT INTO users (email, age) VALUES ('a@b.com', 16);",
+  );
+});
+
+Deno.test("QueryBuilder: basic insert with date value", () => {
+  const date = new Date("14 January, 2004");
+  const dateString = DateUtils.formatDate(date);
+
+  const query = new QueryBuilder("users")
+    .insert({ email: "a@b.com", created_at: date })
+    .toSQL();
+
+  assertEquals(
+    query,
+    `INSERT INTO users (email, created_at) VALUES ('a@b.com', '${dateString}');`,
   );
 });
