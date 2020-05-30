@@ -60,3 +60,25 @@ Deno.test("QueryBuilder: select multiple columns", () => {
   const query = new QueryBuilder("users").select("email", "password").toSQL();
   assertEquals(query, "SELECT (email, password) FROM users;");
 });
+
+Deno.test("QueryBuilder: orderBy default to ASC", () => {
+  const query = new QueryBuilder("users").orderBy("created_at").toSQL();
+  assertEquals(query, "SELECT * FROM users ORDER BY created_at ASC;");
+});
+
+Deno.test("QueryBuilder: single orderBy", () => {
+  const query = new QueryBuilder("users").orderBy("created_at", "ASC").toSQL();
+  assertEquals(query, "SELECT * FROM users ORDER BY created_at ASC;");
+});
+
+Deno.test("QueryBuilder: multiple orderBy", () => {
+  const query = new QueryBuilder("users")
+    .orderBy("created_at", "ASC")
+    .orderBy("name", "DESC")
+    .toSQL();
+
+  assertEquals(
+    query,
+    "SELECT * FROM users ORDER BY created_at ASC, name DESC;",
+  );
+});

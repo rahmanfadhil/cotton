@@ -143,6 +143,21 @@ export class QueryBuilder {
   }
 
   /**
+   * Add an "order by" clause to the query.
+   * 
+   * @param fieldName Table field
+   * @param direction "ASC" or "DESC"
+   */
+  public orderBy(fieldName: string, direction: OrderBy = "ASC"): QueryBuilder {
+    this.orders.push({ fieldName, order: direction });
+    return this;
+  }
+
+  // --------------------------------------------------------------------------------
+  // GENERATE QUERY STRING
+  // --------------------------------------------------------------------------------
+
+  /**
    * Generate executable SQL query string
    */
   public toSQL(): string {
@@ -174,6 +189,17 @@ export class QueryBuilder {
           );
         }
       }
+    }
+
+    // Add "order by" clauses
+    if (this.orders.length > 0) {
+      query.push(`ORDER BY`);
+
+      query.push(
+        this.orders
+          .map((order) => `${order.fieldName} ${order.order}`)
+          .join(", "),
+      );
     }
 
     // Add query limit if exists
