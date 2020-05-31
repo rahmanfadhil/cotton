@@ -24,6 +24,7 @@ enum QueryType {
   Select = "select",
   Insert = "insert",
   Delete = "delete",
+  Update = "update",
 }
 
 export type QueryValues = { [key: string]: number | string | boolean | Date };
@@ -198,6 +199,17 @@ export class QueryBuilder {
     return this;
   }
 
+  /**
+   * Update record on the database
+   * 
+   * @param values new data for the record
+   */
+  public update(values: QueryValues): QueryBuilder {
+    this.type = QueryType.Update;
+    this.values = values;
+    return this;
+  }
+
   // --------------------------------------------------------------------------------
   // GENERATE QUERY STRING
   // --------------------------------------------------------------------------------
@@ -211,11 +223,35 @@ export class QueryBuilder {
         return this.toSelectSQL();
       case QueryType.Insert:
         return this.toInsertSQL();
+      case QueryType.Update:
+        return this.toUpdateSQL();
       case QueryType.Delete:
         return this.toDeleteSQL();
       default:
         throw new Error(`Query type '${this.type}' is invalid!`);
     }
+  }
+
+  /**
+   * Generate `UPDATE` query string
+   */
+  private toUpdateSQL(): string {
+    let query: string[] = [`UPDATE ${this.tableName} SET`];
+
+    if (this.values) {
+      const values = [];
+      for (const [key, value] of Object.entries(this.values)) {
+        values.push(`${key} = ${this.toDatabaseValue(value)}`);
+      }
+      query.push(values.join(", "));
+    } else {
+      throw new Error("Cannot perform insert query without values!");
+    }
+
+    // Add all query constraints
+    query = query.concat(this.collectConstraints());
+
+    return query.join(" ") + ";";
   }
 
   /**
@@ -241,7 +277,7 @@ export class QueryBuilder {
    */
   private toSelectSQL(): string {
     // Query strings
-    let query: string[] = ["SELECT"];
+    let query: string[] = [`SELECT`];
 
     // Select table columns
     if (this.columns.length > 0) {
@@ -249,6 +285,9 @@ export class QueryBuilder {
     } else {
       query.push("*");
     }
+
+    // Add table name
+    query.push(`FROM ${this.tableName}`);
 
     // Add all query constraints
     query = query.concat(this.collectConstraints());
@@ -261,7 +300,7 @@ export class QueryBuilder {
    */
   private toDeleteSQL(): string {
     // Query strings
-    let query: string[] = ["DELETE"];
+    let query: string[] = [`DELETE FROM ${this.tableName}`];
 
     // Add all query constraints
     query = query.concat(this.collectConstraints());
@@ -271,13 +310,16 @@ export class QueryBuilder {
 
   /**
    * Collect query constraints in the current query
+   * 
+   * Example result:
+   * 
+   * ```
+   * ["WHERE email = 'a@b.com'", "LIMIT 1"]
+   * ```
    */
   private collectConstraints(): string[] {
     // Query strings (that contain constraints only)
     let query: string[] = [];
-
-    // Add table name
-    query.push(`FROM ${this.tableName}`);
 
     // Add where clauses if exists
     if (this.wheres.length > 0) {

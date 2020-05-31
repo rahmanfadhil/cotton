@@ -135,6 +135,64 @@ Deno.test("QueryBuilder: basic delete query", () => {
   assertEquals(query, "DELETE FROM users WHERE email = 'a@b.com';");
 });
 
+Deno.test("QueryBuilder: basic update query", () => {
+  const query = new QueryBuilder("users")
+    .where("email", "=", "a@b.com")
+    .update({ name: "John" })
+    .toSQL();
+  assertEquals(
+    query,
+    "UPDATE users SET name = 'John' WHERE email = 'a@b.com';",
+  );
+});
+
+Deno.test("QueryBuilder: update query with number value", () => {
+  const query = new QueryBuilder("users")
+    .where("email", "=", "a@b.com")
+    .update({ name: "John", age: 16 })
+    .toSQL();
+  assertEquals(
+    query,
+    "UPDATE users SET name = 'John', age = 16 WHERE email = 'a@b.com';",
+  );
+});
+
+Deno.test("QueryBuilder: update query with boolean false value", () => {
+  const query = new QueryBuilder("users")
+    .where("email", "=", "a@b.com")
+    .update({ name: "John", is_active: false })
+    .toSQL();
+  assertEquals(
+    query,
+    "UPDATE users SET name = 'John', is_active = 0 WHERE email = 'a@b.com';",
+  );
+});
+
+Deno.test("QueryBuilder: update query with boolean true value", () => {
+  const query = new QueryBuilder("users")
+    .where("email", "=", "a@b.com")
+    .update({ name: "John", is_active: true })
+    .toSQL();
+  assertEquals(
+    query,
+    "UPDATE users SET name = 'John', is_active = 1 WHERE email = 'a@b.com';",
+  );
+});
+
+Deno.test("QueryBuilder: update query with date value", () => {
+  const date = new Date("14 January, 2004");
+  const dateString = DateUtils.formatDate(date);
+
+  const query = new QueryBuilder("users")
+    .where("email", "=", "a@b.com")
+    .update({ name: "John", created_at: date })
+    .toSQL();
+  assertEquals(
+    query,
+    `UPDATE users SET name = 'John', created_at = '${dateString}' WHERE email = 'a@b.com';`,
+  );
+});
+
 Deno.test("QueryBuilder: basic insert", () => {
   const query = new QueryBuilder("users")
     .insert({ email: "a@b.com", password: "12345" })
