@@ -1,8 +1,13 @@
 # Cotton
 
-![ci](https://github.com/rahmanfadhil/cotton/workflows/ci/badge.svg?branch=master)
+![ci](https://github.com/rahmanfadhil/cotton/workflows/ci/badge.svg?branch=master) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/rahmanfadhil/cotton)
 
-SQL Database Toolkit for Deno.
+**SQL Database Toolkit for Deno.**
+
+- Well-tested
+- Type-safe
+- Supports **MySQL**, **SQLite**, and **PostgreSQL**
+- Semantic versioning
 
 ## How to use
 
@@ -67,7 +72,7 @@ class User extends Model {
   static tableName = "users";
   static primaryKey = "id"; // optional
 
-  email: string;
+  email!: string;
 }
 ```
 

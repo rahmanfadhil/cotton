@@ -56,6 +56,6 @@ The password fields are optional. If you don't set any password to your database
 To run the tests, execute the following command.
 
 ```
-$ deno test --allow-net --allow-read --allow-write --allow-env -c tsconfig.json test.ts # long version (but safer)
-$ deno test -A -c tsconfig.json test.ts # short version
+$ deno test --allow-net --allow-read --allow-write --allow-env test.ts # long version (but safer)
+$ deno test -A test.ts # short version
 ```

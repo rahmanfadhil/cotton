@@ -57,4 +57,4 @@ jobs:
           MYSQL_HOSTNAME: localhost
           MYSQL_PORT: 3306
           MYSQL_USERNAME: root
-        run: deno test --allow-read --allow-write --allow-net --allow-env -c tsconfig.json test.ts
+        run: deno test --allow-read --allow-write --allow-net --allow-env test.ts
