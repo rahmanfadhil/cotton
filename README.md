@@ -131,7 +131,7 @@ await db.queryBuilder("users").insert({ email: "a@b.com", age: 16 }).execute();
 // INSERT INTO users (email, age) VALUES ('a@b.com', 16);
 ```
 
-### Insert data
+### Delete data
 
 ```ts
 await db.queryBuilder("users").where("email", "a@b.com").delete().execute();
