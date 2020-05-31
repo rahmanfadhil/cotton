@@ -125,3 +125,10 @@ await db.queryBuilder("users").limit(5).offset(5).execute(); // Skip 5 row and t
 await db.queryBuilder("users").insert({ email: "a@b.com", age: 16 }).execute();
 // INSERT INTO users (email, age) VALUES ('a@b.com', 16);
 ```
+
+### Insert data
+
+```ts
+await db.queryBuilder("users").where("email", "a@b.com").delete().execute();
+// DELETE FROM users WHERE email = 'a@b.com';
+```

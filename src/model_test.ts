@@ -9,7 +9,7 @@ testDB("Model: find", async (client) => {
       email: String,
     };
 
-    email: string;
+    email!: string;
   }
 
   await client.execute(`
@@ -36,7 +36,7 @@ testDB("Model: findOne", async (client) => {
       email: String,
     };
 
-    email: string;
+    email!: string;
   }
 
   await client.execute(`

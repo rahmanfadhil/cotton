@@ -11,7 +11,7 @@ export abstract class Model {
   static adapter: BaseAdapter;
   static fields: { [key: string]: any };
 
-  public id: number;
+  public id!: number;
 
   /**
    * Search for a single instance. Returns the first instance found, or null if none can be found.
@@ -53,6 +53,17 @@ export abstract class Model {
     return this.createModels(result);
   }
 
+  public save(): void {
+    const modelClass = <typeof Model> this.constructor;
+    Object.keys(modelClass.fields).forEach((item) => {
+      (this as any)[item] = this.normalizeData(
+        (this as any)[item],
+        modelClass.fields[item],
+      );
+    });
+    console.log(this);
+  }
+
   // --------------------------------------------------------------------------------
   // TRANSFORM OBJECT TO MODEL CLASS
   // --------------------------------------------------------------------------------
@@ -88,5 +99,17 @@ export abstract class Model {
    */
   private static createModels<T>(data: { [key: string]: any }[]): T[] {
     return data.map((item) => this.createModel(item));
+  }
+
+  private normalizeData(value: any, type: any): any {
+    if (type === Date && !(value instanceof Date)) {
+      value = new Date(value);
+    } else if (type === String && typeof value !== "string") {
+      value = new String(value).toString();
+    } else if (type === Number && typeof value !== "number") {
+      value = new Number(value);
+    }
+
+    return value;
   }
 }

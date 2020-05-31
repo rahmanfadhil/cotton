@@ -127,6 +127,14 @@ Deno.test("QueryBuilder: multiple orderBy", () => {
   );
 });
 
+Deno.test("QueryBuilder: basic delete query", () => {
+  const query = new QueryBuilder("users")
+    .where("email", "=", "a@b.com")
+    .delete()
+    .toSQL();
+  assertEquals(query, "DELETE FROM users WHERE email = 'a@b.com';");
+});
+
 Deno.test("QueryBuilder: basic insert", () => {
   const query = new QueryBuilder("users")
     .insert({ email: "a@b.com", password: "12345" })
