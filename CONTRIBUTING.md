@@ -38,8 +38,6 @@ We need a more tests!
 Before you get started, you need to add `.env` file on the project root folder (don't commit!).
 
 ```
-SQLITE_DATABASE=db.sqlite3
-
 POSTGRES_DATABASE=test
 POSTGRES_HOSTNAME=localhost
 POSTGRES_USERNAME=

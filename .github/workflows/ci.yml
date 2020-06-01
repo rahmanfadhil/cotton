@@ -47,7 +47,6 @@ jobs:
 
       - name: Run tests
         env:
-          SQLITE_DATABASE: ./db.sqlite3
           POSTGRES_DATABASE: cotton_test
           POSTGRES_HOSTNAME: localhost
           POSTGRES_PORT: 5432

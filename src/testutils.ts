@@ -7,12 +7,6 @@ if (fileExistsSync("./.env")) {
   dotenv({ export: true });
 }
 
-// Flush SQLite database
-const dbFile = Deno.env.get("SQLITE_DATABASE") || "./.db.sqlite3";
-if (fileExistsSync(dbFile)) {
-  await Deno.remove(dbFile);
-}
-
 /**
  * Postgres connection options
  */
@@ -39,7 +33,7 @@ export const mysqlOptions: ConnectionOptions = {
  * SQLite connection options
  */
 export const sqliteOptions: ConnectionOptions = {
-  database: Deno.env.get("SQLITE_DATABASE"),
+  database: ":memory:",
 };
 
 /**
@@ -68,11 +62,6 @@ export async function testDB(
 
       // Disconnect to database
       await db.disconnect();
-
-      // Flush database
-      if (sqliteOptions.database && fileExistsSync(sqliteOptions.database)) {
-        await Deno.remove(sqliteOptions.database);
-      }
     },
   });
 }
