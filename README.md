@@ -145,7 +145,6 @@ await db
   .queryBuilder("users")
   .where("email", "a@b.com")
   .update("name", "John")
-  .delete()
   .execute();
 // UPDATE users SET name = 'John' WHERE email = 'a@b.com';
 ```
