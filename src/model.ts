@@ -14,7 +14,7 @@ export abstract class Model {
   public id!: number;
 
   /**
-   * Search for a single instance. Returns the first instance found, or null if none can be found.
+   * Search for a single instance. Returns the first instance found, or null if none can be found
    * 
    * @param id primary key
    */
@@ -38,9 +38,7 @@ export abstract class Model {
   }
 
   /**
-   * Search for multiple instance.
-   * 
-   * @param id primary key
+   * Search for multiple instance
    */
   public static async find<T extends Model>(
     this: ExtendedModel<T>,
@@ -53,15 +51,34 @@ export abstract class Model {
     return this.createModels(result);
   }
 
-  public save(): void {
+  /**
+   * Save model to the database
+   */
+  public async save(): Promise<this> {
+    // Get the actual class to access static properties
     const modelClass = <typeof Model> this.constructor;
-    Object.keys(modelClass.fields).forEach((item) => {
+
+    // Normalize fields data
+    for (const item of Object.keys(modelClass.fields)) {
       (this as any)[item] = this.normalizeData(
         (this as any)[item],
         modelClass.fields[item],
       );
-    });
-    console.log(this);
+    }
+
+    // Bind all values to the `data` variable
+    const data: { [key: string]: any } = {};
+    for (const [key, value] of Object.entries(this)) {
+      data[key] = value;
+    }
+
+    // Save record to the database
+    await modelClass.adapter
+      .queryBuilder(modelClass.tableName)
+      .insert(data)
+      .execute();
+
+    return this;
   }
 
   // --------------------------------------------------------------------------------
@@ -102,7 +119,7 @@ export abstract class Model {
   }
 
   /**
-   * Normalize data type with the expected type
+   * Normalize data with the expected type
    * 
    * @param value the value to be normalize
    * @param type the expected data type
