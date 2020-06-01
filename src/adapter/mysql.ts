@@ -1,10 +1,10 @@
 import { MysqlClient, MysqlClientConfig } from "../../deps.ts";
-import { BaseAdapter, ConnectionOptions } from "../baseadapter.ts";
+import { Adapter, ConnectionOptions } from "./adapter.ts";
 
 /**
  * MySQL database adapter
  */
-export class MysqlAdapter extends BaseAdapter {
+export class MysqlAdapter extends Adapter {
   /**
    * MySQL library database client
    */

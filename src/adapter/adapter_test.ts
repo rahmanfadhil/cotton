@@ -1,8 +1,7 @@
-import { BaseAdapter } from "./baseadapter.ts";
-import { Model } from "./model.ts";
-import { testDB } from "./testutils.ts";
-import { assertEquals } from "../testdeps.ts";
-import { QueryBuilder } from "./querybuilder.ts";
+import { Model } from "../model.ts";
+import { testDB } from "../testutils.ts";
+import { assertEquals } from "../../testdeps.ts";
+import { QueryBuilder } from "../querybuilder.ts";
 
 testDB(
   "BaseAdapter: `addModel` should populate `adapter` property",

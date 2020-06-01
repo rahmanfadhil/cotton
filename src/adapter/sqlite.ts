@@ -1,10 +1,10 @@
-import { BaseAdapter, ConnectionOptions } from "../baseadapter.ts";
+import { Adapter, ConnectionOptions } from "./adapter.ts";
 import { SqliteDB } from "../../deps.ts";
 
 /**
  * SQLite database adapter
  */
-export class SqliteAdapter extends BaseAdapter {
+export class SqliteAdapter extends Adapter {
   /**
    * Database file location
    */
