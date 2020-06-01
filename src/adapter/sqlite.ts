@@ -1,5 +1,5 @@
 import { BaseAdapter, ConnectionOptions } from "../baseadapter.ts";
-import { sqliteOpen, sqliteSave, SqliteDB } from "../../deps.ts";
+import { SqliteDB } from "../../deps.ts";
 
 /**
  * SQLite database adapter
@@ -26,8 +26,11 @@ export class SqliteAdapter extends BaseAdapter {
   }
 
   // TODO: handle connection error with custom error
-  public async connect(): Promise<void> {
-    this.client = await sqliteOpen(this.fileLocation);
+  public connect(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.client = new SqliteDB(this.fileLocation);
+      resolve();
+    });
   }
 
   // TODO: throw an error if the user try to disconnect before they even connected
@@ -43,6 +46,8 @@ export class SqliteAdapter extends BaseAdapter {
       // Execute query
       // TODO: handle error with custom error
       const result = this.client!.query(query, values);
+
+      console.log(result);
 
       // Store fetch records temporarily
       const records: T[] = [];
@@ -75,11 +80,11 @@ export class SqliteAdapter extends BaseAdapter {
   }
 
   // TODO: handle error with custom error
-  public async execute(query: string, values: any[] = []) {
-    // Execute SQL statement
-    this.client!.query(query, values);
-
-    // Save changes to database file
-    await sqliteSave(this.client!);
+  public execute(query: string, values: any[] = []): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // Execute SQL statement
+      this.client!.query(query, values);
+      resolve();
+    });
   }
 }

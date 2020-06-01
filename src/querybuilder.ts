@@ -1,14 +1,23 @@
-import { OrderBy, WhereOperators } from "./types.ts";
 import { VALID_WHERE_OPERATIONS } from "./constants.ts";
 import { BaseAdapter } from "./baseadapter.ts";
 import { DateUtils } from "./utils/date.ts";
+
+/**
+ * WHERE operators
+ */
+export type WhereOperator = ">" | ">=" | "<" | "<=" | "=" | "like";
+
+/**
+ * ORDER BY directions
+ */
+export type OrderDirection = "DESC" | "ASC";
 
 /**
  * WHERE clause informations
  */
 interface WhereBinding {
   fieldName: string;
-  operator: WhereOperators;
+  operator: WhereOperator;
   value: any;
 }
 
@@ -17,9 +26,12 @@ interface WhereBinding {
  */
 interface OrderBinding {
   fieldName: string;
-  order: OrderBy;
+  order: OrderDirection;
 }
 
+/**
+ * Valid query types
+ */
 enum QueryType {
   Select = "select",
   Insert = "insert",
@@ -27,6 +39,9 @@ enum QueryType {
   Update = "update",
 }
 
+/**
+ * Query values for INSERT and UPDATE
+ */
 export type QueryValues = { [key: string]: number | string | boolean | Date };
 
 /**
@@ -105,17 +120,17 @@ export class QueryBuilder {
   }
 
   /**
-   * Add basic where clause to query
+   * Add basic WHERE clause to query
    */
   public where(fieldName: string, value: any): QueryBuilder;
   public where(
     fieldName: string,
-    operator: WhereOperators,
+    operator: WhereOperator,
     value: any,
   ): QueryBuilder;
   public where(
     fieldName: string,
-    operator: WhereOperators,
+    operator: WhereOperator,
     value?: any,
   ): QueryBuilder {
     // If the third parameter is undefined, we assume the user want to use the
@@ -186,7 +201,10 @@ export class QueryBuilder {
    * @param fieldName Table field
    * @param direction "ASC" or "DESC"
    */
-  public orderBy(fieldName: string, direction: OrderBy = "ASC"): QueryBuilder {
+  public orderBy(
+    fieldName: string,
+    direction: OrderDirection = "ASC",
+  ): QueryBuilder {
     this.orders.push({ fieldName, order: direction });
     return this;
   }
@@ -396,7 +414,7 @@ export class QueryBuilder {
    */
   private addWhereClause(
     fieldName: string,
-    operator: WhereOperators,
+    operator: WhereOperator,
     value: any,
   ) {
     this.wheres.push({

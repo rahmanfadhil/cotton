@@ -53,6 +53,9 @@ export abstract class Model {
 
   /**
    * Save model to the database
+   * 
+   * TODO: if the model is already exists, update.
+   * TODO: set the primary key property when saved. (SQLite use `select seq from sqlite_sequence where name='users';`)
    */
   public async save(): Promise<this> {
     // Get the actual class to access static properties
