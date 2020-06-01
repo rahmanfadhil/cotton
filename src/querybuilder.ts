@@ -1,5 +1,5 @@
 import { VALID_WHERE_OPERATIONS } from "./constants.ts";
-import { BaseAdapter } from "./baseadapter.ts";
+import { Adapter } from "./adapters/adapter.ts";
 import { DateUtils } from "./utils/date.ts";
 
 /**
@@ -95,7 +95,7 @@ export class QueryBuilder {
     /** The table which the query is targeting */
     private tableName: string,
     /** The database adapter to perform query */
-    private adapter?: BaseAdapter,
+    private adapter?: Adapter,
   ) {}
 
   // --------------------------------------------------------------------------------
@@ -389,7 +389,7 @@ export class QueryBuilder {
    * 
    * @param adapter Custom database adapter
    */
-  public async execute(adapter?: BaseAdapter): Promise<any[]> {
+  public async execute(adapter?: Adapter): Promise<any[]> {
     let queryResult: any[];
 
     // If user pass a custom adapter, use the it. Otherwise, use the default adapter from the class.

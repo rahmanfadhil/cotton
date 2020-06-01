@@ -1,25 +1,19 @@
 import { assertEquals } from "../testdeps.ts";
 
 import { connect } from "./connect.ts";
-import { SqliteAdapter } from "./adapter/sqlite.ts";
-import { PostgresAdapter } from "./adapter/postgres.ts";
-import { MysqlAdapter } from "./adapter/mysql.ts";
+import { SqliteAdapter } from "./adapters/sqlite.ts";
+import { PostgresAdapter } from "./adapters/postgres.ts";
+import { MysqlAdapter } from "./adapters/mysql.ts";
 import { mysqlOptions, postgresOptions, sqliteOptions } from "./testutils.ts";
 
 Deno.test("connect: sqlite", async () => {
-  const db = await connect({
-    type: "sqlite",
-    ...sqliteOptions,
-  });
+  const db = await connect({ type: "sqlite", ...sqliteOptions });
   assertEquals(db instanceof SqliteAdapter, true);
   await db.disconnect();
 });
 
 Deno.test("connect: postgres", async () => {
-  const db = await connect({
-    type: "postgres",
-    ...postgresOptions,
-  });
+  const db = await connect({ type: "postgres", ...postgresOptions });
   assertEquals(db instanceof PostgresAdapter, true);
   await db.disconnect();
 });

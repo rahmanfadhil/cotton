@@ -1,8 +1,8 @@
-import { ConnectionOptions, BaseAdapter } from "./baseadapter.ts";
+import { ConnectionOptions, Adapter } from "./adapters/adapter.ts";
 
-import { MysqlAdapter } from "./adapter/mysql.ts";
-import { PostgresAdapter } from "./adapter/postgres.ts";
-import { SqliteAdapter } from "./adapter/sqlite.ts";
+import { MysqlAdapter } from "./adapters/mysql.ts";
+import { PostgresAdapter } from "./adapters/postgres.ts";
+import { SqliteAdapter } from "./adapters/sqlite.ts";
 
 interface ConnectionConfig extends ConnectionOptions {
   type: "mysql" | "postgres" | "sqlite";
@@ -15,8 +15,8 @@ interface ConnectionConfig extends ConnectionOptions {
  */
 export async function connect(
   options: ConnectionConfig,
-): Promise<BaseAdapter> {
-  let adapter: BaseAdapter;
+): Promise<Adapter> {
+  let adapter: Adapter;
 
   switch (options.type) {
     case "mysql":

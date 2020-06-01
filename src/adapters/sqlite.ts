@@ -47,8 +47,6 @@ export class SqliteAdapter extends Adapter {
       // TODO: handle error with custom error
       const result = this.client!.query(query, values);
 
-      console.log(result);
-
       // Store fetch records temporarily
       const records: T[] = [];
 

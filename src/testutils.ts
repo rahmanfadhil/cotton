@@ -1,4 +1,4 @@
-import { BaseAdapter, ConnectionOptions } from "./baseadapter.ts";
+import { Adapter, ConnectionOptions } from "./adapters/adapter.ts";
 import { connect } from "./connect.ts";
 import { dotenv, fileExistsSync } from "../testdeps.ts";
 
@@ -52,7 +52,7 @@ export const sqliteOptions: ConnectionOptions = {
  */
 export async function testDB(
   name: string,
-  fn: (client: BaseAdapter) => void | Promise<void>,
+  fn: (client: Adapter) => void | Promise<void>,
 ) {
   Deno.test({
     name,

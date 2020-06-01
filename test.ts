@@ -2,9 +2,9 @@
 
 import "./src/connect_test.ts";
 import "./src/querybuilder_test.ts";
-import "./src/adapter/sqlite_test.ts";
-import "./src/adapter/postgres_test.ts";
-import "./src/adapter/mysql_test.ts";
+import "./src/adapters/sqlite_test.ts";
+import "./src/adapters/postgres_test.ts";
+import "./src/adapters/mysql_test.ts";
 import "./src/utils/date_test.ts";
 import "./src/model_test.ts";
-import "./src/baseadapter_test.ts";
+import "./src/adapters/adapter_test.ts";

@@ -1,4 +1,4 @@
-import { BaseAdapter } from "./baseadapter.ts";
+import { Adapter } from "./adapters/adapter.ts";
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 
@@ -8,7 +8,7 @@ export type ExtendedModel<T> = { new (): T } & typeof Model;
 export abstract class Model {
   static tableName: string;
   static primaryKey: string = "id";
-  static adapter: BaseAdapter;
+  static adapter: Adapter;
   static fields: { [key: string]: any };
 
   public id!: number;
