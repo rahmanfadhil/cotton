@@ -70,9 +70,13 @@ import { Model } from "https://deno.land/x/cotton/mod.ts";
 
 class User extends Model {
   static tableName = "users";
-  static primaryKey = "id"; // optional
+  static fields = {
+    email: String,
+    created_at: Date,
+  };
 
-  email!: string;
+  public email!: string;
+  public created_at!: Date;
 }
 ```
 
