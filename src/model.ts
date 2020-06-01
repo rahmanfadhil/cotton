@@ -101,6 +101,12 @@ export abstract class Model {
     return data.map((item) => this.createModel(item));
   }
 
+  /**
+   * Normalize data type with the expected type
+   * 
+   * @param value the value to be normalize
+   * @param type the expected data type
+   */
   private normalizeData(value: any, type: any): any {
     if (type === Date && !(value instanceof Date)) {
       value = new Date(value);
