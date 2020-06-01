@@ -95,6 +95,15 @@ for (const user in users) {
 }
 ```
 
+To save the current model to the database, use the `save` method.
+
+```ts
+const user = new User();
+user.email = "a@b.com";
+user.created_at = new Date("1 June, 2020");
+await user.save();
+```
+
 ## Query Builder
 
 ### Basic query
