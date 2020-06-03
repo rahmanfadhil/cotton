@@ -150,6 +150,11 @@ export class QueryBuilder {
     return this;
   }
 
+  /**
+   * Select table fields
+   * 
+   * @param fields Table fields to select
+   */
   public select(...fields: string[]): QueryBuilder {
     // Merge the `fields` array with `this.columns` without any duplicate.
     if (Array.isArray(fields)) {
