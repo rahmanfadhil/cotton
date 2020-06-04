@@ -104,6 +104,15 @@ user.created_at = new Date("1 June, 2020");
 await user.save();
 ```
 
+You also can use the `insert` method to create the model instance and save it to the database at the same time.
+
+```ts
+const user = await User.insert({
+  email: "a@b.com",
+  created_at: new Date("1 June, 2020"),
+});
+```
+
 ## Query Builder
 
 ### Basic query

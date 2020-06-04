@@ -84,6 +84,22 @@ export abstract class Model {
     return this;
   }
 
+  /**
+   * Create a model instance and save it to the database.
+   * 
+   * @param data model fields
+   * 
+   * TODO: set the primary key property when saved. (SQLite use `select seq from sqlite_sequence where name='users';`)
+   */
+  public static async insert<T extends Model>(
+    this: ExtendedModel<T>,
+    data: Partial<T>,
+  ): Promise<T> {
+    const model = (this as typeof Model).createModel<T>(data);
+    await model.save();
+    return model;
+  }
+
   // --------------------------------------------------------------------------------
   // TRANSFORM OBJECT TO MODEL CLASS
   // --------------------------------------------------------------------------------
