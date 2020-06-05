@@ -30,8 +30,8 @@ export const COLUMN_TYPES = {
   },
   increments: {
     postgres: "serial",
-    mysql: "int",
-    sqlite: "int",
+    mysql: "integer",
+    sqlite: "integer",
   },
   integer: {
     postgres: "integer",
