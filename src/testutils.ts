@@ -1,11 +1,5 @@
 import { Adapter, ConnectionOptions } from "./adapters/adapter.ts";
 import { connect } from "./connect.ts";
-import { dotenv, fileExistsSync } from "../testdeps.ts";
-
-// Load .env file if exists
-if (fileExistsSync("./.env")) {
-  dotenv({ export: true });
-}
 
 /**
  * Postgres connection options
@@ -49,7 +43,7 @@ export async function testDB(
   fn: (client: Adapter) => void | Promise<void>,
 ) {
   Deno.test({
-    name,
+    name: `[sqlite] ${name}`,
     fn: async () => {
       // Connect to database
       const db = await connect({
@@ -57,8 +51,75 @@ export async function testDB(
         ...sqliteOptions,
       });
 
+      // Create dummy table `users`
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email VARCHAR(255)
+        );
+      `);
+
       // Run the actual test
       await fn(db);
+
+      // Drop dummy table `users`
+      await db.execute("DROP TABLE users;");
+
+      // Disconnect to database
+      await db.disconnect();
+    },
+  });
+
+  Deno.test({
+    name: `[postgres] ${name}`,
+    fn: async () => {
+      // Connect to database
+      const db = await connect({
+        type: "postgres",
+        ...postgresOptions,
+      });
+
+      // Create dummy table `users`
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          email VARCHAR(255)
+        );
+      `);
+
+      // Run the actual test
+      await fn(db);
+
+      // Drop dummy table `users`
+      await db.execute("DROP TABLE users;");
+
+      // Disconnect to database
+      await db.disconnect();
+    },
+  });
+
+  Deno.test({
+    name: `[mysql] ${name}`,
+    fn: async () => {
+      // Connect to database
+      const db = await connect({
+        type: "mysql",
+        ...mysqlOptions,
+      });
+
+      // Create dummy table `users`
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTO_INCREMENT,
+          email VARCHAR(255)
+        );
+      `);
+
+      // Run the actual test
+      await fn(db);
+
+      // Drop dummy table `users`
+      await db.execute("DROP TABLE users;");
 
       // Disconnect to database
       await db.disconnect();

@@ -1,5 +1,10 @@
 import { MysqlClient, MysqlClientConfig } from "../../deps.ts";
-import { Adapter, ConnectionOptions } from "./adapter.ts";
+import {
+  Adapter,
+  ConnectionOptions,
+  QueryResult,
+  QueryOptions,
+} from "./adapter.ts";
 
 /**
  * MySQL database adapter
@@ -39,12 +44,17 @@ export class MysqlAdapter extends Adapter {
     await this.client.close();
   }
 
-  // TODO: handle connection error with custom error
-  async query<T>(query: string, values: any[] = []): Promise<T[]> {
-    return this.client.query(query, values);
+  // TODO: handle error with custom error
+  async query<T>(
+    query: string,
+    options?: QueryOptions,
+  ): Promise<QueryResult<T>> {
+    const records = await this.client.query(query);
+    const lastInsertedId = records.lastInsertId || 0;
+    return { lastInsertedId, records };
   }
 
-  // TODO: handle connection error with custom error
+  // TODO: handle error with custom error
   async execute(query: string, values: any[] = []): Promise<void> {
     await this.client.execute(query, values);
   }

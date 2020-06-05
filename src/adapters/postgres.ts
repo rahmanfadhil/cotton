@@ -1,5 +1,10 @@
 import { PostgresClient } from "../../deps.ts";
-import { Adapter, ConnectionOptions } from "./adapter.ts";
+import {
+  Adapter,
+  ConnectionOptions,
+  QueryResult,
+  QueryOptions,
+} from "./adapter.ts";
 
 /**
  * PostgreSQL database adapter
@@ -33,13 +38,43 @@ export class PostgresAdapter extends Adapter {
     return this.client.end();
   }
 
-  public async query<T>(query: string, values: any[] = []): Promise<T[]> {
-    // Run query
-    // TODO: handle error with custom error
-    const result = await this.client.query(query, ...values);
+  public async query<T>(
+    query: string,
+    options?: QueryOptions,
+  ): Promise<QueryResult<T>> {
+    if (options?.getLastInsertedId) {
+      // PostgreSQL driver doesn't have any special way to fetch the last inserted row id.
+      // So, we need to fetch it manually, and we need the table name and its primary key
+      // to do that.
+      if (options.info && options.info.primaryKey && options.info.primaryKey) {
+        // Run query
+        // TODO: handle error with custom error
+        const [records, lastInsertedId] = await this.client.multiQuery([
+          { text: query },
+          {
+            text:
+              `SELECT currval(pg_get_serial_sequence('${options.info.tableName}', '${options.info.primaryKey}'));`,
+          },
+        ]);
 
-    // Get query results as JavaScript objects
-    return result.rowsOfObjects() as T[];
+        // Transform records to plain JavaScript objects
+        return {
+          records: records.rowsOfObjects() as T[],
+          lastInsertedId: Number(lastInsertedId.rows[0][0]),
+        };
+      } else {
+        throw new Error(
+          "Cannot get last inserted id in PostgreSQL without `tableName` and `primaryKey`!",
+        );
+      }
+    } else {
+      // Run query
+      // TODO: handle error with custom error
+      const records = await this.client.query(query);
+
+      // Transform records to plain JavaScript objects
+      return { records: records.rowsOfObjects() as T[], lastInsertedId: 0 };
+    }
   }
 
   // TODO: handle error with custom error

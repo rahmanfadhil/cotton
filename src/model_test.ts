@@ -12,12 +12,6 @@ class User extends Model {
 }
 
 testDB("Model: find", async (client) => {
-  await client.execute(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email VARCHAR(255)
-    );
-  `);
   await client.execute("INSERT INTO users (email) VALUES ('a@b.com')");
 
   client.addModel(User);
@@ -30,12 +24,6 @@ testDB("Model: find", async (client) => {
 });
 
 testDB("Model: findOne", async (client) => {
-  await client.execute(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email VARCHAR(255)
-    );
-  `);
   await client.execute("INSERT INTO users (email) VALUES ('a@b.com')");
 
   client.addModel(User);
@@ -47,13 +35,6 @@ testDB("Model: findOne", async (client) => {
 });
 
 testDB("Model: save", async (client) => {
-  await client.execute(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email VARCHAR(255)
-    );
-  `);
-
   client.addModel(User);
 
   let users = await User.find();
@@ -63,6 +44,9 @@ testDB("Model: save", async (client) => {
   user.email = "a@b.com";
   await user.save();
 
+  assertEquals(user.id, 1);
+  assertEquals(user.email, "a@b.com");
+
   users = await User.find();
   assertEquals(users.length, 1);
   assertEquals(users[0] instanceof User, true);
@@ -71,13 +55,6 @@ testDB("Model: save", async (client) => {
 });
 
 testDB("Model: insert", async (client) => {
-  await client.execute(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email VARCHAR(255)
-    );
-  `);
-
   client.addModel(User);
 
   let users = await User.find();
@@ -85,6 +62,8 @@ testDB("Model: insert", async (client) => {
 
   const user = await User.insert({ email: "a@b.com" });
   assertEquals(user instanceof User, true);
+  assertEquals(user.id, 1);
+  assertEquals(user.email, "a@b.com");
 
   users = await User.find();
   assertEquals(users.length, 1);

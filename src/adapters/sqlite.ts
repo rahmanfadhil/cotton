@@ -1,4 +1,9 @@
-import { Adapter, ConnectionOptions } from "./adapter.ts";
+import {
+  Adapter,
+  ConnectionOptions,
+  QueryResult,
+  QueryOptions,
+} from "./adapter.ts";
 import { SqliteDB } from "../../deps.ts";
 
 /**
@@ -41,11 +46,14 @@ export class SqliteAdapter extends Adapter {
     });
   }
 
-  public query<T>(query: string, values: any[] = []): Promise<T[]> {
+  public query<T>(
+    query: string,
+    options?: QueryOptions,
+  ): Promise<QueryResult<T>> {
     return new Promise((resolve, reject) => {
       // Execute query
       // TODO: handle error with custom error
-      const result = this.client!.query(query, values);
+      const result = this.client!.query(query);
 
       // Store fetch records temporarily
       const records: T[] = [];
@@ -70,9 +78,9 @@ export class SqliteAdapter extends Adapter {
           records.push(data);
         }
 
-        resolve(records);
+        resolve({ lastInsertedId: this.client!.lastInsertRowId, records });
       } catch {
-        resolve([]);
+        resolve({ lastInsertedId: this.client!.lastInsertRowId, records: [] });
       }
     });
   }
