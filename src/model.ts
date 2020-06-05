@@ -30,10 +30,10 @@ export abstract class Model {
 
     // If the record is not found, return null.
     // Otherwise, return the model instance with the data
-    if (result.length < 1) {
+    if (result.records.length < 1) {
       return null;
     } else {
-      return this.createModel(result[0]);
+      return this.createModel(result.records[0]);
     }
   }
 
@@ -48,7 +48,7 @@ export abstract class Model {
       .queryBuilder(this.tableName)
       .execute();
 
-    return this.createModels(result);
+    return this.createModels(result.records);
   }
 
   /**
@@ -76,12 +76,37 @@ export abstract class Model {
     }
 
     // Save record to the database
-    await modelClass.adapter
+    const { lastInsertedId } = await modelClass.adapter
       .queryBuilder(modelClass.tableName)
       .insert(data)
-      .execute();
+      .execute({
+        getLastInsertedId: true,
+        info: {
+          tableName: modelClass.tableName,
+          primaryKey: modelClass.primaryKey,
+        },
+      });
+
+    // Set the primary key
+    this.id = lastInsertedId as number;
 
     return this;
+  }
+
+  /**
+   * Create a model instance and save it to the database.
+   * 
+   * @param data model fields
+   * 
+   * TODO: set the primary key property when saved. (SQLite use `select seq from sqlite_sequence where name='users';`)
+   */
+  public static async insert<T extends Model>(
+    this: ExtendedModel<T>,
+    data: Partial<T>,
+  ): Promise<T> {
+    const model = (this as typeof Model).createModel<T>(data);
+    await model.save();
+    return model;
   }
 
   // --------------------------------------------------------------------------------

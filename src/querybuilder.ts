@@ -1,5 +1,5 @@
 import { VALID_WHERE_OPERATIONS } from "./constants.ts";
-import { Adapter } from "./adapters/adapter.ts";
+import { Adapter, QueryOptions, QueryResult } from "./adapters/adapter.ts";
 import { DateUtils } from "./utils/date.ts";
 
 /**
@@ -87,6 +87,11 @@ export class QueryBuilder {
    */
   private queryOffset?: number;
 
+  /**
+   * Values to be returned by the query
+   */
+  private returnings: string[] = [];
+
   // --------------------------------------------------------------------------------
   // CONSTRUCTOR
   // --------------------------------------------------------------------------------
@@ -157,13 +162,11 @@ export class QueryBuilder {
    */
   public select(...fields: string[]): QueryBuilder {
     // Merge the `fields` array with `this.columns` without any duplicate.
-    if (Array.isArray(fields)) {
-      fields.forEach((item) => {
-        if (!this.columns.includes(item)) {
-          this.columns.push(item);
-        }
-      });
-    }
+    fields.forEach((item) => {
+      if (!this.columns.includes(item)) {
+        this.columns.push(item);
+      }
+    });
 
     return this;
   }
@@ -233,6 +236,24 @@ export class QueryBuilder {
     return this;
   }
 
+  /**
+   * Sets the returning value for the query.
+   * 
+   * TODO: check if the database supports RETURNING (mysql and sqlite doesn't support it)
+   * 
+   * @param columns Table column name
+   */
+  public returning(...columns: string[]): QueryBuilder {
+    // Merge the `columns` array with `this.returnings` without any duplicate.
+    columns.forEach((item) => {
+      if (!this.returnings.includes(item)) {
+        this.returnings.push(item);
+      }
+    });
+
+    return this;
+  }
+
   // --------------------------------------------------------------------------------
   // GENERATE QUERY STRING
   // --------------------------------------------------------------------------------
@@ -271,6 +292,10 @@ export class QueryBuilder {
       throw new Error("Cannot perform insert query without values!");
     }
 
+    if (this.returnings.length > 0) {
+      query.push("RETURNING", this.returnings.join(", "));
+    }
+
     // Add all query constraints
     query = query.concat(this.collectConstraints());
 
@@ -290,6 +315,10 @@ export class QueryBuilder {
       query.push(fields, "VALUES", values);
     } else {
       throw new Error("Cannot perform insert query without values!");
+    }
+
+    if (this.returnings.length > 0) {
+      query.push("RETURNING", this.returnings.join(", "));
     }
 
     return query.join(" ") + ";";
@@ -394,20 +423,16 @@ export class QueryBuilder {
    * 
    * @param adapter Custom database adapter
    */
-  public async execute(adapter?: Adapter): Promise<any[]> {
-    let queryResult: any[];
+  public async execute(
+    options?: { adapter?: Adapter } & QueryOptions,
+  ): Promise<QueryResult<any>> {
+    let currentAdapter = options?.adapter || this.adapter;
 
-    // If user pass a custom adapter, use the it. Otherwise, use the default adapter from the class.
-    if (adapter !== undefined) {
-      queryResult = await adapter.query(this.toSQL());
-    } else if (this.adapter) {
-      queryResult = await this.adapter.query(this.toSQL());
-    } else {
-      // TODO: improve error message
-      throw new Error("Adapter is not provided!");
+    if (!currentAdapter) {
+      throw new Error("Cannot run query, adapter is not provided!");
     }
 
-    return queryResult;
+    return await currentAdapter.query(this.toSQL(), options);
   }
 
   // --------------------------------------------------------------------------------

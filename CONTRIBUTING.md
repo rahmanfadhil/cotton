@@ -29,31 +29,29 @@ In this early stage, our focus is to implement the basic features of the query b
 
 We need a more tests!
 
-- [querybuilder_test.ts](./src/querybuilder_test.ts)
-- [connect_test.ts](./src/connect_test.ts)
-- [adapter/mysql_test.ts](./src/adapter/mysql_test.ts)
-- [adapter/sqlite_test.ts](./src/adapter/sqlite_test.ts)
-- [adapter/postgres_test.ts](./src/adapter/postgres_test.ts)
+- [src/connect_test.ts](./src/connect_test.ts)
+- [src/querybuilder_test.ts](./src/querybuilder_test.ts)
+- [src/adapters/sqlite_test.ts](./src/adapters/sqlite_test.ts)
+- [src/adapters/postgres_test.ts](./src/adapters/postgres_test.ts)
+- [src/adapters/mysql_test.ts](./src/adapters/mysql_test.ts)
+- [src/utils/date_test.ts](./src/utils/date_test.ts)
+- [src/model_test.ts](./src/model_test.ts)
+- [src/adapters/adapter_test.ts](./src/adapters/adapter_test.ts)
 
-Before you get started, you need to add `.env` file on the project root folder (don't commit!).
-
-```
-POSTGRES_DATABASE=test
-POSTGRES_HOSTNAME=localhost
-POSTGRES_USERNAME=
-POSTGRES_PASSWORD=
-
-MYSQL_DATABASE=test
-MYSQL_HOSTNAME=127.0.0.1
-MYSQL_USERNAME=
-MYSQL_PASSWORD=
-```
-
-The password fields are optional. If you don't set any password to your database, you don't need to define it.
+Before you get started, you need to have Docker and Docker Compose installed.
 
 To run the tests, execute the following command.
 
+```sh
+./test.sh
+
+# Or
+
+docker-compose up --build --exit-code-from tests
 ```
-$ deno test --allow-net --allow-read --allow-write --allow-env test.ts # long version (but safer)
-$ deno test -A test.ts # short version
+
+To clean up everything, run:
+
+```sh
+docker-compose down --volumes
 ```

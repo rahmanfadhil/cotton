@@ -1,0 +1,38 @@
+version: "3.7"
+
+services:
+  postgres:
+    image: postgres
+    container_name: "cotton-postgres"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test
+  mysql:
+    image: "mysql:5.7"
+    container_name: "cotton-mysql"
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+      MYSQL_DATABASE: test
+  tests:
+    build: .
+    depends_on:
+      - postgres
+      - mysql
+    environment:
+      POSTGRES_DATABASE: test
+      POSTGRES_HOSTNAME: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_PASSWORD: test
+      POSTGRES_USERNAME: test
+      MYSQL_DATABASE: test
+      MYSQL_HOSTNAME: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USERNAME: test
+      MYSQL_PASSWORD: test

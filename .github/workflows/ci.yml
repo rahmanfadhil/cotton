@@ -15,7 +15,7 @@ jobs:
         env:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
-          POSTGRES_DB: cotton_test
+          POSTGRES_DB: test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -27,10 +27,12 @@ jobs:
       mysql:
         image: mysql:5.7
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
-          MYSQL_DATABASE: cotton_test
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_USER: test
+          MYSQL_PASSWORD: test
+          MYSQL_DATABASE: test
         ports:
-          - 3306
+          - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
@@ -40,20 +42,21 @@ jobs:
       - name: Install deno
         uses: denolib/setup-deno@master
         with:
-          deno-version: 1.0.0
+          deno-version: 1.0.5
 
       - name: Check formatting
         run: deno fmt --check
 
       - name: Run tests
         env:
-          POSTGRES_DATABASE: cotton_test
+          POSTGRES_DATABASE: test
           POSTGRES_HOSTNAME: localhost
           POSTGRES_PORT: 5432
           POSTGRES_PASSWORD: test
           POSTGRES_USERNAME: test
-          MYSQL_DATABASE: cotton_test
+          MYSQL_DATABASE: test
           MYSQL_HOSTNAME: localhost
           MYSQL_PORT: 3306
-          MYSQL_USERNAME: root
-        run: deno test --allow-read --allow-write --allow-net --allow-env test.ts
+          MYSQL_USERNAME: test
+          MYSQL_PASSWORD: test
+        run: deno test --allow-read --allow-net --allow-env test.ts

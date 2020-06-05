@@ -6,4 +6,4 @@ export { Client as PostgresClient } from "https://deno.land/x/postgres@v0.4.1/mo
 export {
   DB as SqliteDB,
   Empty as SqliteEmpty,
-} from "https://deno.land/x/sqlite@v2.0.0/mod.ts";
+} from "https://deno.land/x/sqlite@v2.1.0/mod.ts";

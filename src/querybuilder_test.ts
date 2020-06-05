@@ -250,3 +250,27 @@ Deno.test("QueryBuilder: basic insert with date value", () => {
     `INSERT INTO users (email, created_at) VALUES ('a@b.com', '${dateString}');`,
   );
 });
+
+Deno.test("QueryBuilder: basic insert with returning", () => {
+  const query = new QueryBuilder("users")
+    .insert({ email: "a@b.com" })
+    .returning("*")
+    .toSQL();
+
+  assertEquals(
+    query,
+    `INSERT INTO users (email) VALUES ('a@b.com') RETURNING *;`,
+  );
+});
+
+Deno.test("QueryBuilder: basic insert with returning multiple columns", () => {
+  const query = new QueryBuilder("users")
+    .insert({ email: "a@b.com" })
+    .returning("id", "email")
+    .toSQL();
+
+  assertEquals(
+    query,
+    `INSERT INTO users (email) VALUES ('a@b.com') RETURNING id, email;`,
+  );
+});
