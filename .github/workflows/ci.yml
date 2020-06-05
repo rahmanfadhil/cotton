@@ -27,7 +27,9 @@ jobs:
       mysql:
         image: mysql:5.7
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_USER: test
+          MYSQL_PASSWORD: test
           MYSQL_DATABASE: test
         ports:
           - 3306
@@ -55,5 +57,6 @@ jobs:
           MYSQL_DATABASE: test
           MYSQL_HOSTNAME: localhost
           MYSQL_PORT: 3306
-          MYSQL_USERNAME: root
+          MYSQL_USERNAME: test
+          MYSQL_PASSWORD: test
         run: deno test --allow-read --allow-net --allow-env test.ts
