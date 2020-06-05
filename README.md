@@ -71,12 +71,14 @@ import { Model } from "https://deno.land/x/cotton/mod.ts";
 class User extends Model {
   static tableName = "users";
   static fields = {
-    email: String,
-    created_at: Date,
+    email: { type: FieldType.STRING },
+    age: { type: FieldType.NUMBER },
+    created_at: { type: FieldType.DATE },
   };
 
-  public email!: string;
-  public created_at!: Date;
+  email!: string;
+  age!: number;
+  created_at!: Date;
 }
 ```
 
@@ -100,6 +102,7 @@ To save the current model to the database, use the `save` method.
 ```ts
 const user = new User();
 user.email = "a@b.com";
+user.age = 16;
 user.created_at = new Date("1 June, 2020");
 await user.save();
 ```
@@ -109,6 +112,7 @@ You also can use the `insert` method to create the model instance and save it to
 ```ts
 const user = await User.insert({
   email: "a@b.com",
+  age: 16,
   created_at: new Date("1 June, 2020"),
 });
 ```
@@ -149,7 +153,14 @@ await db.queryBuilder("users").limit(5).offset(5).execute(); // Skip 5 row and t
 ### Insert data
 
 ```ts
-await db.queryBuilder("users").insert({ email: "a@b.com", age: 16 }).execute();
+await db
+  .queryBuilder("users")
+  .insert({
+    email: "a@b.com",
+    age: 16,
+    created_at: new Date("5 June, 2020"),
+  })
+  .execute();
 // INSERT INTO users (email, age) VALUES ('a@b.com', 16);
 ```
 
@@ -166,7 +177,7 @@ await db.queryBuilder("users").where("email", "a@b.com").delete().execute();
 await db
   .queryBuilder("users")
   .where("email", "a@b.com")
-  .update("name", "John")
+  .update({ name: "John" })
   .execute();
 // UPDATE users SET name = 'John' WHERE email = 'a@b.com';
 ```

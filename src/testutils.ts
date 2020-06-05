@@ -55,7 +55,9 @@ export async function testDB(
       await db.execute(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          email VARCHAR(255)
+          email VARCHAR(255),
+          age INTEGER,
+          created_at DATETIME
         );
       `);
 
@@ -83,7 +85,9 @@ export async function testDB(
       await db.execute(`
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
-          email VARCHAR(255)
+          email VARCHAR(255),
+          age INTEGER,
+          created_at TIMESTAMP
         );
       `);
 
@@ -111,7 +115,9 @@ export async function testDB(
       await db.execute(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTO_INCREMENT,
-          email VARCHAR(255)
+          email VARCHAR(255),
+          age INTEGER,
+          created_at DATETIME
         );
       `);
 
