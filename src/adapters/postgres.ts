@@ -5,11 +5,14 @@ import {
   QueryResult,
   QueryOptions,
 } from "./adapter.ts";
+import { SupportedDatabaseType } from "../connect.ts";
 
 /**
  * PostgreSQL database adapter
  */
 export class PostgresAdapter extends Adapter {
+  public type: SupportedDatabaseType = "postgres";
+
   /**
    * Postgres client
    */

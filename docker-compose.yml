@@ -21,6 +21,7 @@ services:
       MYSQL_PASSWORD: test
       MYSQL_DATABASE: test
   tests:
+    container_name: "cotton-tests"
     build: .
     depends_on:
       - postgres

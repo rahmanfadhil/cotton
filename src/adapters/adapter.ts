@@ -1,5 +1,6 @@
 import { QueryBuilder } from "../querybuilder.ts";
 import { Model } from "../model.ts";
+import { SupportedDatabaseType } from "../connect.ts";
 
 export interface QueryOptions {
   getLastInsertedId?: boolean;
@@ -24,6 +25,8 @@ export type QueryResult<T> = { lastInsertedId: number; records: T[] };
  * The parent class for all database adapters
  */
 export abstract class Adapter {
+  public abstract type: SupportedDatabaseType;
+
   /**
    * Run SQL query and get the result
    * 

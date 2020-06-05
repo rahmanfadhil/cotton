@@ -5,11 +5,14 @@ import {
   QueryResult,
   QueryOptions,
 } from "./adapter.ts";
+import { SupportedDatabaseType } from "../connect.ts";
 
 /**
  * MySQL database adapter
  */
 export class MysqlAdapter extends Adapter {
+  public type: SupportedDatabaseType = "mysql";
+
   /**
    * MySQL library database client
    */
