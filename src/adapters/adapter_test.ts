@@ -35,12 +35,12 @@ testDB(
 );
 
 testDB(
-  'BaseAdapter: `getAllModels` should return an array containing all classes of the registered Models ',
+  'BaseAdapter: `getModels` should return an array containing all classes of the registered Models ',
   (client) => {
     client.addModel(User);
     client.addModel(Product);
 
-    const models = client.getAllModels();
+    const models = client.getModels();
 
     assertEquals(models.length, 2);
     assertEquals(models[0], User);
@@ -49,7 +49,7 @@ testDB(
 );
 
 testDB(
-  'BaseAdapter: `truncateAllModels` should truncate all registered model tables',
+  'BaseAdapter: `truncateModels` should truncate all registered model tables',
   async (client) => {
     const date = new Date('5 June, 2020');
 
@@ -71,7 +71,7 @@ testDB(
     await Product.insert({ name: 'notebook' });
     await Product.insert({ name: 'pen' });
 
-    client.truncateAllModels();
+    await client.truncateModels();
 
     const users = await User.find();
     const products = await Product.find();

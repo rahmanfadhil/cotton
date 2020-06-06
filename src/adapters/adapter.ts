@@ -78,16 +78,14 @@ export abstract class Adapter {
   /**
    * Returns an array containing all classes of the Models registered with 'addModel'.
    */
-  public getAllModels(): Array<typeof Model> {
+  public getModels(): Array<typeof Model> {
     return this.models;
   }
   
   /**
    * Truncates all registered model tables with 'Model.truncate'.
    */
-  public truncateAllModels() {
-    this.models.forEach(async (model) => {
-      await model.truncate();
-    });
+  public async truncateModels(): Promise<void> {
+    await Promise.all(this.models.map(model => model.truncate()));
   }
 }

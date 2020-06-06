@@ -130,7 +130,7 @@ export abstract class Model {
    */
   public static async truncate(): Promise<void> {
     // sqlite TRUNCATE is a different command
-    const truncateCommand = this.adapter.type == 'sqlite' ? 'DELETE FROM':'TRUNCATE';
+    const truncateCommand = this.adapter.type === 'sqlite' ? 'DELETE FROM':'TRUNCATE';
     await this.adapter.execute(`${truncateCommand} ${this.tableName};`);
   }
 
