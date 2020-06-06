@@ -110,6 +110,20 @@ export abstract class Model {
   }
 
   /**
+   * Delete model from the database
+   */
+  public async remove(): Promise<void> {
+    // Get the actual class to access static properties
+    const modelClass = <typeof Model> this.constructor;
+
+    // Delete from the database
+    await modelClass.adapter.queryBuilder(modelClass.tableName)
+      .where(modelClass.primaryKey, this.id)
+      .delete()
+      .execute();
+  }
+
+  /**
    * Create a model instance and save it to the database.
    * 
    * @param data model fields

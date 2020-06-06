@@ -129,3 +129,18 @@ testDB('Model: truncate', async (client) => {
   const users = await User.find();
   assertEquals(users.length, 0);
 });
+
+testDB("Model: remove", async (client) => {
+  client.addModel(User);
+
+  const user = await User.insert({
+    email: "a@b.com",
+    created_at: new Date("5 June, 2020"),
+    age: 16,
+  });
+  await user.remove();
+
+  console.log(user);
+
+  assertEquals(await User.findOne(1), null);
+});
