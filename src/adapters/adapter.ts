@@ -25,6 +25,7 @@ export type QueryResult<T> = { lastInsertedId: number; records: T[] };
  * The parent class for all database adapters
  */
 export abstract class Adapter {
+  private models: Array<typeof Model> = [];
   public abstract type: SupportedDatabaseType;
 
   /**
@@ -71,5 +72,22 @@ export abstract class Adapter {
    */
   public addModel(model: typeof Model): void {
     model.adapter = this;
+    this.models.push(model);
+  }
+
+  /**
+   * Returns an array containing all classes of the Models registered with 'addModel'.
+   */
+  public getAllModels(): Array<typeof Model> {
+    return this.models;
+  }
+  
+  /**
+   * Truncates all registered model tables with 'Model.truncate'.
+   */
+  public truncateAllModels() {
+    this.models.forEach(async (model) => {
+      await model.truncate();
+    });
   }
 }
