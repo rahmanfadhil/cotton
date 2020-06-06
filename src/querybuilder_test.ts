@@ -63,6 +63,61 @@ Deno.test("QueryBuilder: multiple where query", () => {
   );
 });
 
+Deno.test("QueryBuilder: where not query", () => {
+  const query = new QueryBuilder("users")
+    .notWhere("email", "=", "a@b.com")
+    .toSQL();
+  assertEquals(
+    query,
+    "SELECT * FROM users WHERE NOT email = 'a@b.com';",
+  );
+});
+
+Deno.test("QueryBuilder: multiple where not query", () => {
+  const query = new QueryBuilder("users")
+    .notWhere("email", "=", "a@b.com")
+    .notWhere("name", "=", "John")
+    .toSQL();
+  assertEquals(
+    query,
+    "SELECT * FROM users WHERE NOT email = 'a@b.com' AND NOT name = 'John';",
+  );
+});
+
+Deno.test("QueryBuilder: where and where not query", () => {
+  const query = new QueryBuilder("users")
+    .where("email", "=", "a@b.com")
+    .notWhere("name", "=", "John")
+    .toSQL();
+  assertEquals(
+    query,
+    "SELECT * FROM users WHERE email = 'a@b.com' AND NOT name = 'John';",
+  );
+});
+
+Deno.test("QueryBuilder: where ... or query", () => {
+  const query = new QueryBuilder("users")
+    .where("email", "=", "a@b.com")
+    .orWhere("name", "=", "John")
+    .toSQL();
+  assertEquals(
+    query,
+    "SELECT * FROM users WHERE email = 'a@b.com' OR name = 'John';",
+  );
+});
+
+Deno.test("QueryBuilder: multiple where ... or query", () => {
+  const query = new QueryBuilder("users")
+    .where("email", "=", "a@b.com")
+    .orWhere("name", "=", "John")
+    .orWhere("age", ">", 16)
+    .toSQL();
+  assertEquals(
+    query,
+    "SELECT * FROM users WHERE email = 'a@b.com' OR name = 'John' OR age > 16;",
+  );
+});
+
 Deno.test("QueryBuilder: should validate where operation", () => {
   assertThrows(
     () => {

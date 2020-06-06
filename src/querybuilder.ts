@@ -8,6 +8,14 @@ import { DateUtils } from "./utils/date.ts";
 export type WhereOperator = ">" | ">=" | "<" | "<=" | "=" | "like";
 
 /**
+ * Combine WHERE operators with OR or NOT
+ */
+export enum WhereType {
+  OR = "OR",
+  NOT = "NOT",
+}
+
+/**
  * ORDER BY directions
  */
 export type OrderDirection = "DESC" | "ASC";
@@ -19,6 +27,7 @@ interface WhereBinding {
   fieldName: string;
   operator: WhereOperator;
   value: any;
+  type?: WhereType;
 }
 
 /**
@@ -143,14 +152,61 @@ export class QueryBuilder {
     // Default operation, which is `=`. Otherwise, it will use the custom
     // operation defined by the user.
     if (typeof value === "undefined") {
-      this.addWhereClause(fieldName, "=", operator);
+      this.addWhereClause({ fieldName, value: operator });
     } else {
-      // Check wether the custom WHERE operation is valid
-      if (!VALID_WHERE_OPERATIONS.includes(operator)) {
-        throw new Error("Invalid operation!");
-      } else {
-        this.addWhereClause(fieldName, operator, value);
-      }
+      this.addWhereClause({ fieldName, operator, value });
+    }
+
+    return this;
+  }
+
+  /**
+   * Add WHERE NOT clause to query
+   */
+  public notWhere(fieldName: string, value: any): QueryBuilder;
+  public notWhere(
+    fieldName: string,
+    operator: WhereOperator,
+    value: any,
+  ): QueryBuilder;
+  public notWhere(
+    fieldName: string,
+    operator: WhereOperator,
+    value?: any,
+  ): QueryBuilder {
+    // If the third parameter is undefined, we assume the user want to use the
+    // Default operation, which is `=`. Otherwise, it will use the custom
+    // operation defined by the user.
+    if (typeof value === "undefined") {
+      this.addWhereClause({ fieldName, value: operator, type: WhereType.NOT });
+    } else {
+      this.addWhereClause({ fieldName, operator, value, type: WhereType.NOT });
+    }
+
+    return this;
+  }
+
+  /**
+   * Add WHERE ... OR clause to query
+   */
+  public orWhere(fieldName: string, value: any): QueryBuilder;
+  public orWhere(
+    fieldName: string,
+    operator: WhereOperator,
+    value: any,
+  ): QueryBuilder;
+  public orWhere(
+    fieldName: string,
+    operator: WhereOperator,
+    value?: any,
+  ): QueryBuilder {
+    // If the third parameter is undefined, we assume the user want to use the
+    // Default operation, which is `=`. Otherwise, it will use the custom
+    // operation defined by the user.
+    if (typeof value === "undefined") {
+      this.addWhereClause({ fieldName, value: operator, type: WhereType.OR });
+    } else {
+      this.addWhereClause({ fieldName, operator, value, type: WhereType.OR });
     }
 
     return this;
@@ -379,14 +435,36 @@ export class QueryBuilder {
       for (let index = 0; index < this.description.wheres.length; index++) {
         const whereClause = this.description.wheres[index];
 
-        if (index === 0) { // The first where clause should have `WHERE` explicitly
-          query.push(
-            `WHERE ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
-          );
-        } else { // The rest of them use `AND`
-          query.push(
-            `AND ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
-          );
+        if (index === 0) {
+          // The first where clause should have `WHERE` explicitly.
+          if (whereClause.type === WhereType.NOT) {
+            query.push(
+              `WHERE NOT ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
+            );
+          } else {
+            query.push(
+              `WHERE ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
+            );
+          }
+        } else {
+          // The rest of them use `AND`
+          switch (whereClause.type) {
+            case WhereType.NOT:
+              query.push(
+                `AND NOT ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
+              );
+              break;
+            case WhereType.OR:
+              query.push(
+                `OR ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
+              );
+              break;
+            default:
+              query.push(
+                `AND ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
+              );
+              break;
+          }
         }
       }
     }
@@ -444,13 +522,30 @@ export class QueryBuilder {
    * Add new where clause to query
    */
   private addWhereClause(
-    fieldName: string,
-    operator: WhereOperator,
-    value: any,
+    options: {
+      fieldName: string;
+      operator?: WhereOperator;
+      value: any;
+      type?: WhereType;
+    },
   ) {
+    // Populate options with default values
+    const { fieldName, operator, value, type } = Object.assign(
+      {},
+      { operator: "=" },
+      options,
+    );
+
+    // Check wether the custom WHERE operation is valid
+    if (!VALID_WHERE_OPERATIONS.includes(operator)) {
+      throw new Error("Invalid operation!");
+    }
+
+    // Push to `wheres` description
     this.description.wheres.push({
       fieldName,
       operator,
+      type,
       value: this.toDatabaseValue(value),
     });
   }
