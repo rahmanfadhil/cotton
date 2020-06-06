@@ -130,6 +130,20 @@ await db
 // SELECT * FROM users WHERE email = 'a@b.com' AND name = 'john';
 ```
 
+### orWhere and notWhere
+
+```ts
+await db.queryBuilder("users").notWhere("name", "kevin").execute();
+// SELECT * FROM users WHERE NOT name = 'kevin';
+
+await db
+  .queryBuilder("users")
+  .where("name", "kevin")
+  .orWhere("name", "john")
+  .execute();
+// SELECT * FROM users WHERE name = 'kevin' OR name = 'john';
+```
+
 ### Select columns
 
 ```ts
