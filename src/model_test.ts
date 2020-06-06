@@ -108,3 +108,18 @@ testDB("Model: insert", async (client) => {
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
 });
+
+testDB("Model: remove", async (client) => {
+  client.addModel(User);
+
+  const user = await User.insert({
+    email: "a@b.com",
+    created_at: new Date("5 June, 2020"),
+    age: 16,
+  });
+  await user.remove();
+
+  console.log(user);
+
+  assertEquals(await User.findOne(1), null);
+});
