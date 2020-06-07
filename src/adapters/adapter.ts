@@ -25,11 +25,12 @@ export type QueryResult<T> = { lastInsertedId: number; records: T[] };
  * The parent class for all database adapters
  */
 export abstract class Adapter {
+  private models: Array<typeof Model> = [];
   public abstract type: SupportedDatabaseType;
 
   /**
    * Run SQL query and get the result
-   * 
+   *
    * @param query SQL query to run (ex: "SELECT * FROM users;")
    */
   public abstract query<T>(
@@ -39,7 +40,7 @@ export abstract class Adapter {
 
   /**
    * Execute SQL statement and save changes to database
-   * 
+   *
    * @param query SQL query to run (ex: "INSERT INTO users (email) VALUES ('a@b.com');")
    * @param values Bind values to query to prevent SQL injection
    */
@@ -57,7 +58,7 @@ export abstract class Adapter {
 
   /**
    * Query builder
-   * 
+   *
    * @param tableName The table name which the query is targetting
    */
   public queryBuilder(tableName: string): QueryBuilder {
@@ -66,10 +67,27 @@ export abstract class Adapter {
 
   /**
    * Register a model
-   * 
+   *
    * @param model The model to be registered
    */
   public addModel(model: typeof Model): void {
     model.adapter = this;
+    this.models.push(model);
+  }
+
+  /**
+   * Returns an array containing all classes of the Models registered with 'addModel'.
+   */
+  public getModels(): Array<typeof Model> {
+    return this.models;
+  }
+
+  /**
+   * Truncates all registered model tables with 'Model.truncate'.
+   */
+  public async truncateModels(): Promise<void> {
+    for (const model of this.models) {
+      await model.truncate();
+    }
   }
 }

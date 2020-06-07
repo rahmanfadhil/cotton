@@ -18,10 +18,11 @@ class User extends Model {
 
 testDB("Model: find", async (client) => {
   const date = new Date("5 June, 2020");
+  // deno-fmt-ignore
   await client.execute(
-    `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${
-      DateUtils.formatDate(date)
-    }')`,
+    `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${DateUtils.formatDate(
+      date
+    )}')`
   );
 
   client.addModel(User);
@@ -37,10 +38,11 @@ testDB("Model: find", async (client) => {
 
 testDB("Model: findOne", async (client) => {
   const date = new Date("5 June, 2020");
+  // deno-fmt-ignore
   await client.execute(
-    `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${
-      DateUtils.formatDate(date)
-    }')`,
+    `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${DateUtils.formatDate(
+      date
+    )}')`
   );
 
   client.addModel(User);
@@ -107,6 +109,29 @@ testDB("Model: insert", async (client) => {
   assertEquals(users[0].email, "a@b.com");
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
+});
+
+testDB("Model: truncate", async (client) => {
+  const date = new Date("5 June, 2020");
+  // deno-fmt-ignore
+  await client.execute(
+    `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${DateUtils.formatDate(
+      date
+    )}')`
+  );
+  // deno-fmt-ignore
+  await client.execute(
+    `INSERT INTO users (email, age, created_at) VALUES ('b@c.com', 16, '${DateUtils.formatDate(
+      date
+    )}')`
+  );
+
+  client.addModel(User);
+
+  await User.truncate();
+
+  const users = await User.find();
+  assertEquals(users.length, 0);
 });
 
 testDB("Model: remove", async (client) => {
