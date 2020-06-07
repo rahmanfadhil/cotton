@@ -329,3 +329,85 @@ Deno.test("QueryBuilder: basic insert with returning multiple columns", () => {
     `INSERT INTO users (email) VALUES ('a@b.com') RETURNING id, email;`,
   );
 });
+
+Deno.test("QueryBuilder: basic replace", () => {
+  const query = new QueryBuilder("users")
+    .replace({ email: "a@b.com", password: "12345" })
+    .toSQL();
+
+  assertEquals(
+    query,
+    "REPLACE INTO users (email, password) VALUES ('a@b.com', '12345');",
+  );
+});
+
+Deno.test("QueryBuilder: basic replace with number value", () => {
+  const query = new QueryBuilder("users")
+    .replace({ email: "a@b.com", age: 16 })
+    .toSQL();
+
+  assertEquals(
+    query,
+    "REPLACE INTO users (email, age) VALUES ('a@b.com', 16);",
+  );
+});
+
+Deno.test("QueryBuilder: basic replace with boolean true value", () => {
+  const query = new QueryBuilder("users")
+    .replace({ email: "a@b.com", is_active: true })
+    .toSQL();
+
+  assertEquals(
+    query,
+    "REPLACE INTO users (email, is_active) VALUES ('a@b.com', 1);",
+  );
+});
+
+Deno.test("QueryBuilder: basic replace with boolean false value", () => {
+  const query = new QueryBuilder("users")
+    .replace({ email: "a@b.com", is_active: false })
+    .toSQL();
+
+  assertEquals(
+    query,
+    "REPLACE INTO users (email, is_active) VALUES ('a@b.com', 0);",
+  );
+});
+
+Deno.test("QueryBuilder: basic replace with date value", () => {
+  const date = new Date("14 January, 2004");
+  const dateString = DateUtils.formatDate(date);
+
+  const query = new QueryBuilder("users")
+    .replace({ email: "a@b.com", created_at: date })
+    .toSQL();
+
+  assertEquals(
+    query,
+    `REPLACE INTO users (email, created_at) VALUES ('a@b.com', '${dateString}');`,
+  );
+});
+
+Deno.test("QueryBuilder: basic replace with returning", () => {
+  const query = new QueryBuilder("users")
+    .replace({ email: "a@b.com" })
+    .returning("*")
+    .toSQL();
+
+  assertEquals(
+    query,
+    `REPLACE INTO users (email) VALUES ('a@b.com') RETURNING *;`,
+  );
+});
+
+Deno.test("QueryBuilder: basic replace with returning multiple columns", () => {
+  const query = new QueryBuilder("users")
+    .replace({ email: "a@b.com" })
+    .returning("id", "email")
+    .toSQL();
+
+  assertEquals(
+    query,
+    `REPLACE INTO users (email) VALUES ('a@b.com') RETURNING id, email;`,
+  );
+});

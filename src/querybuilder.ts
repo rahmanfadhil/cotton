@@ -46,6 +46,7 @@ enum QueryType {
   Insert = "insert",
   Delete = "delete",
   Update = "update",
+  Replace = "replace",
 }
 
 /**
@@ -120,6 +121,23 @@ export class QueryBuilder {
   public insert(data: QueryValues): QueryBuilder {
     // Change the query type from `select` (default) to `insert`
     this.description.type = QueryType.Insert;
+
+    // Holds the cleaned data
+    let cleanedData: QueryValues = {};
+
+    // Transform values to the format that the database can understand and store it to `cleanedData`
+    for (const [key, value] of Object.entries(data)) {
+      cleanedData[key] = this.toDatabaseValue(value);
+    }
+
+    this.description.values = cleanedData;
+
+    return this;
+  }
+
+  public replace(data: QueryValues): QueryBuilder {
+    // Change the query type from `select` (default) to `insert`
+    this.description.type = QueryType.Replace;
 
     // Holds the cleaned data
     let cleanedData: QueryValues = {};
@@ -324,6 +342,8 @@ export class QueryBuilder {
         return this.toSelectSQL();
       case QueryType.Insert:
         return this.toInsertSQL();
+      case QueryType.Replace:
+        return this.toReplaceSQL();
       case QueryType.Update:
         return this.toUpdateSQL();
       case QueryType.Delete:
@@ -365,6 +385,28 @@ export class QueryBuilder {
   private toInsertSQL(): string {
     // Query strings
     let query: string[] = [`INSERT INTO ${this.description.tableName}`];
+
+    if (this.description.values) {
+      const fields = `(${Object.keys(this.description.values).join(", ")})`;
+      const values = `(${Object.values(this.description.values).join(", ")})`;
+      query.push(fields, "VALUES", values);
+    } else {
+      throw new Error("Cannot perform insert query without values!");
+    }
+
+    if (this.description.returning.length > 0) {
+      query.push("RETURNING", this.description.returning.join(", "));
+    }
+
+    return query.join(" ") + ";";
+  }
+
+  /**
+   * Generate `INSERT` query string
+   */
+  private toReplaceSQL(): string {
+    // Query strings
+    let query: string[] = [`REPLACE INTO ${this.description.tableName}`];
 
     if (this.description.values) {
       const fields = `(${Object.keys(this.description.values).join(", ")})`;
