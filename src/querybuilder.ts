@@ -8,6 +8,14 @@ import { DateUtils } from "./utils/date.ts";
 export type WhereOperator = ">" | ">=" | "<" | "<=" | "=" | "like";
 
 /**
+ * Combine WHERE operators with OR or NOT
+ */
+export enum WhereType {
+  OR = "OR",
+  NOT = "NOT",
+}
+
+/**
  * ORDER BY directions
  */
 export type OrderDirection = "DESC" | "ASC";
@@ -19,6 +27,7 @@ interface WhereBinding {
   fieldName: string;
   operator: WhereOperator;
   value: any;
+  type?: WhereType;
 }
 
 /**
@@ -42,55 +51,47 @@ enum QueryType {
 /**
  * Query values for INSERT and UPDATE
  */
-export type QueryValues = { [key: string]: number | string | boolean | Date };
+export type QueryValues = {
+  [key: string]: number | string | boolean | Date;
+};
+
+/**
+ * All information about the query
+ */
+export interface QueryDescription {
+  /** The table which the query is targeting */
+  tableName: string;
+
+  /** Query type */
+  type: QueryType;
+
+  /** Table columns that are going to be fetched */
+  columns: string[];
+
+  /** Query values for INSERT and UPDATE */
+  values?: QueryValues;
+
+  /** The where constraints of the query */
+  wheres: WhereBinding[];
+
+  /** The orderings for the query */
+  orders: OrderBinding[];
+
+  /** The maximum number of records to return */
+  limit?: number;
+
+  /** The number of records to skip */
+  offset?: number;
+
+  /** Values to be returned by the query */
+  returning: string[];
+}
 
 /**
  * Allows to build complex SQL queries and execute those queries.
  */
 export class QueryBuilder {
-  // --------------------------------------------------------------------------------
-  // QUERY CONSTRAINTS
-  // --------------------------------------------------------------------------------
-
-  /**
-   * Query type
-   */
-  private type: QueryType = QueryType.Select;
-
-  /**
-   * Table columns that are going to be fetched
-   */
-  private columns: string[] = [];
-
-  /**
-   * Query values for INSERT and UPDATE
-   */
-  private values?: QueryValues;
-
-  /**
-   * The where constraints of the query
-   */
-  private wheres: WhereBinding[] = [];
-
-  /**
-   * The orderings for the query. 
-   */
-  private orders: OrderBinding[] = [];
-
-  /**
-   * The maximum number of records to return
-   */
-  private queryLimit?: number;
-
-  /**
-   * The number of records to skip
-   */
-  private queryOffset?: number;
-
-  /**
-   * Values to be returned by the query
-   */
-  private returnings: string[] = [];
+  private description: QueryDescription;
 
   // --------------------------------------------------------------------------------
   // CONSTRUCTOR
@@ -98,10 +99,19 @@ export class QueryBuilder {
 
   constructor(
     /** The table which the query is targeting */
-    private tableName: string,
+    tableName: string,
     /** The database adapter to perform query */
     private adapter?: Adapter,
-  ) {}
+  ) {
+    this.description = {
+      tableName,
+      type: QueryType.Select,
+      columns: [],
+      wheres: [],
+      orders: [],
+      returning: [],
+    };
+  }
 
   // --------------------------------------------------------------------------------
   // PUBLIC QUERY METHODS
@@ -109,7 +119,7 @@ export class QueryBuilder {
 
   public insert(data: QueryValues): QueryBuilder {
     // Change the query type from `select` (default) to `insert`
-    this.type = QueryType.Insert;
+    this.description.type = QueryType.Insert;
 
     // Holds the cleaned data
     let cleanedData: QueryValues = {};
@@ -119,7 +129,7 @@ export class QueryBuilder {
       cleanedData[key] = this.toDatabaseValue(value);
     }
 
-    this.values = cleanedData;
+    this.description.values = cleanedData;
 
     return this;
   }
@@ -142,14 +152,61 @@ export class QueryBuilder {
     // Default operation, which is `=`. Otherwise, it will use the custom
     // operation defined by the user.
     if (typeof value === "undefined") {
-      this.addWhereClause(fieldName, "=", operator);
+      this.addWhereClause({ fieldName, value: operator });
     } else {
-      // Check wether the custom WHERE operation is valid
-      if (!VALID_WHERE_OPERATIONS.includes(operator)) {
-        throw new Error("Invalid operation!");
-      } else {
-        this.addWhereClause(fieldName, operator, value);
-      }
+      this.addWhereClause({ fieldName, operator, value });
+    }
+
+    return this;
+  }
+
+  /**
+   * Add WHERE NOT clause to query
+   */
+  public notWhere(fieldName: string, value: any): QueryBuilder;
+  public notWhere(
+    fieldName: string,
+    operator: WhereOperator,
+    value: any,
+  ): QueryBuilder;
+  public notWhere(
+    fieldName: string,
+    operator: WhereOperator,
+    value?: any,
+  ): QueryBuilder {
+    // If the third parameter is undefined, we assume the user want to use the
+    // Default operation, which is `=`. Otherwise, it will use the custom
+    // operation defined by the user.
+    if (typeof value === "undefined") {
+      this.addWhereClause({ fieldName, value: operator, type: WhereType.NOT });
+    } else {
+      this.addWhereClause({ fieldName, operator, value, type: WhereType.NOT });
+    }
+
+    return this;
+  }
+
+  /**
+   * Add WHERE ... OR clause to query
+   */
+  public orWhere(fieldName: string, value: any): QueryBuilder;
+  public orWhere(
+    fieldName: string,
+    operator: WhereOperator,
+    value: any,
+  ): QueryBuilder;
+  public orWhere(
+    fieldName: string,
+    operator: WhereOperator,
+    value?: any,
+  ): QueryBuilder {
+    // If the third parameter is undefined, we assume the user want to use the
+    // Default operation, which is `=`. Otherwise, it will use the custom
+    // operation defined by the user.
+    if (typeof value === "undefined") {
+      this.addWhereClause({ fieldName, value: operator, type: WhereType.OR });
+    } else {
+      this.addWhereClause({ fieldName, operator, value, type: WhereType.OR });
     }
 
     return this;
@@ -161,10 +218,10 @@ export class QueryBuilder {
    * @param fields Table fields to select
    */
   public select(...fields: string[]): QueryBuilder {
-    // Merge the `fields` array with `this.columns` without any duplicate.
+    // Merge the `fields` array with `this.description.columns` without any duplicate.
     fields.forEach((item) => {
-      if (!this.columns.includes(item)) {
-        this.columns.push(item);
+      if (!this.description.columns.includes(item)) {
+        this.description.columns.push(item);
       }
     });
 
@@ -178,7 +235,7 @@ export class QueryBuilder {
    */
   public limit(limit: number): QueryBuilder {
     if (limit >= 0) {
-      this.queryLimit = limit;
+      this.description.limit = limit;
     }
 
     return this;
@@ -191,7 +248,7 @@ export class QueryBuilder {
    */
   public offset(offset: number): QueryBuilder {
     if (offset > 0) {
-      this.queryOffset = offset;
+      this.description.offset = offset;
     }
     return this;
   }
@@ -213,7 +270,7 @@ export class QueryBuilder {
     fieldName: string,
     direction: OrderDirection = "ASC",
   ): QueryBuilder {
-    this.orders.push({ fieldName, order: direction });
+    this.description.orders.push({ fieldName, order: direction });
     return this;
   }
 
@@ -221,7 +278,7 @@ export class QueryBuilder {
    * Delete record from the database.
    */
   public delete(): QueryBuilder {
-    this.type = QueryType.Delete;
+    this.description.type = QueryType.Delete;
     return this;
   }
 
@@ -231,8 +288,8 @@ export class QueryBuilder {
    * @param values new data for the record
    */
   public update(values: QueryValues): QueryBuilder {
-    this.type = QueryType.Update;
-    this.values = values;
+    this.description.type = QueryType.Update;
+    this.description.values = values;
     return this;
   }
 
@@ -244,10 +301,10 @@ export class QueryBuilder {
    * @param columns Table column name
    */
   public returning(...columns: string[]): QueryBuilder {
-    // Merge the `columns` array with `this.returnings` without any duplicate.
+    // Merge the `columns` array with `this.description.returning` without any duplicate.
     columns.forEach((item) => {
-      if (!this.returnings.includes(item)) {
-        this.returnings.push(item);
+      if (!this.description.returning.includes(item)) {
+        this.description.returning.push(item);
       }
     });
 
@@ -262,7 +319,7 @@ export class QueryBuilder {
    * Generate executable SQL statement
    */
   public toSQL(): string {
-    switch (this.type) {
+    switch (this.description.type) {
       case QueryType.Select:
         return this.toSelectSQL();
       case QueryType.Insert:
@@ -272,7 +329,7 @@ export class QueryBuilder {
       case QueryType.Delete:
         return this.toDeleteSQL();
       default:
-        throw new Error(`Query type '${this.type}' is invalid!`);
+        throw new Error(`Query type '${this.description.type}' is invalid!`);
     }
   }
 
@@ -280,11 +337,11 @@ export class QueryBuilder {
    * Generate `UPDATE` query string
    */
   private toUpdateSQL(): string {
-    let query: string[] = [`UPDATE ${this.tableName} SET`];
+    let query: string[] = [`UPDATE ${this.description.tableName} SET`];
 
-    if (this.values) {
+    if (this.description.values) {
       const values = [];
-      for (const [key, value] of Object.entries(this.values)) {
+      for (const [key, value] of Object.entries(this.description.values)) {
         values.push(`${key} = ${this.toDatabaseValue(value)}`);
       }
       query.push(values.join(", "));
@@ -292,8 +349,8 @@ export class QueryBuilder {
       throw new Error("Cannot perform insert query without values!");
     }
 
-    if (this.returnings.length > 0) {
-      query.push("RETURNING", this.returnings.join(", "));
+    if (this.description.returning.length > 0) {
+      query.push("RETURNING", this.description.returning.join(", "));
     }
 
     // Add all query constraints
@@ -307,18 +364,18 @@ export class QueryBuilder {
    */
   private toInsertSQL(): string {
     // Query strings
-    let query: string[] = [`INSERT INTO ${this.tableName}`];
+    let query: string[] = [`INSERT INTO ${this.description.tableName}`];
 
-    if (this.values) {
-      const fields = `(${Object.keys(this.values).join(", ")})`;
-      const values = `(${Object.values(this.values).join(", ")})`;
+    if (this.description.values) {
+      const fields = `(${Object.keys(this.description.values).join(", ")})`;
+      const values = `(${Object.values(this.description.values).join(", ")})`;
       query.push(fields, "VALUES", values);
     } else {
       throw new Error("Cannot perform insert query without values!");
     }
 
-    if (this.returnings.length > 0) {
-      query.push("RETURNING", this.returnings.join(", "));
+    if (this.description.returning.length > 0) {
+      query.push("RETURNING", this.description.returning.join(", "));
     }
 
     return query.join(" ") + ";";
@@ -332,14 +389,14 @@ export class QueryBuilder {
     let query: string[] = [`SELECT`];
 
     // Select table columns
-    if (this.columns.length > 0) {
-      query.push(`(${this.columns.join(", ")})`);
+    if (this.description.columns.length > 0) {
+      query.push(`(${this.description.columns.join(", ")})`);
     } else {
       query.push("*");
     }
 
     // Add table name
-    query.push(`FROM ${this.tableName}`);
+    query.push(`FROM ${this.description.tableName}`);
 
     // Add all query constraints
     query = query.concat(this.collectConstraints());
@@ -352,7 +409,7 @@ export class QueryBuilder {
    */
   private toDeleteSQL(): string {
     // Query strings
-    let query: string[] = [`DELETE FROM ${this.tableName}`];
+    let query: string[] = [`DELETE FROM ${this.description.tableName}`];
 
     // Add all query constraints
     query = query.concat(this.collectConstraints());
@@ -374,41 +431,63 @@ export class QueryBuilder {
     let query: string[] = [];
 
     // Add where clauses if exists
-    if (this.wheres.length > 0) {
-      for (let index = 0; index < this.wheres.length; index++) {
-        const whereClause = this.wheres[index];
+    if (this.description.wheres.length > 0) {
+      for (let index = 0; index < this.description.wheres.length; index++) {
+        const whereClause = this.description.wheres[index];
 
-        if (index === 0) { // The first where clause should have `WHERE` explicitly
-          query.push(
-            `WHERE ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
-          );
-        } else { // The rest of them use `AND`
-          query.push(
-            `AND ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
-          );
+        if (index === 0) {
+          // The first where clause should have `WHERE` explicitly.
+          if (whereClause.type === WhereType.NOT) {
+            query.push(
+              `WHERE NOT ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
+            );
+          } else {
+            query.push(
+              `WHERE ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
+            );
+          }
+        } else {
+          // The rest of them use `AND`
+          switch (whereClause.type) {
+            case WhereType.NOT:
+              query.push(
+                `AND NOT ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
+              );
+              break;
+            case WhereType.OR:
+              query.push(
+                `OR ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
+              );
+              break;
+            default:
+              query.push(
+                `AND ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
+              );
+              break;
+          }
         }
       }
     }
 
     // Add "order by" clauses
-    if (this.orders.length > 0) {
+    if (this.description.orders.length > 0) {
       query.push(`ORDER BY`);
 
       query.push(
-        this.orders
+        this.description.orders
           .map((order) => `${order.fieldName} ${order.order}`)
           .join(", "),
       );
     }
 
     // Add query limit if exists
-    if (this.queryLimit && this.queryLimit > 0) {
-      query.push(`LIMIT ${this.queryLimit}`);
+    if (this.description.limit && this.description.limit > 0) {
+      query.push(`LIMIT ${this.description.limit}`);
     }
 
     // Add query offset if exists
-    if (this.queryOffset && this.queryOffset > 0) {
-      query.push(`OFFSET ${this.queryOffset}`);
+    if (this.description.offset && this.description.offset > 0) {
+      query.push(`OFFSET ${this.description.offset}`);
     }
 
     return query;
@@ -443,13 +522,30 @@ export class QueryBuilder {
    * Add new where clause to query
    */
   private addWhereClause(
-    fieldName: string,
-    operator: WhereOperator,
-    value: any,
+    options: {
+      fieldName: string;
+      operator?: WhereOperator;
+      value: any;
+      type?: WhereType;
+    },
   ) {
-    this.wheres.push({
+    // Populate options with default values
+    const { fieldName, operator, value, type } = Object.assign(
+      {},
+      { operator: "=" },
+      options,
+    );
+
+    // Check wether the custom WHERE operation is valid
+    if (!VALID_WHERE_OPERATIONS.includes(operator)) {
+      throw new Error("Invalid operation!");
+    }
+
+    // Push to `wheres` description
+    this.description.wheres.push({
       fieldName,
       operator,
+      type,
       value: this.toDatabaseValue(value),
     });
   }

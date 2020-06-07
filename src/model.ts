@@ -3,13 +3,29 @@ import { Adapter } from "./adapters/adapter.ts";
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 
 /**
+ * Transform database value to JavaScript types
+ */
+export enum FieldType {
+  STRING = "string",
+  NUMBER = "number",
+  DATE = "date",
+}
+
+/**
+ * Information about table the table column
+ */
+export interface FieldDescription {
+  type: FieldType;
+}
+
+/**
  * Database model
  */
 export abstract class Model {
   static tableName: string;
   static primaryKey: string = "id";
   static adapter: Adapter;
-  static fields: { [key: string]: any };
+  static fields: { [key: string]: FieldDescription };
 
   public id!: number;
 
@@ -63,9 +79,9 @@ export abstract class Model {
 
     // Normalize fields data
     for (const item of Object.keys(modelClass.fields)) {
-      (this as any)[item] = this.normalizeData(
+      (this as any)[item] = modelClass.normalizeData(
         (this as any)[item],
-        modelClass.fields[item],
+        modelClass.fields[item].type,
       );
     }
 
@@ -94,6 +110,20 @@ export abstract class Model {
   }
 
   /**
+   * Delete model from the database
+   */
+  public async remove(): Promise<void> {
+    // Get the actual class to access static properties
+    const modelClass = <typeof Model> this.constructor;
+
+    // Delete from the database
+    await modelClass.adapter.queryBuilder(modelClass.tableName)
+      .where(modelClass.primaryKey, this.id)
+      .delete()
+      .execute();
+  }
+
+  /**
    * Create a model instance and save it to the database.
    * 
    * @param data model fields
@@ -107,6 +137,17 @@ export abstract class Model {
     const model = (this as typeof Model).createModel<T>(data);
     await model.save();
     return model;
+  }
+
+  /**
+   * Remove all records from a table.
+   */
+  public static async truncate(): Promise<void> {
+    // sqlite TRUNCATE is a different command
+    const truncateCommand = this.adapter.type === "sqlite"
+      ? "DELETE FROM"
+      : "TRUNCATE";
+    await this.adapter.execute(`${truncateCommand} ${this.tableName};`);
   }
 
   // --------------------------------------------------------------------------------
@@ -124,13 +165,7 @@ export abstract class Model {
     const result = Object.assign(model, data);
 
     for (const [field, type] of Object.entries(this.fields)) {
-      if (type === Date && !(result[field] instanceof Date)) {
-        result[field] = new Date(result[field]);
-      } else if (type === String && typeof result[field] !== "string") {
-        result[field] = new String(result[field]).toString();
-      } else if (type === Number && typeof result[field] !== "number") {
-        result[field] = new Number(result[field]);
-      }
+      result[field] = this.normalizeData(result[field], type.type);
     }
 
     return result;
@@ -152,12 +187,12 @@ export abstract class Model {
    * @param value the value to be normalize
    * @param type the expected data type
    */
-  private normalizeData(value: any, type: any): any {
-    if (type === Date && !(value instanceof Date)) {
+  private static normalizeData(value: any, type: FieldType): any {
+    if (type === FieldType.DATE && !(value instanceof Date)) {
       value = new Date(value);
-    } else if (type === String && typeof value !== "string") {
+    } else if (type === FieldType.STRING && typeof value !== "string") {
       value = new String(value).toString();
-    } else if (type === Number && typeof value !== "number") {
+    } else if (type === FieldType.NUMBER && typeof value !== "number") {
       value = new Number(value);
     }
 

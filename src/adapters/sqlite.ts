@@ -5,11 +5,14 @@ import {
   QueryOptions,
 } from "./adapter.ts";
 import { SqliteDB } from "../../deps.ts";
+import { SupportedDatabaseType } from "../connect.ts";
 
 /**
  * SQLite database adapter
  */
 export class SqliteAdapter extends Adapter {
+  public type: SupportedDatabaseType = "sqlite";
+
   /**
    * Database file location
    */
