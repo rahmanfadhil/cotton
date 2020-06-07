@@ -1,10 +1,10 @@
-import { testDB } from './testutils.ts';
-import { Model, FieldType } from './model.ts';
-import { assertEquals } from '../testdeps.ts';
-import { DateUtils } from './utils/date.ts';
+import { testDB } from "./testutils.ts";
+import { Model, FieldType } from "./model.ts";
+import { assertEquals } from "../testdeps.ts";
+import { DateUtils } from "./utils/date.ts";
 
 class User extends Model {
-  static tableName = 'users';
+  static tableName = "users";
   static fields = {
     email: { type: FieldType.STRING },
     age: { type: FieldType.NUMBER },
@@ -16,8 +16,9 @@ class User extends Model {
   created_at!: Date;
 }
 
-testDB('Model: find', async (client) => {
-  const date = new Date('5 June, 2020');
+testDB("Model: find", async (client) => {
+  const date = new Date("5 June, 2020");
+  // deno-fmt-ignore
   await client.execute(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${DateUtils.formatDate(
       date
@@ -30,13 +31,14 @@ testDB('Model: find', async (client) => {
   assertEquals(Array.isArray(users), true);
   assertEquals(users.length, 1);
   assertEquals(users[0].id, 1);
-  assertEquals(users[0].email, 'a@b.com');
+  assertEquals(users[0].email, "a@b.com");
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
 });
 
-testDB('Model: findOne', async (client) => {
-  const date = new Date('5 June, 2020');
+testDB("Model: findOne", async (client) => {
+  const date = new Date("5 June, 2020");
+  // deno-fmt-ignore
   await client.execute(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${DateUtils.formatDate(
       date
@@ -48,13 +50,13 @@ testDB('Model: findOne', async (client) => {
   const user = await User.findOne(1);
   assertEquals(user instanceof User, true);
   assertEquals(user?.id, 1);
-  assertEquals(user?.email, 'a@b.com');
+  assertEquals(user?.email, "a@b.com");
   assertEquals(user?.created_at, date);
   assertEquals(user?.age, 16);
 });
 
-testDB('Model: save', async (client) => {
-  const date = new Date('5 June, 2020');
+testDB("Model: save", async (client) => {
+  const date = new Date("5 June, 2020");
 
   client.addModel(User);
 
@@ -62,13 +64,13 @@ testDB('Model: save', async (client) => {
   assertEquals(users.length, 0);
 
   const user = new User();
-  user.email = 'a@b.com';
+  user.email = "a@b.com";
   user.age = 16;
   user.created_at = date;
   await user.save();
 
   assertEquals(user.id, 1);
-  assertEquals(user.email, 'a@b.com');
+  assertEquals(user.email, "a@b.com");
   assertEquals(user.age, 16);
   assertEquals(user.created_at, date);
 
@@ -76,13 +78,13 @@ testDB('Model: save', async (client) => {
   assertEquals(users.length, 1);
   assertEquals(users[0] instanceof User, true);
   assertEquals(users[0].id, 1);
-  assertEquals(users[0].email, 'a@b.com');
+  assertEquals(users[0].email, "a@b.com");
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
 });
 
-testDB('Model: insert', async (client) => {
-  const date = new Date('5 June, 2020');
+testDB("Model: insert", async (client) => {
+  const date = new Date("5 June, 2020");
 
   client.addModel(User);
 
@@ -90,13 +92,13 @@ testDB('Model: insert', async (client) => {
   assertEquals(users.length, 0);
 
   const user = await User.insert({
-    email: 'a@b.com',
+    email: "a@b.com",
     age: 16,
     created_at: date,
   });
   assertEquals(user instanceof User, true);
   assertEquals(user.id, 1);
-  assertEquals(user.email, 'a@b.com');
+  assertEquals(user.email, "a@b.com");
   assertEquals(user.age, 16);
   assertEquals(user.created_at, date);
 
@@ -104,18 +106,20 @@ testDB('Model: insert', async (client) => {
   assertEquals(users.length, 1);
   assertEquals(users[0] instanceof User, true);
   assertEquals(users[0].id, 1);
-  assertEquals(users[0].email, 'a@b.com');
+  assertEquals(users[0].email, "a@b.com");
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
 });
 
-testDB('Model: truncate', async (client) => {
-  const date = new Date('5 June, 2020');
+testDB("Model: truncate", async (client) => {
+  const date = new Date("5 June, 2020");
+  // deno-fmt-ignore
   await client.execute(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${DateUtils.formatDate(
       date
     )}')`
   );
+  // deno-fmt-ignore
   await client.execute(
     `INSERT INTO users (email, age, created_at) VALUES ('b@c.com', 16, '${DateUtils.formatDate(
       date

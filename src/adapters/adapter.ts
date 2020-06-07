@@ -30,7 +30,7 @@ export abstract class Adapter {
 
   /**
    * Run SQL query and get the result
-   * 
+   *
    * @param query SQL query to run (ex: "SELECT * FROM users;")
    */
   public abstract query<T>(
@@ -40,7 +40,7 @@ export abstract class Adapter {
 
   /**
    * Execute SQL statement and save changes to database
-   * 
+   *
    * @param query SQL query to run (ex: "INSERT INTO users (email) VALUES ('a@b.com');")
    * @param values Bind values to query to prevent SQL injection
    */
@@ -58,7 +58,7 @@ export abstract class Adapter {
 
   /**
    * Query builder
-   * 
+   *
    * @param tableName The table name which the query is targetting
    */
   public queryBuilder(tableName: string): QueryBuilder {
@@ -67,7 +67,7 @@ export abstract class Adapter {
 
   /**
    * Register a model
-   * 
+   *
    * @param model The model to be registered
    */
   public addModel(model: typeof Model): void {
@@ -81,11 +81,13 @@ export abstract class Adapter {
   public getModels(): Array<typeof Model> {
     return this.models;
   }
-  
+
   /**
    * Truncates all registered model tables with 'Model.truncate'.
    */
   public async truncateModels(): Promise<void> {
-    await Promise.all(this.models.map(model => model.truncate()));
+    for (const model of this.models) {
+      await model.truncate();
+    }
   }
 }
