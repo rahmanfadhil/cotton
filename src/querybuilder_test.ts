@@ -329,3 +329,13 @@ Deno.test("QueryBuilder: basic insert with returning multiple columns", () => {
     `INSERT INTO users (email) VALUES ('a@b.com') RETURNING id, email;`,
   );
 });
+
+Deno.test("QueryBuilder: throw an error if the `insert` method gets called without any values", () => {
+  assertThrows(
+    () => {
+      (new QueryBuilder("users") as any).insert().toSQL();
+    },
+    Error,
+    "Cannot perform replace query without values!",
+  );
+});

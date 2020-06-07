@@ -117,6 +117,9 @@ export class QueryBuilder {
   // PUBLIC QUERY METHODS
   // --------------------------------------------------------------------------------
 
+  /**
+   * Insert a record to the table
+   */
   public insert(data: QueryValues): QueryBuilder {
     // Change the query type from `select` (default) to `insert`
     this.description.type = QueryType.Insert;
