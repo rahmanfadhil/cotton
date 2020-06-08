@@ -46,6 +46,7 @@ enum QueryType {
   Insert = "insert",
   Delete = "delete",
   Update = "update",
+  Replace = "replace",
 }
 
 /**
@@ -128,6 +129,32 @@ export class QueryBuilder {
     if (!data) {
       throw new Error("Cannot perform insert query without values!");
     }
+
+    // Holds the cleaned data
+    let cleanedData: QueryValues = {};
+
+    // Transform values to the format that the database can understand and store it to `cleanedData`
+    for (const [key, value] of Object.entries(data)) {
+      cleanedData[key] = this.toDatabaseValue(value);
+    }
+
+    this.description.values = cleanedData;
+
+    return this;
+  }
+
+  /**
+   * Perform `REPLACE` query to the table.
+   * 
+   * It will look for `PRIMARY` and `UNIQUE` constraints.
+   * If something matched, it gets removed from the table
+   * and creates a new row with the given values.
+   * 
+   * @param data A JSON Object { cloumnname:value, ... }
+   */
+  public replace(data: QueryValues): QueryBuilder {
+    // Change the query type from `select` (default) to `insert`
+    this.description.type = QueryType.Replace;
 
     // Holds the cleaned data
     let cleanedData: QueryValues = {};
@@ -341,6 +368,8 @@ export class QueryBuilder {
         return this.toSelectSQL();
       case QueryType.Insert:
         return this.toInsertSQL();
+      case QueryType.Replace:
+        return this.toReplaceSQL();
       case QueryType.Update:
         return this.toUpdateSQL();
       case QueryType.Delete:
@@ -389,6 +418,38 @@ export class QueryBuilder {
       query.push(fields, "VALUES", values);
     } else {
       throw new Error("Cannot perform insert query without values!");
+    }
+
+    if (this.description.returning.length > 0) {
+      query.push("RETURNING", this.description.returning.join(", "));
+    }
+
+    return query.join(" ") + ";";
+  }
+
+  /**
+   * Generate `REPLACE` query string
+   */
+  private toReplaceSQL(): string {
+    // Query strings
+    let query: string[] = [`REPLACE INTO ${this.description.tableName}`];
+
+    if (
+      this.description.values
+    ) {
+      // Only call Object.keys once for performance reasons(this function can get really slow on bigger Objects)
+      let keys = Object.keys(this.description.values);
+      if (keys.length >= 1) {
+        const fields = `(${keys.join(", ")})`;
+        const values = `(${Object.values(this.description.values).join(", ")})`;
+        query.push(fields, "VALUES", values);
+      } else {
+        throw new Error("Cannot perform replace query without values!");
+      }
+    } else {
+      // This is probably redundant and will never be triggered,
+      // because insert() will throw a default error if the type is not matching.
+      throw new TypeError("Cannot perform replace with undefined Parameters!");
     }
 
     if (this.description.returning.length > 0) {
