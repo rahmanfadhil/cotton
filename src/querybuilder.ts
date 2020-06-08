@@ -135,6 +135,15 @@ export class QueryBuilder {
     return this;
   }
 
+  /**
+   * Perform `REPLACE` query to the table.
+   * 
+   * It will look for `PRIMARY` and `UNIQUE` constraints.
+   * If something matched, it gets removed from the table
+   * and creates a new row with the given values.
+   * 
+   * @param data A JSON Object { cloumnname:value, ... }
+   */
   public replace(data: QueryValues): QueryBuilder {
     // Change the query type from `select` (default) to `insert`
     this.description.type = QueryType.Replace;
@@ -402,18 +411,28 @@ export class QueryBuilder {
   }
 
   /**
-   * Generate `INSERT` query string
+   * Generate `REPLACE` query string
    */
   private toReplaceSQL(): string {
     // Query strings
     let query: string[] = [`REPLACE INTO ${this.description.tableName}`];
 
-    if (this.description.values) {
-      const fields = `(${Object.keys(this.description.values).join(", ")})`;
-      const values = `(${Object.values(this.description.values).join(", ")})`;
-      query.push(fields, "VALUES", values);
+    if (
+      this.description.values
+    ) {
+      // Only call Object.keys once for performance reasons(this function can get really slow on bigger Objects)
+      let keys = Object.keys(this.description.values);
+      if (keys.length >= 1) {
+        const fields = `(${keys.join(", ")})`;
+        const values = `(${Object.values(this.description.values).join(", ")})`;
+        query.push(fields, "VALUES", values);
+      } else {
+        throw new Error("Cannot perform replace query without values!");
+      }
     } else {
-      throw new Error("Cannot perform insert query without values!");
+      // This is probably redundant and will never be triggered, 
+      // because insert() will throw a default error if the type is not matching.
+      throw new TypeError("Cannot perform replace with undefined Parameters!");
     }
 
     if (this.description.returning.length > 0) {

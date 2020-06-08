@@ -411,3 +411,25 @@ Deno.test("QueryBuilder: basic replace with returning multiple columns", () => {
     `REPLACE INTO users (email) VALUES ('a@b.com') RETURNING id, email;`,
   );
 });
+
+Deno.test("QueryBuilder: throw an type error if the `replace` method gets called with undefined", () => {
+  assertThrows(
+    () => {
+      const query: any = new QueryBuilder("users");
+      query.replace().toSQL();
+    },
+    TypeError,
+    "Cannot convert undefined or null to object", 
+  );
+});
+
+Deno.test("QueryBuilder: throw an error if the `replace` method gets called without any values", () => {
+  assertThrows(
+    () => {
+      const query: any = new QueryBuilder("users");
+      query.replace({}).toSQL();
+    },
+    Error,
+    "Cannot perform replace query without values!",
+  );
+});
