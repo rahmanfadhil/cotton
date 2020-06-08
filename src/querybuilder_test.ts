@@ -333,9 +333,21 @@ Deno.test("QueryBuilder: basic insert with returning multiple columns", () => {
 Deno.test("QueryBuilder: throw an error if the `insert` method gets called without any values", () => {
   assertThrows(
     () => {
-      (new QueryBuilder("users") as any).insert().toSQL();
+      const query: any = new QueryBuilder("users");
+      query.insert().toSQL();
     },
     Error,
-    "Cannot perform replace query without values!",
+    "Cannot perform insert query without values!",
+  );
+});
+
+Deno.test("QueryBuilder: throw an error if the `update` method gets called without any values", () => {
+  assertThrows(
+    () => {
+      const query: any = new QueryBuilder("users");
+      query.update().toSQL();
+    },
+    Error,
+    "Cannot perform update query without values!",
   );
 });

@@ -124,6 +124,11 @@ export class QueryBuilder {
     // Change the query type from `select` (default) to `insert`
     this.description.type = QueryType.Insert;
 
+    // Throw an error if the data is not provided
+    if (!data) {
+      throw new Error("Cannot perform insert query without values!");
+    }
+
     // Holds the cleaned data
     let cleanedData: QueryValues = {};
 
@@ -288,11 +293,20 @@ export class QueryBuilder {
   /**
    * Update record on the database
    * 
-   * @param values new data for the record
+   * @param data new data for the record
    */
-  public update(values: QueryValues): QueryBuilder {
+  public update(data: QueryValues): QueryBuilder {
+    // Change the query type from `select` (default) to `update`
     this.description.type = QueryType.Update;
-    this.description.values = values;
+
+    // Throw an error if the data is not provided
+    if (!data) {
+      throw new Error("Cannot perform update query without values!");
+    }
+
+    // Set query values
+    this.description.values = data;
+
     return this;
   }
 
