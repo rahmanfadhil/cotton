@@ -430,7 +430,7 @@ export class QueryBuilder {
         throw new Error("Cannot perform replace query without values!");
       }
     } else {
-      // This is probably redundant and will never be triggered, 
+      // This is probably redundant and will never be triggered,
       // because insert() will throw a default error if the type is not matching.
       throw new TypeError("Cannot perform replace with undefined Parameters!");
     }

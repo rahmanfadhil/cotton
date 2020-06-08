@@ -419,7 +419,7 @@ Deno.test("QueryBuilder: throw an type error if the `replace` method gets called
       query.replace().toSQL();
     },
     TypeError,
-    "Cannot convert undefined or null to object", 
+    "Cannot convert undefined or null to object",
   );
 });
 
