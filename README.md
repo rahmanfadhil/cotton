@@ -189,7 +189,7 @@ await db
     created_at: new Date("5 June, 2020"),
   })
   .execute();
-// REPLACE INTO users (email, age) VALUES ('a@b.com', 16);
+// REPLACE INTO users (email, age, created_at) VALUES ('a@b.com', 16);
 ```
 
 ### Delete data
