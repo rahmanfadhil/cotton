@@ -1,6 +1,5 @@
 import { COLUMN_TYPES } from "./constants.ts";
 import { Adapter, QueryResult, QueryOptions } from "./adapters/adapter.ts";
-import { SqliteAdapter } from "./adapters/sqlite.ts";
 
 interface ColumnDefinition {
   type: keyof typeof COLUMN_TYPES;
