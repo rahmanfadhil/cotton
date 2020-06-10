@@ -138,7 +138,5 @@ testDB("Model: remove", async (client) => {
   });
   await user.remove();
 
-  console.log(user);
-
   assertEquals(await User.findOne(1), null);
 });

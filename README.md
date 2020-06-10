@@ -175,7 +175,7 @@ await db
     created_at: new Date("5 June, 2020"),
   })
   .execute();
-// INSERT INTO users (email, age) VALUES ('a@b.com', 16);
+// INSERT INTO users (email, age) VALUES ('a@b.com', 16, '2020-06-05 00:00:00');
 ```
 
 ### Delete data
