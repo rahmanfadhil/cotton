@@ -16,6 +16,9 @@ interface TableOptions {
   createIfNotExists?: boolean;
 }
 
+/**
+ * Handles a Table, create, modify or get info about the table.
+ */
 export class Table {
   constructor(
     /** Table name on the database */
@@ -34,7 +37,7 @@ export class Table {
   }
 
   /**
-   * Delete a table
+   * Delete this table.
    */
   async delete() {
     if (!this.adapter) {
@@ -48,16 +51,17 @@ export class Table {
   }
 
   /**
-   * Modify a table
+   * Modify a table(add rows or constraints). NOT IMPLEMENTED YET.
    */
   modify() {
     throw new Error("Not implementet yet");
   }
-
+  /** Will give tableinfos(Columnnames, Row Count or Key Infos [...]) NOT IMPLEMENTED YET. */
   info() {
     return new TableInfo(this.tableName, this.adapter);
   }
 
+  /** Checks if this Table exists. */
   exists() {
     return new TableInfo(this.tableName, this.adapter).exists();
   }
@@ -184,6 +188,7 @@ export class TableInfo {
     this.options = Object.assign({}, { createIfNotExists: false }, options);
   }
 
+  /** Checks if this Table exists. */
   async exists(): Promise<boolean> {
     if (!this.adapter) {
       throw new Error("Cannot run query, adapter is not provided!");
