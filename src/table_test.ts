@@ -22,7 +22,6 @@ Deno.test("Table: sqlite", () => {
     )
     .addField({ type: "varchar", name: "name" });
 
-  console.log("SQLite: " + table.toSQL());
   assertEquals(
     table.toSQL(),
     "create table users (id integer primary key autoincrement, name varchar(2048));",
@@ -36,7 +35,6 @@ Deno.test("Table: postgres", () => {
     )
     .addField({ type: "varchar", name: "name" });
 
-  console.log("POSTGRES: " + table.toSQL());
   assertEquals(
     table.toSQL(),
     "create table users (id serial primary key, name varchar(2048));",
@@ -56,21 +54,6 @@ testDB("Table: create and check for existence", async (client) => {
   assertEquals(
     await tablehandler.exists(),
     false,
-  );
-
-  // Spill the beans
-  console.log(
-    client.type + " : " + await tablehandler.create()
-      .addField(
-        {
-          type: "increments",
-          name: "id",
-          primaryKey: true,
-          autoIncrement: true,
-        },
-      )
-      .addField({ type: "varchar", name: "name" })
-      .toSQL(),
   );
 
   // Now we create the table again
