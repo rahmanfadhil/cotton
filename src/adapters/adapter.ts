@@ -1,7 +1,7 @@
 import { QueryBuilder } from "../querybuilder.ts";
 import { Model } from "../model.ts";
 import { SupportedDatabaseType } from "../connect.ts";
-import { TableBuilder } from "../table.ts";
+import { Table } from "../table.ts";
 
 export interface QueryOptions {
   getLastInsertedId?: boolean;
@@ -88,8 +88,8 @@ export abstract class Adapter {
    *
    * @param model The model to be registered
    */
-  public tableBuilder(tableName: string): TableBuilder {
-    return new TableBuilder(tableName, this);
+  public table(tableName: string): Table {
+    return new Table(tableName, this);
   }
 
   /**

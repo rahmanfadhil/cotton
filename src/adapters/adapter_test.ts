@@ -2,7 +2,7 @@ import { Model, FieldType } from "../model.ts";
 import { testDB } from "../testutils.ts";
 import { assertEquals } from "../../testdeps.ts";
 import { QueryBuilder } from "../querybuilder.ts";
-import { TableBuilder } from "../table.ts";
+import { Table } from "../table.ts";
 
 class User extends Model {
   static tableName = "users";
@@ -93,7 +93,7 @@ testDB(
 testDB(
   "BaseAdapter: `tableBuilder` should contains actual table builder",
   (client) => {
-    const query = client.tableBuilder("users");
-    assertEquals(query instanceof TableBuilder, true);
+    const query = client.table("users");
+    assertEquals(query instanceof Table, true);
   },
 );

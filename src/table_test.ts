@@ -11,7 +11,7 @@ Deno.test("Table: mysql", () => {
 
   assertEquals(
     table.toSQL(),
-    "create table users (id int primary key auto_increment, name varchar);",
+    "create table users (id integer primary key auto_increment, name varchar(2048));",
   );
 });
 
@@ -22,9 +22,10 @@ Deno.test("Table: sqlite", () => {
     )
     .addField({ type: "varchar", name: "name" });
 
+  console.log("SQLite: " + table.toSQL());
   assertEquals(
     table.toSQL(),
-    "create table users (id int primary key autoincrement, name varchar);",
+    "create table users (id integer primary key autoincrement, name varchar(2048));",
   );
 });
 
@@ -35,17 +36,56 @@ Deno.test("Table: postgres", () => {
     )
     .addField({ type: "varchar", name: "name" });
 
+  console.log("POSTGRES: " + table.toSQL());
   assertEquals(
     table.toSQL(),
-    "create table users (id serial primary key, name varchar);",
+    "create table users (id serial primary key, name varchar(2048));",
   );
 });
 
-testDB("Model: insert", async (client) => {
-  client.tableBuilder("sigma")
+testDB("Table: create and check for existence", async (client) => {
+  // Check if Table is already in Database if so Drop it
+  let tablehandler = client.table("testing_table");
+  if (
+    await tablehandler.exists()
+  ) {
+    await tablehandler.delete();
+  }
+
+  // Check if table exists again it should be false
+  assertEquals(
+    await tablehandler.exists(),
+    false,
+  );
+
+  // Spill the beans
+  console.log(
+    client.type + " : " + await tablehandler.create()
+      .addField(
+        {
+          type: "increments",
+          name: "id",
+          primaryKey: true,
+          autoIncrement: true,
+        },
+      )
+      .addField({ type: "varchar", name: "name" })
+      .toSQL(),
+  );
+
+  // Now we create the table again
+  await tablehandler
+    .create()
     .addField(
       { type: "increments", name: "id", primaryKey: true, autoIncrement: true },
     )
     .addField({ type: "varchar", name: "name" })
     .execute();
+
+  // Table should exist now
+  assertEquals(
+    await tablehandler
+      .exists(),
+    true,
+  );
 });
