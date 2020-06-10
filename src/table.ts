@@ -1,4 +1,5 @@
 import { COLUMN_TYPES } from "./constants.ts";
+import { Adapter, QueryResult, QueryOptions } from "./adapters/adapter.ts";
 
 interface ColumnDefinition {
   type: keyof typeof COLUMN_TYPES;
@@ -16,16 +17,17 @@ interface TableOptions {
 /**
  * A representation of a single table in database
  */
-export class Table {
+export class TableBuilder {
   private options: Required<TableOptions>;
+  private columns: ColumnDefinition[] = [];
 
   constructor(
     /** Table name on the database */
     private tableName: string,
-    /** Table columns */
-    private columns: ColumnDefinition[],
+    /** Adapter */
+    private adapter?: Adapter,
     /** Other options */
-    options: TableOptions,
+    options?: TableOptions,
   ) {
     // Populate `this.options` with default
     this.options = Object.assign({}, { createIfNotExists: false }, options);
@@ -80,5 +82,27 @@ export class Table {
     sql.push(`(${[...columns].join(", ")})`);
 
     return sql.join(" ") + ";";
+  }
+
+  addField(field: ColumnDefinition) {
+    this.columns.push(field);
+    return this;
+  }
+
+  /**
+   * Execute query to create table.
+   * 
+   * @param adapter Custom database adapter
+   */
+  public async execute(
+    options?: { adapter?: Adapter } & QueryOptions,
+  ): Promise<QueryResult<any>> {
+    let currentAdapter = options?.adapter || this.adapter;
+
+    if (!currentAdapter) {
+      throw new Error("Cannot run query, adapter is not provided!");
+    }
+
+    return await currentAdapter.query(this.toSQL(), options);
   }
 }

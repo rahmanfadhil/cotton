@@ -1,11 +1,12 @@
-import { Table } from "./table.ts";
+import { TableBuilder } from "./table.ts";
 import { assertEquals } from "../testdeps.ts";
 
 Deno.test("Table: mysql", () => {
-  const table = new Table("users", [
-    { type: "increments", name: "id", primaryKey: true, autoIncrement: true },
-    { type: "varchar", name: "name" },
-  ], { dialect: "mysql" });
+  const table = new TableBuilder("users", undefined, { dialect: "mysql" })
+    .addField(
+      { type: "increments", name: "id", primaryKey: true, autoIncrement: true },
+    )
+    .addField({ type: "varchar", name: "name" });
 
   assertEquals(
     table.toSQL(),
@@ -14,10 +15,11 @@ Deno.test("Table: mysql", () => {
 });
 
 Deno.test("Table: sqlite", () => {
-  const table = new Table("users", [
-    { type: "increments", name: "id", primaryKey: true, autoIncrement: true },
-    { type: "varchar", name: "name" },
-  ], { dialect: "sqlite" });
+  const table = new TableBuilder("users", undefined, { dialect: "sqlite" })
+    .addField(
+      { type: "increments", name: "id", primaryKey: true, autoIncrement: true },
+    )
+    .addField({ type: "varchar", name: "name" });
 
   assertEquals(
     table.toSQL(),
@@ -26,10 +28,11 @@ Deno.test("Table: sqlite", () => {
 });
 
 Deno.test("Table: postgres", () => {
-  const table = new Table("users", [
-    { type: "increments", name: "id", primaryKey: true, autoIncrement: true },
-    { type: "varchar", name: "name" },
-  ], { dialect: "postgres" });
+  const table = new TableBuilder("users", undefined, { dialect: "postgres" })
+    .addField(
+      { type: "increments", name: "id", primaryKey: true, autoIncrement: true },
+    )
+    .addField({ type: "varchar", name: "name" });
 
   assertEquals(
     table.toSQL(),
