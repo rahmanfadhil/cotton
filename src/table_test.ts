@@ -1,5 +1,6 @@
 import { TableBuilder } from "./table.ts";
 import { assertEquals } from "../testdeps.ts";
+import { testDB } from "./testutils.ts";
 
 Deno.test("Table: mysql", () => {
   const table = new TableBuilder("users", undefined, { dialect: "mysql" })
@@ -38,4 +39,13 @@ Deno.test("Table: postgres", () => {
     table.toSQL(),
     "create table users (id serial primary key, name varchar);",
   );
+});
+
+testDB("Model: insert", async (client) => {
+  client.tableBuilder("sigma")
+    .addField(
+      { type: "increments", name: "id", primaryKey: true, autoIncrement: true },
+    )
+    .addField({ type: "varchar", name: "name" })
+    .execute();
 });
