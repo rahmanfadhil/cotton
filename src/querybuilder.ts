@@ -120,6 +120,8 @@ export class QueryBuilder {
 
   /**
    * Insert a record to the table
+   * 
+   * @param data A JSON Object representing columnname-value pairs. Example: { firstname: "John", age: 22, ... }
    */
   public insert(data: QueryValues): QueryBuilder {
     // Change the query type from `select` (default) to `insert`
@@ -150,7 +152,7 @@ export class QueryBuilder {
    * If something matched, it gets removed from the table
    * and creates a new row with the given values.
    * 
-   * @param data A JSON Object { cloumnname:value, ... }
+   * @param data A JSON Object representing columnname-value pairs. Example: { firstname: "John", age: 22, ... }
    */
   public replace(data: QueryValues): QueryBuilder {
     // Change the query type from `select` (default) to `insert`
@@ -266,7 +268,7 @@ export class QueryBuilder {
   /**
    * Set the "limit" value for the query.
    * 
-   * @param limit maximum number of records
+   * @param limit Maximum number of records
    */
   public limit(limit: number): QueryBuilder {
     if (limit >= 0) {
@@ -279,7 +281,7 @@ export class QueryBuilder {
   /**
    * Set the "offset" value for the query.
    * 
-   * @param offset numbers of records to skip
+   * @param offset Numbers of records to skip
    */
   public offset(offset: number): QueryBuilder {
     if (offset > 0) {
@@ -320,7 +322,7 @@ export class QueryBuilder {
   /**
    * Update record on the database
    * 
-   * @param data new data for the record
+   * @param data A JSON Object representing columnname-value pairs. Example: { firstname: "John", age: 22, ... }
    */
   public update(data: QueryValues): QueryBuilder {
     // Change the query type from `select` (default) to `update`
