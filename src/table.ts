@@ -196,29 +196,25 @@ export class TableInfo {
 
     switch (this.adapter.type) {
       case "sqlite":
-        return (await (await this.adapter.query(
+        const sqliteQuery = await this.adapter.query(
           `SELECT name FROM sqlite_master WHERE type='table' AND name='${this.tableName}'`,
-        )).records.length) == 1;
+        );
+        return sqliteQuery.records.length === 1;
       case "postgres":
-        var fromDB = (await (await this.adapter.query(
-          `SELECT EXISTS (
-              SELECT FROM pg_tables
-              WHERE    tablename  = '${this.tableName}'
-              )`,
-        )));
-        if (!!fromDB.records && !!fromDB.records[0]) {
-          let result = fromDB.records[0] as any;
+        const postgresQuery = await this.adapter.query(
+          `SELECT EXISTS (SELECT FROM pg_tables WHERE tablename = '${this.tableName}')`,
+        );
+        if (postgresQuery.records[0]) {
+          let result = postgresQuery.records[0] as any;
           return result.exists;
-        } else return false;
-        break;
+        } else {
+          return false;
+        }
       case "mysql":
-        return (await (await this.adapter.query(
-          `SELECT * 
-          FROM information_schema.tables
-              WHERE table_name = '${this.tableName}'
-          LIMIT 1`,
-        )).records.length) == 1;
-        break;
+        const mysqlQuery = await this.adapter.query(
+          `SELECT * FROM information_schema.tables WHERE table_name = '${this.tableName}' LIMIT 1`,
+        );
+        return mysqlQuery.records.length === 1;
       default:
         return false;
     }
