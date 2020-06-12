@@ -2,3 +2,4 @@
 .env
 experiments
 db.sqlite3
+test.zsh
