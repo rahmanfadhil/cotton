@@ -2,3 +2,4 @@
 .env
 experiments
 db.sqlite3
+docs/.vuepress/dist
