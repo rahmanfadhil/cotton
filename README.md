@@ -9,9 +9,14 @@
 - Supports **MySQL**, **SQLite**, and **PostgreSQL**
 - Semantic versioning
 
+## Documentation
+
+- [Getting started guide](https://rahmanfadhil.github.io/cotton)
+- [Explore the API](https://doc.deno.land/https/deno.land/x/cotton/mod.ts)
+
 ## How to use
 
-Currently, Cotton supports SQLite3, MySQL, and PostgreSQL. To create a connection, use `connect` and pass the connection configurations.
+Currently, Cotton supports [SQLite3](https://sqlite.org), [MySQL](https://mysql.com), and [PostgreSQL](https://postgresql.org). To create a connection, use `connect` and pass the connection configurations.
 
 ```ts
 import { connect } from "https://deno.land/x/cotton/mod.ts";
