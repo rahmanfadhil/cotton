@@ -9,3 +9,5 @@ import "./src/adapters/mysql_test.ts";
 import "./src/utils/date_test.ts";
 import "./src/model_test.ts";
 import "./src/adapters/adapter_test.ts";
+import "./src/migrations/migration_test.ts";
+import "./src/migrations/tablebuilder_test.ts";

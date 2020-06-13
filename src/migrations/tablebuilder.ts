@@ -26,7 +26,9 @@ export class TableBuilder {
   }
 
   /** Add column */
-  public addColumn(column: ColumnDefinition) {}
+  public addColumn(column: ColumnDefinition) {
+    this.columns.push(column);
+  }
 
   /**
    * Generate SQL statement for creating the table

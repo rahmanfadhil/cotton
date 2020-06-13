@@ -2,7 +2,7 @@ import { TableBuilder } from "./tablebuilder.ts";
 import { testDB } from "../testutils.ts";
 import { assertEquals } from "../../testdeps.ts";
 
-testDB("TableBuilder", (client) => {
+testDB("TableBuilder", async (client) => {
   const builder = new TableBuilder("posts", client);
 
   builder.addColumn({
@@ -15,23 +15,25 @@ testDB("TableBuilder", (client) => {
 
   const query = builder.toSQL();
 
+  console.log(query);
+
   switch (client.type) {
     case "mysql":
       assertEquals(
         query,
-        "create table users (id integer primary key auto_increment, name varchar(2048));",
+        "create table posts (id integer primary key auto_increment, name varchar(2048));",
       );
       break;
     case "sqlite":
       assertEquals(
         query,
-        "create table users (id integer primary key autoincrement, name varchar(2048));",
+        "create table posts (id integer primary key autoincrement, name varchar(2048));",
       );
       break;
     case "postgres":
       assertEquals(
         query,
-        "create table users (id serial primary key, name varchar(2048));",
+        "create table posts (id serial primary key, name varchar(2048));",
       );
       break;
   }
