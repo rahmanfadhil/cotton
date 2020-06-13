@@ -37,14 +37,14 @@ export class Migration {
   /** Drop a table */
   public async dropTable(
     tableName: string,
-    options?: { ifNotExists: boolean },
+    options?: { ifExists: boolean },
   ) {
     // Populate options with default values
-    options = Object.assign({}, options, { ifNotExists: false });
+    options = Object.assign({}, options, { ifExists: false });
 
     // Build query string
     const query = [`DROP TABLE`];
-    if (options.ifNotExists) query.push(`IF NOT EXISTS`);
+    if (options.ifExists) query.push(`IF EXISTS`);
     query.push(tableName);
 
     // Perform query
