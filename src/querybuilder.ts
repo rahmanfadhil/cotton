@@ -333,8 +333,15 @@ export class QueryBuilder {
       throw new Error("Cannot perform update query without values!");
     }
 
-    // Set query values
-    this.description.values = data;
+    // Holds the cleaned data
+    let cleanedData: QueryValues = {};
+
+    // Transform values to the format that the database can understand and store it to `cleanedData`
+    for (const [key, value] of Object.entries(data)) {
+      cleanedData[key] = this.toDatabaseValue(value);
+    }
+
+    this.description.values = cleanedData;
 
     return this;
   }
@@ -390,7 +397,7 @@ export class QueryBuilder {
     if (this.description.values) {
       const values = [];
       for (const [key, value] of Object.entries(this.description.values)) {
-        values.push(`${key} = ${this.toDatabaseValue(value)}`);
+        values.push(`${key} = ${value}`);
       }
       query.push(values.join(", "));
     } else {
