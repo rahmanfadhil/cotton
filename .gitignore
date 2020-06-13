@@ -3,3 +3,4 @@
 experiments
 db.sqlite3
 test.zsh
+docs/.vuepress/dist
