@@ -5,13 +5,11 @@ import { assertEquals } from "../../testdeps.ts";
 testDB("Migration: getTableInfo", async (client) => {
   const migration = new Migration(client);
 
-  const tableInfo = migration.getTableInfo("users");
-
   // Table exists
-  assertEquals(await tableInfo.exists(), true);
+  assertEquals(await migration.getTableInfo("users").exists(), true);
 
   // Table not exists
-  assertEquals(await tableInfo.exists(), false);
+  assertEquals(await migration.getTableInfo("posts").exists(), false);
 });
 
 testDB("Migration: createTable and dropTable", async (client) => {
