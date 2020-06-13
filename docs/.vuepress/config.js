@@ -1,7 +1,7 @@
 module.exports = {
   title: "Cotton",
   description: "SQL Database Toolkit for Deno",
-  base: "https://rahmanfadhil.github.io/cotton/",
+  base: "/cotton/",
   themeConfig: {
     nav: [
       { text: "Home", link: "/" },
