@@ -13,19 +13,12 @@ export class Migration {
   ) {}
 
   /** Create a table */
-  public async createTable(
-    tableName: string,
-    fn: (table: TableBuilder) => void,
-    options?: CreateTableOptions,
-  ) {
-    const tableBuilder = new TableBuilder(tableName, this.adapter, options);
-    fn(tableBuilder);
-    const query = tableBuilder.toSQL();
-    await this.adapter.execute(query);
+  public createTable(tableName: string, options?: CreateTableOptions) {
+    return new TableBuilder(tableName, this.adapter, options);
   }
 
   /** Alter table columns */
-  public alterTable(tableName: string, fn: (table: TableUpdater) => void) {
+  public alterTable(tableName: string): TableUpdater {
     throw new Error("Not implemented yet!");
   }
 

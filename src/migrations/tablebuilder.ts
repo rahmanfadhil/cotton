@@ -28,6 +28,7 @@ export class TableBuilder {
   /** Add column */
   public addColumn(column: ColumnDefinition) {
     this.columns.push(column);
+    return this;
   }
 
   /**
@@ -88,5 +89,9 @@ export class TableBuilder {
     sql.push(`(${[...columns].join(", ")})`);
 
     return sql.join(" ") + ";";
+  }
+
+  public async execute(): Promise<void> {
+    this.adapter.query(this.toSQL());
   }
 }

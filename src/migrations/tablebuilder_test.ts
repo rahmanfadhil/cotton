@@ -3,19 +3,15 @@ import { testDB } from "../testutils.ts";
 import { assertEquals } from "../../testdeps.ts";
 
 testDB("TableBuilder", async (client) => {
-  const builder = new TableBuilder("posts", client);
-
-  builder.addColumn({
-    type: "increments",
-    name: "id",
-    primaryKey: true,
-    autoIncrement: true,
-  });
-  builder.addColumn({ type: "varchar", name: "name" });
-
-  const query = builder.toSQL();
-
-  console.log(query);
+  const query = new TableBuilder("posts", client)
+    .addColumn({
+      type: "increments",
+      name: "id",
+      primaryKey: true,
+      autoIncrement: true,
+    })
+    .addColumn({ type: "varchar", name: "name" })
+    .toSQL();
 
   switch (client.type) {
     case "mysql":

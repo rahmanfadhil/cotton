@@ -5,11 +5,13 @@ import { assertEquals } from "../../testdeps.ts";
 testDB("Migration: getTableInfo", async (client) => {
   const migration = new Migration(client);
 
+  const tableInfo = migration.getTableInfo("users");
+
   // Table exists
-  assertEquals(await migration.getTableInfo("users").exists(), true);
+  assertEquals(await tableInfo.exists(), true);
 
   // Table not exists
-  assertEquals(await migration.getTableInfo("posts").exists(), false);
+  assertEquals(await tableInfo.exists(), false);
 });
 
 testDB("Migration: createTable and dropTable", async (client) => {
@@ -20,15 +22,15 @@ testDB("Migration: createTable and dropTable", async (client) => {
   assertEquals(await tableInfo.exists(), false);
 
   // Create table
-  await migration.createTable("posts", (table) => {
-    table.addColumn({
+  await migration.createTable("posts")
+    .addColumn({
       type: "increments",
       name: "id",
       primaryKey: true,
       autoIncrement: true,
-    });
-    table.addColumn({ type: "varchar", name: "name" });
-  });
+    })
+    .addColumn({ type: "varchar", name: "name" })
+    .execute();
 
   // The table now should be exists
   assertEquals(await tableInfo.exists(), true);
