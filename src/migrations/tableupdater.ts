@@ -24,13 +24,13 @@ export class TableUpdater {
     throw new Error("Not implemented yet!");
   }
 
-  /** Update a columm */
-  public updateColumn(column: string, newColumn: ColumnDefinition) {
+  /** Update a column's datatype */
+  public alterColumn(column: string, newColumn: ColumnDefinition) {
     throw new Error("Not implemented yet!");
   }
 
-  /** Remove a columm */
-  public removeColumm(column: string) {
+  /** Remove a column */
+  public dropColumn(column: string) {
     throw new Error("Not implemented yet!");
   }
 }
