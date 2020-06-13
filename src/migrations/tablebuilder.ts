@@ -92,6 +92,6 @@ export class TableBuilder {
   }
 
   public async execute(): Promise<void> {
-    this.adapter.query(this.toSQL());
+    await this.adapter.query(this.toSQL());
   }
 }
