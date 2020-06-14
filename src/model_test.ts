@@ -78,13 +78,28 @@ testDB("Model: findOne", async (client) => {
   await client.execute(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${formattedDate}')`,
   );
+  await client.execute(
+    `INSERT INTO users (email, age, created_at) VALUES ('b@c.com', 16, '${formattedDate}')`,
+  );
+  await client.execute(
+    `INSERT INTO users (email, age, created_at) VALUES ('c@d.com', 16, '${formattedDate}')`,
+  );
 
   client.addModel(User);
 
-  const user = await User.findOne(1);
+  // Find by id
+  let user = await User.findOne(2);
   assertEquals(user instanceof User, true);
-  assertEquals(user?.id, 1);
-  assertEquals(user?.email, "a@b.com");
+  assertEquals(user?.id, 2);
+  assertEquals(user?.email, "b@c.com");
+  assertEquals(user?.created_at, date);
+  assertEquals(user?.age, 16);
+
+  // Find by columns
+  user = await User.findOne({ email: "c@d.com" });
+  assertEquals(user instanceof User, true);
+  assertEquals(user?.id, 3);
+  assertEquals(user?.email, "c@d.com");
   assertEquals(user?.created_at, date);
   assertEquals(user?.age, 16);
 });
