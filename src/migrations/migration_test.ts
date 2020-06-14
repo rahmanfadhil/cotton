@@ -12,6 +12,23 @@ testDB("Migration: getTableInfo", async (client) => {
   assertEquals(await migration.getTableInfo("posts").exists(), false);
 });
 
+testDB("Migration: renameTable", async (client) => {
+  const migration = new Migration(client);
+
+  assertEquals(await migration.getTableInfo("users").exists(), true);
+  assertEquals(await migration.getTableInfo("accounts").exists(), false);
+
+  await migration.renameTable("users", "accounts");
+
+  assertEquals(await migration.getTableInfo("users").exists(), false);
+  assertEquals(await migration.getTableInfo("accounts").exists(), true);
+
+  await migration.renameTable("accounts", "users");
+
+  assertEquals(await migration.getTableInfo("users").exists(), true);
+  assertEquals(await migration.getTableInfo("accounts").exists(), false);
+});
+
 testDB("Migration: createTable and dropTable", async (client) => {
   const migration = new Migration(client);
   const tableInfo = migration.getTableInfo("posts");

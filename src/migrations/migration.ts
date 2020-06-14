@@ -22,9 +22,11 @@ export class Migration {
     throw new Error("Not implemented yet!");
   }
 
-  /** Alter table columns */
-  public renameTable(tableName: string, newTableName: string) {
-    throw new Error("Not implemented yet!");
+  /** Rename a table */
+  public async renameTable(tableName: string, newTableName: string) {
+    await this.adapter.execute(
+      `ALTER TABLE ${tableName} RENAME TO ${newTableName}`,
+    );
   }
 
   /** Drop a table */
