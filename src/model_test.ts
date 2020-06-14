@@ -16,6 +16,15 @@ class User extends Model {
   created_at!: Date;
 }
 
+class Product extends Model {
+  static tableName = "products";
+  static fields = {
+    name: { type: FieldType.STRING },
+  };
+
+  name!: string;
+}
+
 testDB("Model: find", async (client) => {
   const date = new Date("5 June, 2020");
   const formattedDate = DateUtils.formatDate(date);
@@ -33,6 +42,33 @@ testDB("Model: find", async (client) => {
   assertEquals(users[0].email, "a@b.com");
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
+});
+
+testDB("Model: find with options", async (client) => {
+  await client.execute(`INSERT INTO products (name) VALUES ('Cheese')`);
+  await client.execute(`INSERT INTO products (name) VALUES ('Spoon')`);
+  await client.execute(`INSERT INTO products (name) VALUES ('Spoon')`);
+  await client.execute(`INSERT INTO products (name) VALUES ('Spoon')`);
+  await client.execute(`INSERT INTO products (name) VALUES ('Table')`);
+
+  client.addModel(Product);
+
+  let products = await Product.find({ where: { name: "Spoon" } });
+  assertEquals(products.length, 3);
+
+  products = await Product.find({ limit: 2 });
+  assertEquals(products.length, 2);
+
+  products = await Product.find({ limit: 2, offset: 2 });
+  assertEquals(products.length, 2);
+  assertEquals(products[0].id, 3);
+  assertEquals(products[1].id, 4);
+
+  products = await Product.find(
+    { where: { name: "Spoon" }, limit: 1, offset: 1 },
+  );
+  assertEquals(products.length, 1);
+  assertEquals(products[0].id, 3);
 });
 
 testDB("Model: findOne", async (client) => {

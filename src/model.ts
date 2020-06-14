@@ -18,6 +18,12 @@ export interface FieldDescription {
   type: FieldType;
 }
 
+export interface FindOptions<T> {
+  limit?: number;
+  offset?: number;
+  where?: Partial<T>;
+}
+
 /**
  * Database model
  */
@@ -58,11 +64,31 @@ export abstract class Model {
    */
   public static async find<T extends Model>(
     this: ExtendedModel<T>,
+    options?: FindOptions<T>,
   ): Promise<T[]> {
-    // TODO: give the user option to query the fields (not only the primary key)
-    const result = await this.adapter
-      .queryBuilder(this.tableName)
-      .execute();
+    // Initialize query builder
+    const query = this.adapter.queryBuilder(this.tableName);
+
+    // Add where clauses (if exists)
+    if (options && options.where) {
+      for (const [column, value] of Object.entries(options.where)) {
+        // TODO: allow user to use different operator
+        query.where(column, value);
+      }
+    }
+
+    // Add maximum number of records (if exists)
+    if (options && options.limit) {
+      query.limit(options.limit);
+    }
+
+    // Add offset (if exists)
+    if (options && options.offset) {
+      query.offset(options.offset);
+    }
+
+    // Execute query
+    const result = await query.execute();
 
     return this.createModels(result.records);
   }
