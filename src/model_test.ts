@@ -16,6 +16,15 @@ class User extends Model {
   created_at!: Date;
 }
 
+class Product extends Model {
+  static tableName = "products";
+  static fields = {
+    name: { type: FieldType.STRING },
+  };
+
+  name!: string;
+}
+
 testDB("Model: find", async (client) => {
   const date = new Date("5 June, 2020");
   const formattedDate = DateUtils.formatDate(date);
@@ -35,6 +44,33 @@ testDB("Model: find", async (client) => {
   assertEquals(users[0].created_at, date);
 });
 
+testDB("Model: find with options", async (client) => {
+  await client.execute(`INSERT INTO products (name) VALUES ('Cheese')`);
+  await client.execute(`INSERT INTO products (name) VALUES ('Spoon')`);
+  await client.execute(`INSERT INTO products (name) VALUES ('Spoon')`);
+  await client.execute(`INSERT INTO products (name) VALUES ('Spoon')`);
+  await client.execute(`INSERT INTO products (name) VALUES ('Table')`);
+
+  client.addModel(Product);
+
+  let products = await Product.find({ where: { name: "Spoon" } });
+  assertEquals(products.length, 3);
+
+  products = await Product.find({ limit: 2 });
+  assertEquals(products.length, 2);
+
+  products = await Product.find({ limit: 2, offset: 2 });
+  assertEquals(products.length, 2);
+  assertEquals(products[0].id, 3);
+  assertEquals(products[1].id, 4);
+
+  products = await Product.find(
+    { where: { name: "Spoon" }, limit: 1, offset: 1 },
+  );
+  assertEquals(products.length, 1);
+  assertEquals(products[0].id, 3);
+});
+
 testDB("Model: findOne", async (client) => {
   const date = new Date("5 June, 2020");
   const formattedDate = DateUtils.formatDate(date);
@@ -42,13 +78,28 @@ testDB("Model: findOne", async (client) => {
   await client.execute(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${formattedDate}')`,
   );
+  await client.execute(
+    `INSERT INTO users (email, age, created_at) VALUES ('b@c.com', 16, '${formattedDate}')`,
+  );
+  await client.execute(
+    `INSERT INTO users (email, age, created_at) VALUES ('c@d.com', 16, '${formattedDate}')`,
+  );
 
   client.addModel(User);
 
-  const user = await User.findOne(1);
+  // Find by id
+  let user = await User.findOne(2);
   assertEquals(user instanceof User, true);
-  assertEquals(user?.id, 1);
-  assertEquals(user?.email, "a@b.com");
+  assertEquals(user?.id, 2);
+  assertEquals(user?.email, "b@c.com");
+  assertEquals(user?.created_at, date);
+  assertEquals(user?.age, 16);
+
+  // Find by columns
+  user = await User.findOne({ email: "c@d.com" });
+  assertEquals(user instanceof User, true);
+  assertEquals(user?.id, 3);
+  assertEquals(user?.email, "c@d.com");
   assertEquals(user?.created_at, date);
   assertEquals(user?.age, 16);
 });

@@ -18,6 +18,12 @@ export interface FieldDescription {
   type: FieldType;
 }
 
+export interface FindOptions<T> {
+  limit?: number;
+  offset?: number;
+  where?: Partial<T>;
+}
+
 /**
  * Database model
  */
@@ -30,19 +36,55 @@ export abstract class Model {
   public id!: number;
 
   /**
-   * Search for a single instance. Returns the first instance found, or null if none can be found
+   * Get the first record in a table or null null if none can be found
+   */
+  public static async findOne<T extends Model>(
+    this: ExtendedModel<T>,
+  ): Promise<T | null>;
+
+  /**
+   * Get a single record by primary key or null if none can be found
    * 
    * @param id primary key
    */
   public static async findOne<T extends Model>(
     this: ExtendedModel<T>,
     id: number,
+  ): Promise<T | null>;
+
+  /**
+   * Search for a single instance. Returns the first instance found, or null if none can be found
+   * 
+   * @param where query columns
+   */
+  public static async findOne<T extends Model>(
+    this: ExtendedModel<T>,
+    where: Partial<T>,
+  ): Promise<T | null>;
+
+  /**
+   * Search for a single instance. Returns the first instance found, or null if none can be found
+   */
+  public static async findOne<T extends Model>(
+    this: ExtendedModel<T>,
+    options?: number | Partial<T>,
   ): Promise<T | null> {
-    // TODO: give the user option to query the fields (not only the primary key)
-    const result = await this.adapter
-      .queryBuilder(this.tableName)
-      .where(this.primaryKey, "=", id)
-      .execute();
+    // Initialize query builder
+    const query = this.adapter.queryBuilder(this.tableName);
+
+    // If the options is a number, we assume that the user want to find based on the primary key.
+    // Otherwise, query the columns.
+    if (typeof options === "number") {
+      query.where(this.primaryKey, "=", options);
+    } else if (typeof options === "object") {
+      for (const [column, value] of Object.entries(options)) {
+        // TODO: allow user to use different operator
+        query.where(column, value);
+      }
+    }
+
+    // Execute query
+    const result = await query.execute();
 
     // If the record is not found, return null.
     // Otherwise, return the model instance with the data
@@ -55,14 +97,36 @@ export abstract class Model {
 
   /**
    * Search for multiple instance
+   * 
+   * @param options query options
    */
   public static async find<T extends Model>(
     this: ExtendedModel<T>,
+    options?: FindOptions<T>,
   ): Promise<T[]> {
-    // TODO: give the user option to query the fields (not only the primary key)
-    const result = await this.adapter
-      .queryBuilder(this.tableName)
-      .execute();
+    // Initialize query builder
+    const query = this.adapter.queryBuilder(this.tableName);
+
+    // Add where clauses (if exists)
+    if (options && options.where) {
+      for (const [column, value] of Object.entries(options.where)) {
+        // TODO: allow user to use different operator
+        query.where(column, value);
+      }
+    }
+
+    // Add maximum number of records (if exists)
+    if (options && options.limit) {
+      query.limit(options.limit);
+    }
+
+    // Add offset (if exists)
+    if (options && options.offset) {
+      query.offset(options.offset);
+    }
+
+    // Execute query
+    const result = await query.execute();
 
     return this.createModels(result.records);
   }
