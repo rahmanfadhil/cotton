@@ -1,14 +1,30 @@
 # Contribute to Cotton
 
-In this early stage, our focus is to implement the basic features of the query builder (`src/querybuilder.ts`). Here are some features that are not implemented yet:
+There are still a lot of room for improvements. Here are some features that are not available yet:
 
-- Select columns (`*` by default)
-- Offset
-- Order by
-- Left join
-- Inner join
-- Input sanitization (Prevent SQL injection)
+[Query Buider](./src/querybuilder.ts)
+
+- Left Join
+- Inner Join
+- Input Sanitization.
+
+[Adapter](./src/adapters)
+
 - Connect via URL
+
+[Migrations](./src/migrations)
+
+- Add index in [TableBuilder](./src/migrations/tablebuilder.ts)
+- [TableUpdater](./src/migrations/tableupdater.ts) (for altering a table)
+- Seeder
+- Factory
+
+[Migrations](./src/migrations)
+
+- Add index in [TableBuilder](./src/migrations/tablebuilder.ts)
+- [TableUpdater](./src/migrations/tableupdater.ts) (for altering a table)
+- Seeder
+- Factory
 
 ## Roadmap
 
@@ -19,11 +35,11 @@ In this early stage, our focus is to implement the basic features of the query b
   - ✅ PostgresQL _(via [postgres](https://github.com/deno-postgres/deno-postgres))_
 - 🚧 Query Builder
 - 🚧 Object-Relational Mapper
-  - 🚧 Model Manager
+  - ✅ Model Manager
   - ❌ Relationship
   - ❌ Data Validators
   - ❌ Hooks
-- ❌ Migrations
+- 🚧 Migrations
 
 ## Testing
 
