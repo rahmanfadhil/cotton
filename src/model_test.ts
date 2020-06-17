@@ -214,3 +214,40 @@ testDB("Model: isSaved", async (client) => {
 
   assertEquals(user.isSaved(), true);
 });
+
+testDB("Model: isDirty", async (client) => {
+  client.addModel(User);
+
+  let user = await User.insert({
+    email: "a@b.com",
+    created_at: new Date("5 June, 2020"),
+    age: 16,
+  });
+
+  assertEquals(user.isDirty(), false);
+
+  user = await User.findOne(1) as User;
+
+  assertEquals(user.isDirty(), false);
+
+  user.email = "c@d.com";
+
+  console.log(user);
+
+  assertEquals(user.isDirty(), true);
+
+  user = new User();
+  user.email = "a@b.com";
+  user.created_at = new Date("5 June, 2020");
+  user.age = 16;
+
+  assertEquals(user.isDirty(), true);
+
+  await user.save();
+
+  assertEquals(user.isDirty(), false);
+
+  user.email = "c@d.com";
+
+  assertEquals(user.isDirty(), true);
+});

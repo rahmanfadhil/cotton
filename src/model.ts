@@ -36,6 +36,31 @@ export abstract class Model {
   public id!: number;
 
   private _isSaved: boolean = false;
+  private _original?: Model;
+
+  /**
+   * Check if this instance's fields are changed
+   */
+  public isDirty(): boolean {
+    // If this._original is not defined, it means the object is not saved to the database yet which is dirty
+    if (this._original) {
+      const modelClass = <typeof Model> this.constructor;
+
+      // Loop for the fields, if one of the fields doesn't match, the object is dirty
+      for (const field of Object.keys(modelClass.fields)) {
+        const value = (this as any)[field];
+        const originalValue = (this._original as any)[field];
+
+        if (value !== originalValue) {
+          return true;
+        }
+      }
+
+      return false;
+    } else {
+      return true;
+    }
+  }
 
   /**
    * Check if a this instance is saved to the database
@@ -176,6 +201,7 @@ export abstract class Model {
     // Set the primary key
     this.id = lastInsertedId as number;
     this._isSaved = true;
+    this._original = this._clone();
 
     return this;
   }
@@ -221,6 +247,15 @@ export abstract class Model {
     await this.adapter.execute(`${truncateCommand} ${this.tableName};`);
   }
 
+  /**
+   * Clone the instance, used for comparing with the original instance
+   */
+  private _clone() {
+    const clone = Object.assign({}, this);
+    Object.setPrototypeOf(clone, Model.prototype);
+    return clone;
+  }
+
   // --------------------------------------------------------------------------------
   // TRANSFORM OBJECT TO MODEL CLASS
   // --------------------------------------------------------------------------------
@@ -241,6 +276,8 @@ export abstract class Model {
     const result = Object.assign(model, data, { _isSaved: fromDatabase });
 
     this.normalizeModel(result);
+
+    result._original = result._clone();
 
     return result;
   }
