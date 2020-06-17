@@ -112,7 +112,7 @@ testDB("Model: save", async (client) => {
   let users = await User.find();
   assertEquals(users.length, 0);
 
-  const user = new User();
+  let user = new User();
   user.email = "a@b.com";
   user.age = 16;
   user.created_at = date;
@@ -130,6 +130,12 @@ testDB("Model: save", async (client) => {
   assertEquals(users[0].email, "a@b.com");
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
+
+  // user.email = "b@c.com";
+  // await user.save();
+
+  // user = await User.findOne(1) as User;
+  // assertEquals(user.email, "c@d.com");
 });
 
 testDB("Model: insert", async (client) => {

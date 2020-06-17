@@ -42,24 +42,7 @@ export abstract class Model {
    * Check if this instance's fields are changed
    */
   public isDirty(): boolean {
-    // If this._original is not defined, it means the object is not saved to the database yet which is dirty
-    if (this._original) {
-      const modelClass = <typeof Model> this.constructor;
-
-      // Loop for the fields, if one of the fields doesn't match, the object is dirty
-      for (const field of Object.keys(modelClass.fields)) {
-        const value = (this as any)[field];
-        const originalValue = (this._original as any)[field];
-
-        if (value !== originalValue) {
-          return true;
-        }
-      }
-
-      return false;
-    } else {
-      return true;
-    }
+    return this._compareWithOriginal().isDirty;
   }
 
   /**
@@ -167,8 +150,6 @@ export abstract class Model {
 
   /**
    * Save model to the database
-   * 
-   * TODO: if the model is already exists, update.
    */
   public async save(): Promise<this> {
     // Get the actual class to access static properties
@@ -179,28 +160,49 @@ export abstract class Model {
 
     // If the primary key is defined, we assume that the user want to update the record.
     // Otherwise, create a new record to the database.
+    if (this._isSaved) {
+      const { isDirty, changedFields } = this._compareWithOriginal();
 
-    // Bind all values to the `data` variable
-    const data: { [key: string]: any } = {};
-    for (const key of Object.keys(modelClass.fields)) {
-      data[key] = (this as any)[key];
+      console.log("UPDATE!!");
+
+      if (isDirty) {
+        // Bind all values to the `data` variable
+        const data: { [key: string]: any } = {};
+        for (const key of changedFields) {
+          data[key] = (this as any)[key];
+        }
+
+        // Save record to the database
+        await modelClass.adapter
+          .queryBuilder(modelClass.tableName)
+          .where(modelClass.primaryKey, this.id)
+          .update(data)
+          .execute();
+      }
+    } else {
+      // Bind all values to the `data` variable
+      const data: { [key: string]: any } = {};
+      for (const key of Object.keys(modelClass.fields)) {
+        data[key] = (this as any)[key];
+      }
+
+      // Save record to the database
+      const { lastInsertedId } = await modelClass.adapter
+        .queryBuilder(modelClass.tableName)
+        .insert(data)
+        .execute({
+          getLastInsertedId: true,
+          info: {
+            tableName: modelClass.tableName,
+            primaryKey: modelClass.primaryKey,
+          },
+        });
+
+      // Set the primary key
+      this.id = lastInsertedId as number;
+      this._isSaved = true;
     }
 
-    // Save record to the database
-    const { lastInsertedId } = await modelClass.adapter
-      .queryBuilder(modelClass.tableName)
-      .insert(data)
-      .execute({
-        getLastInsertedId: true,
-        info: {
-          tableName: modelClass.tableName,
-          primaryKey: modelClass.primaryKey,
-        },
-      });
-
-    // Set the primary key
-    this.id = lastInsertedId as number;
-    this._isSaved = true;
     this._original = this._clone();
 
     return this;
@@ -231,7 +233,7 @@ export abstract class Model {
     this: ExtendedModel<T>,
     data: Partial<T>,
   ): Promise<T> {
-    const model = (this as typeof Model).createModel<T>(data, true);
+    const model = (this as typeof Model).createModel<T>(data);
     await model.save();
     return model;
   }
@@ -254,6 +256,34 @@ export abstract class Model {
     const clone = Object.assign({}, this);
     Object.setPrototypeOf(clone, Model.prototype);
     return clone;
+  }
+
+  private _compareWithOriginal(): {
+    isDirty: boolean;
+    changedFields: string[];
+  } {
+    // If this._original is not defined, it means the object is not saved to the database yet which is dirty
+    if (this._original) {
+      const modelClass = <typeof Model> this.constructor;
+
+      let isDirty = false;
+      const changedFields: string[] = [];
+
+      // Loop for the fields, if one of the fields doesn't match, the object is dirty
+      for (const field of Object.keys(modelClass.fields)) {
+        const value = (this as any)[field];
+        const originalValue = (this._original as any)[field];
+
+        if (value !== originalValue) {
+          isDirty = true;
+          changedFields.push(field);
+        }
+      }
+
+      return { isDirty, changedFields };
+    } else {
+      return { isDirty: true, changedFields: [] };
+    }
   }
 
   // --------------------------------------------------------------------------------
