@@ -191,3 +191,26 @@ testDB("Model: remove", async (client) => {
 
   assertEquals(await User.findOne(1), null);
 });
+
+testDB("Model: isSaved", async (client) => {
+  client.addModel(User);
+
+  let user = await User.insert({
+    email: "a@b.com",
+    created_at: new Date("5 June, 2020"),
+    age: 16,
+  });
+
+  assertEquals(user.isSaved(), true);
+
+  user = new User();
+  user.email = "a@b.com";
+  user.created_at = new Date("5 June, 2020");
+  user.age = 16;
+
+  assertEquals(user.isSaved(), false);
+
+  await user.save();
+
+  assertEquals(user.isSaved(), true);
+});

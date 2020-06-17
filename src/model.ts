@@ -35,6 +35,15 @@ export abstract class Model {
 
   public id!: number;
 
+  private _isSaved: boolean = false;
+
+  /**
+   * Check if a this instance is saved to the database
+   */
+  public isSaved(): boolean {
+    return this._isSaved;
+  }
+
   /**
    * Get the first record in a table or null null if none can be found
    */
@@ -91,7 +100,7 @@ export abstract class Model {
     if (result.records.length < 1) {
       return null;
     } else {
-      return this.createModel(result.records[0]);
+      return this.createModel(result.records[0], true);
     }
   }
 
@@ -128,31 +137,28 @@ export abstract class Model {
     // Execute query
     const result = await query.execute();
 
-    return this.createModels(result.records);
+    return this.createModels(result.records, true);
   }
 
   /**
    * Save model to the database
    * 
    * TODO: if the model is already exists, update.
-   * TODO: set the primary key property when saved. (SQLite use `select seq from sqlite_sequence where name='users';`)
    */
   public async save(): Promise<this> {
     // Get the actual class to access static properties
     const modelClass = <typeof Model> this.constructor;
 
     // Normalize fields data
-    for (const item of Object.keys(modelClass.fields)) {
-      (this as any)[item] = modelClass.normalizeData(
-        (this as any)[item],
-        modelClass.fields[item].type,
-      );
-    }
+    modelClass.normalizeModel(this);
+
+    // If the primary key is defined, we assume that the user want to update the record.
+    // Otherwise, create a new record to the database.
 
     // Bind all values to the `data` variable
     const data: { [key: string]: any } = {};
-    for (const [key, value] of Object.entries(this)) {
-      data[key] = value;
+    for (const key of Object.keys(modelClass.fields)) {
+      data[key] = (this as any)[key];
     }
 
     // Save record to the database
@@ -169,6 +175,7 @@ export abstract class Model {
 
     // Set the primary key
     this.id = lastInsertedId as number;
+    this._isSaved = true;
 
     return this;
   }
@@ -198,7 +205,7 @@ export abstract class Model {
     this: ExtendedModel<T>,
     data: Partial<T>,
   ): Promise<T> {
-    const model = (this as typeof Model).createModel<T>(data);
+    const model = (this as typeof Model).createModel<T>(data, true);
     await model.save();
     return model;
   }
@@ -221,16 +228,19 @@ export abstract class Model {
   /**
    * Transform single plain JavaScript object to Model class
    * 
-   * @param model The database model
    * @param data List of plain JavaScript objects
+   * @param fromDatabase Check wether the data is saved to the database or not
+   * 
+   * TODO: implement fromDatabase
    */
-  private static createModel<T>(data: { [key: string]: any }): T {
+  private static createModel<T>(
+    data: { [key: string]: any },
+    fromDatabase: boolean = false,
+  ): T {
     const model = Object.create(this.prototype);
-    const result = Object.assign(model, data);
+    const result = Object.assign(model, data, { _isSaved: fromDatabase });
 
-    for (const [field, type] of Object.entries(this.fields)) {
-      result[field] = this.normalizeData(result[field], type.type);
-    }
+    this.normalizeModel(result);
 
     return result;
   }
@@ -238,11 +248,14 @@ export abstract class Model {
   /**
    * Transform multiple plain JavaScript objects to Model classes
    * 
-   * @param model The database model
    * @param data List of plain JavaScript objects
+   * @param fromDatabase Check wether the data is saved to the database or not
    */
-  private static createModels<T>(data: { [key: string]: any }[]): T[] {
-    return data.map((item) => this.createModel(item));
+  private static createModels<T>(
+    data: { [key: string]: any }[],
+    fromDatabase: boolean = false,
+  ): T[] {
+    return data.map((item) => this.createModel(item, fromDatabase));
   }
 
   /**
@@ -251,7 +264,7 @@ export abstract class Model {
    * @param value the value to be normalize
    * @param type the expected data type
    */
-  private static normalizeData(value: any, type: FieldType): any {
+  private static normalizeValue(value: any, type: FieldType): any {
     if (type === FieldType.DATE && !(value instanceof Date)) {
       value = new Date(value);
     } else if (type === FieldType.STRING && typeof value !== "string") {
@@ -261,5 +274,19 @@ export abstract class Model {
     }
 
     return value;
+  }
+
+  /**
+   * Normalize the whole model fields
+   */
+  private static normalizeModel<T>(model: T): T {
+    for (const [field, type] of Object.entries(this.fields)) {
+      (model as any)[field] = this.normalizeValue(
+        (model as any)[field],
+        type.type,
+      );
+    }
+
+    return model;
   }
 }
