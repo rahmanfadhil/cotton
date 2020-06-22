@@ -1,16 +1,17 @@
 import { MysqlClient, MysqlClientConfig } from "../../deps.ts";
-import {
-  Adapter,
-  ConnectionOptions,
-  QueryResult,
-  QueryOptions,
-} from "./adapter.ts";
+import { Adapter, ConnectionOptions } from "./adapter.ts";
 import { SupportedDatabaseType } from "../connect.ts";
 
 /**
  * MySQL database adapter
  */
 export class MysqlAdapter extends Adapter {
+  private _lastInsertedId: number = 0;
+
+  public getLastInsertedId(): Promise<number> {
+    return Promise.resolve(this._lastInsertedId);
+  }
+
   public type: SupportedDatabaseType = "mysql";
 
   /**
@@ -48,13 +49,14 @@ export class MysqlAdapter extends Adapter {
   }
 
   // TODO: handle error with custom error
-  async query<T>(
-    query: string,
-    options?: QueryOptions,
-  ): Promise<QueryResult<T>> {
+  async query<T>(query: string): Promise<T[]> {
     const records = await this.client.query(query);
-    const lastInsertedId = records.lastInsertId || 0;
-    return { lastInsertedId, records };
+
+    if (records.lastInsertId) {
+      this._lastInsertedId = records.lastInsertId;
+    }
+
+    return Array.isArray(records) ? records : [];
   }
 
   // TODO: handle error with custom error

@@ -105,10 +105,10 @@ export abstract class Model {
 
     // If the record is not found, return null.
     // Otherwise, return the model instance with the data
-    if (result.records.length < 1) {
+    if (result.length < 1) {
       return null;
     } else {
-      return this.createModel(result.records[0], true);
+      return this.createModel(result[0], true);
     }
   }
 
@@ -145,7 +145,7 @@ export abstract class Model {
     // Execute query
     const result = await query.execute();
 
-    return this.createModels(result.records, true);
+    return this.createModels(result, true);
   }
 
   /**
@@ -187,19 +187,16 @@ export abstract class Model {
       }
 
       // Save record to the database
-      const { lastInsertedId } = await modelClass.adapter
+      await modelClass.adapter
         .queryBuilder(modelClass.tableName)
         .insert(data)
-        .execute({
-          getLastInsertedId: true,
-          info: {
-            tableName: modelClass.tableName,
-            primaryKey: modelClass.primaryKey,
-          },
-        });
+        .execute();
+
+      // Get last inserted id
+      const lastInsertedId = await modelClass.adapter.getLastInsertedId();
 
       // Set the primary key
-      this.id = lastInsertedId as number;
+      this.id = lastInsertedId;
       this._isSaved = true;
     }
 

@@ -2,9 +2,9 @@ import { QueryBuilder } from "../querybuilder.ts";
 import { Model } from "../model.ts";
 import { SupportedDatabaseType } from "../connect.ts";
 
-export interface QueryOptions {
-  getLastInsertedId?: boolean;
-  info?: { tableName: string; primaryKey: string };
+export interface GetLastInsertedIdOptions {
+  tableName: string;
+  primaryKey: string;
 }
 
 /**
@@ -19,8 +19,6 @@ export interface ConnectionOptions {
   applicationName?: string;
 }
 
-export type QueryResult<T> = { lastInsertedId: number; records: T[] };
-
 /**
  * The parent class for all database adapters
  */
@@ -28,15 +26,16 @@ export abstract class Adapter {
   private models: Array<typeof Model> = [];
   public abstract type: SupportedDatabaseType;
 
+  public abstract getLastInsertedId(
+    options?: GetLastInsertedIdOptions,
+  ): Promise<number>;
+
   /**
    * Run SQL query and get the result
    *
    * @param query SQL query to run (ex: "SELECT * FROM users;")
    */
-  public abstract query<T>(
-    query: string,
-    options?: QueryOptions,
-  ): Promise<QueryResult<T>>;
+  public abstract query<T>(query: string): Promise<T[]>;
 
   /**
    * Execute SQL statement and save changes to database

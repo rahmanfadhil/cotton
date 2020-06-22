@@ -1,5 +1,5 @@
 import { VALID_WHERE_OPERATIONS } from "./constants.ts";
-import { Adapter, QueryOptions, QueryResult } from "./adapters/adapter.ts";
+import { Adapter } from "./adapters/adapter.ts";
 import { DateUtils } from "./utils/date.ts";
 
 /**
@@ -589,16 +589,14 @@ export class QueryBuilder {
    * 
    * @param adapter Custom database adapter
    */
-  public async execute(
-    options?: { adapter?: Adapter } & QueryOptions,
-  ): Promise<QueryResult<any>> {
-    let currentAdapter = options?.adapter || this.adapter;
+  public async execute<T extends {}>(adapter?: Adapter): Promise<T[]> {
+    let currentAdapter = adapter || this.adapter;
 
     if (!currentAdapter) {
       throw new Error("Cannot run query, adapter is not provided!");
     }
 
-    return await currentAdapter.query(this.toSQL(), options);
+    return await currentAdapter.query(this.toSQL());
   }
 
   // --------------------------------------------------------------------------------

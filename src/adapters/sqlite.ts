@@ -1,9 +1,4 @@
-import {
-  Adapter,
-  ConnectionOptions,
-  QueryResult,
-  QueryOptions,
-} from "./adapter.ts";
+import { Adapter, ConnectionOptions } from "./adapter.ts";
 import { SqliteDB } from "../../deps.ts";
 import { SupportedDatabaseType } from "../connect.ts";
 
@@ -12,6 +7,10 @@ import { SupportedDatabaseType } from "../connect.ts";
  */
 export class SqliteAdapter extends Adapter {
   public type: SupportedDatabaseType = "sqlite";
+
+  public getLastInsertedId(): Promise<number> {
+    return Promise.resolve(this.client?.lastInsertRowId || 0);
+  }
 
   /**
    * Database file location
@@ -49,10 +48,7 @@ export class SqliteAdapter extends Adapter {
     });
   }
 
-  public query<T>(
-    query: string,
-    options?: QueryOptions,
-  ): Promise<QueryResult<T>> {
+  public query<T>(query: string): Promise<T[]> {
     return new Promise((resolve, reject) => {
       // Execute query
       // TODO: handle error with custom error
@@ -81,9 +77,9 @@ export class SqliteAdapter extends Adapter {
           records.push(data);
         }
 
-        resolve({ lastInsertedId: this.client!.lastInsertRowId, records });
+        resolve(records);
       } catch {
-        resolve({ lastInsertedId: this.client!.lastInsertRowId, records: [] });
+        resolve([]);
       }
     });
   }
