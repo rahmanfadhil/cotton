@@ -259,6 +259,21 @@ Deno.test("QueryBuilder: basic insert", () => {
   );
 });
 
+Deno.test("QueryBuilder: basic multiple insert", () => {
+  const query = new QueryBuilder("users")
+    .insert([
+      { email: "a@b.com" },
+      { age: 16 },
+      { email: "a@b.com", age: 16 },
+    ])
+    .toSQL();
+
+  assertEquals(
+    query,
+    "INSERT INTO users (email, age) VALUES ('a@b.com', NULL), (NULL, 16), ('a@b.com', 16);",
+  );
+});
+
 Deno.test("QueryBuilder: basic insert with number value", () => {
   const query = new QueryBuilder("users")
     .insert({ email: "a@b.com", age: 16 })

@@ -52,8 +52,8 @@ export class MysqlAdapter extends Adapter {
   async query<T>(query: string): Promise<T[]> {
     const records = await this.client.query(query);
 
-    if (records.lastInsertId) {
-      this._lastInsertedId = records.lastInsertId;
+    if (records.lastInsertId && records.affectedRows) {
+      this._lastInsertedId = records.lastInsertId + records.affectedRows - 1;
     }
 
     return Array.isArray(records) ? records : [];

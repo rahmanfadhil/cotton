@@ -1,6 +1,14 @@
 import { Adapter } from "./adapters/adapter.ts";
 import { Reflect } from "./utils/reflect.ts";
 
+function range(start: number, end: number): number[] {
+  var arr = [];
+  while (start <= end) {
+    arr.push(start++);
+  }
+  return arr;
+}
+
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 
 /**
@@ -198,10 +206,7 @@ export abstract class Model {
 
       if (isDirty) {
         // Bind all values to the `data` variable
-        const data: { [key: string]: any } = {};
-        for (const key of changedFields) {
-          data[key] = (this as any)[key];
-        }
+        const data = this._getValues(changedFields);
 
         // Save record to the database
         await modelClass.adapter
@@ -212,10 +217,7 @@ export abstract class Model {
       }
     } else {
       // Bind all values to the `data` variable
-      const data: { [key: string]: any } = {};
-      for (const { name } of this._getColumns()) {
-        data[name] = (this as any)[name];
-      }
+      const data = this._getValues();
 
       // Save record to the database
       await modelClass.adapter
@@ -256,17 +258,72 @@ export abstract class Model {
   /**
    * Create a model instance and save it to the database.
    * 
-   * @param data model fields
-   * 
-   * TODO: set the primary key property when saved. (SQLite use `select seq from sqlite_sequence where name='users';`)
+   * @param data record data
    */
   public static async insert<T extends Model>(
     this: ExtendedModel<T>,
     data: Partial<T>,
-  ): Promise<T> {
-    const model = (this as typeof Model).createModel<T>(data);
-    await model.save();
-    return model;
+  ): Promise<T>;
+
+  /**
+   * Create a model instance and save it to the database.
+   * 
+   * @param data array of records
+   */
+  public static async insert<T extends Model>(
+    this: ExtendedModel<T>,
+    data: Partial<T>[],
+  ): Promise<T[]>;
+
+  /**
+   * Create a model instance and save it to the database.
+   * 
+   * @param data model fields
+   */
+  public static async insert<T extends Model>(
+    this: ExtendedModel<T>,
+    data: Partial<T> | Partial<T>[],
+  ): Promise<T | T[]> {
+    if (Array.isArray(data)) {
+      const models = this.createModels<T>(data);
+      return this._bulkSave<T>(models);
+    } else {
+      const model = this.createModel<T>(data);
+      await model.save();
+      return model;
+    }
+  }
+
+  /**
+   * Save multiple records to the database efficiently
+   */
+  public static async _bulkSave<T extends Model>(models: T[]): Promise<T[]> {
+    // Get all model values
+    const values = models.map((model) => model._getValues());
+
+    // Execute query
+    await this.adapter
+      .queryBuilder(this.tableName)
+      .insert(values)
+      .execute();
+
+    // Get last inserted id
+    const lastInsertedId = await this.adapter.getLastInsertedId({
+      tableName: this.tableName,
+      primaryKey: this.primaryKey,
+    });
+
+    console.log(lastInsertedId);
+
+    // Set the model primary keys
+    const ids = range(lastInsertedId + 1 - models.length, lastInsertedId);
+    models.forEach((model, index) => {
+      model.id = ids[index];
+      model._isSaved = true;
+      model._original = model._clone();
+    });
+
+    return models;
   }
 
   /**
@@ -355,14 +412,16 @@ export abstract class Model {
    * @param type the expected data type
    */
   private _normalizeValue(value: any, type: FieldType): any {
-    if (type === "date" && !(value instanceof Date)) {
-      value = new Date(value);
+    if (typeof value === "undefined" || value === null) {
+      return null;
+    } else if (type === "date" && !(value instanceof Date)) {
+      return new Date(value);
     } else if (type === "string" && typeof value !== "string") {
-      value = value.toString();
+      return value.toString();
     } else if (type === "number" && typeof value !== "number") {
-      value = parseInt(value);
+      return parseInt(value);
     } else if (type === "boolean" && typeof value !== "boolean") {
-      value = Boolean(value);
+      return Boolean(value);
     }
 
     return value;
@@ -404,5 +463,24 @@ export abstract class Model {
     } else {
       return { isDirty: true, changedFields: [] };
     }
+  }
+
+  /**
+   * Get model values as a plain JavaScript object
+   * 
+   * @param columns the columns to be retrieved
+   */
+  private _getValues(columns?: string[]): { [key: string]: any } {
+    const selectedColumns: string[] = columns
+      ? columns
+      : this._getColumns().map((item) => item.name);
+
+    const data: { [key: string]: any } = {};
+
+    for (const column of selectedColumns) {
+      data[column] = (this as any)[column];
+    }
+
+    return data;
   }
 }

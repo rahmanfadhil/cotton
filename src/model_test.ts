@@ -136,7 +136,7 @@ testDB("Model: save", async (client) => {
   // assertEquals(user.email, "c@d.com");
 });
 
-testDB("Model: insert", async (client) => {
+testDB("Model: insert single", async (client) => {
   const date = new Date("5 June, 2020");
 
   client.addModel(User);
@@ -162,6 +162,31 @@ testDB("Model: insert", async (client) => {
   assertEquals(users[0].email, "a@b.com");
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
+});
+
+testDB("Model: insert multiple", async (client) => {
+  const date = new Date("5 June, 2020");
+
+  client.addModel(User);
+
+  assertEquals((await User.find()).length, 0);
+
+  let users = await User.insert([
+    { email: "a@b.com", age: 16, created_at: date },
+    { email: "a@b.com", created_at: date },
+    { email: "a@b.com", age: 16 },
+  ]);
+  users.forEach((user, index) => {
+    assertEquals(user.id, index + 1);
+    assertEquals(user instanceof User, true);
+  });
+
+  users = await User.find();
+  assertEquals(users.length, 3);
+  users.forEach((user, index) => {
+    assertEquals(user.id, index + 1);
+    assertEquals(user instanceof User, true);
+  });
 });
 
 testDB("Model: truncate", async (client) => {

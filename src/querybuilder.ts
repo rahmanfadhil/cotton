@@ -70,7 +70,7 @@ export interface QueryDescription {
   columns: string[];
 
   /** Query values for INSERT and UPDATE */
-  values?: QueryValues;
+  values?: QueryValues | QueryValues[];
 
   /** The where constraints of the query */
   wheres: WhereBinding[];
@@ -123,7 +123,7 @@ export class QueryBuilder {
    * 
    * @param data A JSON Object representing columnname-value pairs. Example: { firstname: "John", age: 22, ... }
    */
-  public insert(data: QueryValues): QueryBuilder {
+  public insert(data: QueryValues | QueryValues[]): QueryBuilder {
     // Change the query type from `select` (default) to `insert`
     this.description.type = QueryType.Insert;
 
@@ -132,15 +132,7 @@ export class QueryBuilder {
       throw new Error("Cannot perform insert query without values!");
     }
 
-    // Holds the cleaned data
-    let cleanedData: QueryValues = {};
-
-    // Transform values to the format that the database can understand and store it to `cleanedData`
-    for (const [key, value] of Object.entries(data)) {
-      cleanedData[key] = this.toDatabaseValue(value);
-    }
-
-    this.description.values = cleanedData;
+    this.description.values = data;
 
     return this;
   }
@@ -421,12 +413,39 @@ export class QueryBuilder {
     // Query strings
     let query: string[] = [`INSERT INTO ${this.description.tableName}`];
 
-    if (this.description.values) {
-      const fields = `(${Object.keys(this.description.values).join(", ")})`;
-      const values = `(${Object.values(this.description.values).join(", ")})`;
-      query.push(fields, "VALUES", values);
-    } else {
+    if (!this.description.values) {
       throw new Error("Cannot perform insert query without values!");
+    }
+
+    if (Array.isArray(this.description.values)) {
+      // Get all inserted columns from the values
+      const fields = this.description.values
+        .map((v) => Object.keys(v))
+        .reduce((accumulator, currentValue) => {
+          for (const field of currentValue) {
+            if (!accumulator.includes(field)) {
+              accumulator.push(field);
+            }
+          }
+
+          return accumulator;
+        });
+
+      // Transform values to the format that the database can understand and store it to `cleanedData`
+      const values = this.description.values.map((item) => {
+        const itemValues = fields.map((field) =>
+          this.toDatabaseValue((item[field]))
+        );
+        return `(${itemValues.join(", ")})`;
+      });
+
+      query.push(`(${fields.join(", ")})`, "VALUES", values.join(", "));
+    } else {
+      const fields = Object.keys(this.description.values).join(", ");
+      const values = Object.values(this.description.values)
+        .map((i) => this.toDatabaseValue(i))
+        .join(", ");
+      query.push(`(${fields}) VALUES (${values})`);
     }
 
     if (this.description.returning.length > 0) {
@@ -443,9 +462,7 @@ export class QueryBuilder {
     // Query strings
     let query: string[] = [`REPLACE INTO ${this.description.tableName}`];
 
-    if (
-      this.description.values
-    ) {
+    if (this.description.values) {
       // Only call Object.keys once for performance reasons(this function can get really slow on bigger Objects)
       let keys = Object.keys(this.description.values);
       if (keys.length >= 1) {
@@ -655,6 +672,10 @@ export class QueryBuilder {
 
     if (typeof value === "number") {
       cleanedValue = value.toString();
+    }
+
+    if (typeof value === "undefined" || value === null) {
+      cleanedValue = "NULL";
     }
 
     if (value instanceof Date) {
