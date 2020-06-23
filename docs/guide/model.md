@@ -7,14 +7,14 @@ import { Model } from "https://deno.land/x/cotton/mod.ts";
 
 class User extends Model {
   static tableName = "users";
-  static fields = {
-    email: { type: FieldType.STRING },
-    age: { type: FieldType.NUMBER },
-    created_at: { type: FieldType.DATE },
-  };
 
+  @Field()
   email!: string;
+
+  @Field()
   age!: number;
+
+  @Field()
   created_at!: Date;
 }
 ```

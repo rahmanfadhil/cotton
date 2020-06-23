@@ -6,18 +6,13 @@ export type ExtendedModel<T> = { new (): T } & typeof Model;
 /**
  * Transform database value to JavaScript types
  */
-export enum ColumnType {
-  STRING = "string",
-  NUMBER = "number",
-  DATE = "date",
-  BOOLEAN = "boolean",
-}
+export type FieldType = "string" | "number" | "date" | "boolean";
 
 /**
  * Information about table the table column
  */
 export interface ColumnDescription {
-  type: ColumnType;
+  type: FieldType;
   name: string;
 }
 
@@ -27,7 +22,7 @@ export interface FindOptions<T> {
   where?: Partial<T>;
 }
 
-export function Field(type?: ColumnType) {
+export function Field(type?: FieldType) {
   return (target: Object, propertyKey: string) => {
     let columns: ColumnDescription[] = [];
 
@@ -45,13 +40,13 @@ export function Field(type?: ColumnType) {
       );
 
       if (fieldType === String) {
-        columns.push({ type: ColumnType.STRING, name: propertyKey });
+        columns.push({ type: "string", name: propertyKey });
       } else if (fieldType === Number) {
-        columns.push({ type: ColumnType.NUMBER, name: propertyKey });
+        columns.push({ type: "number", name: propertyKey });
       } else if (fieldType === Date) {
-        columns.push({ type: ColumnType.DATE, name: propertyKey });
+        columns.push({ type: "date", name: propertyKey });
       } else if (fieldType === Boolean) {
-        columns.push({ type: ColumnType.DATE, name: propertyKey });
+        columns.push({ type: "boolean", name: propertyKey });
       } else {
         throw new Error(
           `Cannot assign column '${propertyKey}' without a type!`,
@@ -361,14 +356,14 @@ export abstract class Model {
    * @param value the value to be normalized
    * @param type the expected data type
    */
-  private _normalizeValue(value: any, type: ColumnType): any {
-    if (type === ColumnType.DATE && !(value instanceof Date)) {
+  private _normalizeValue(value: any, type: FieldType): any {
+    if (type === "date" && !(value instanceof Date)) {
       value = new Date(value);
-    } else if (type === ColumnType.STRING && typeof value !== "string") {
+    } else if (type === "string" && typeof value !== "string") {
       value = value.toString();
-    } else if (type === ColumnType.NUMBER && typeof value !== "number") {
+    } else if (type === "number" && typeof value !== "number") {
       value = parseInt(value);
-    } else if (type === ColumnType.BOOLEAN && typeof value !== "boolean") {
+    } else if (type === "boolean" && typeof value !== "boolean") {
       value = Boolean(value);
     }
 
