@@ -24,7 +24,7 @@ Deno.test("SqliteAdapter: getLastInsertedId", async () => {
 
   assertEquals(await client.getLastInsertedId(), 0);
 
-  client.query(
+  await client.query(
     `insert into users (email, age, created_at) values ('a@b.com', 16, '${
       DateUtils.formatDate(new Date())
     }')`,

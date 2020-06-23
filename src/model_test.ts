@@ -238,8 +238,6 @@ testDB("Model: isDirty", async (client) => {
 
   user.email = "c@d.com";
 
-  console.log(user);
-
   assertEquals(user.isDirty(), true);
 
   user = new User();

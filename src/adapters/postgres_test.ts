@@ -27,7 +27,7 @@ Deno.test("PostgresAdapter: getLastInsertedId", async () => {
     0,
   );
 
-  client.query(
+  await client.query(
     `insert into users (email, age, created_at) values ('a@b.com', 16, '${
       DateUtils.formatDate(new Date())
     }')`,
@@ -35,7 +35,7 @@ Deno.test("PostgresAdapter: getLastInsertedId", async () => {
 
   assertEquals(
     await client.getLastInsertedId({ tableName: "users", primaryKey: "id" }),
-    2,
+    1,
   );
 
   await client.execute("DROP TABLE users");

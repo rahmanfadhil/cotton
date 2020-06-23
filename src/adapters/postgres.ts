@@ -26,10 +26,14 @@ export class PostgresAdapter extends Adapter {
       );
     }
 
-    const result = await this.client.query(
-      `SELECT currval(pg_get_serial_sequence('${options.tableName}', '${options.primaryKey}'));`,
-    );
-    return parseInt(result.rows[0][0]);
+    try {
+      const result = await this.client.query(
+        `SELECT currval(pg_get_serial_sequence('${options.tableName}', '${options.primaryKey}'));`,
+      );
+      return parseInt(result.rows[0][0]);
+    } catch {
+      return 0;
+    }
   }
 
   constructor(options: ConnectionOptions) {

@@ -24,13 +24,13 @@ Deno.test("MysqlAdapter: getLastInsertedId", async () => {
 
   assertEquals(await client.getLastInsertedId(), 0);
 
-  client.query(
+  await client.query(
     `insert into users (email, age, created_at) values ('a@b.com', 16, '${
       DateUtils.formatDate(new Date())
     }')`,
   );
 
-  assertEquals(await client.getLastInsertedId(), 2);
+  assertEquals(await client.getLastInsertedId(), 1);
 
   await client.execute("DROP TABLE users;");
 

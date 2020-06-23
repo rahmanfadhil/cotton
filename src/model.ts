@@ -193,7 +193,10 @@ export abstract class Model {
         .execute();
 
       // Get last inserted id
-      const lastInsertedId = await modelClass.adapter.getLastInsertedId();
+      const lastInsertedId = await modelClass.adapter.getLastInsertedId({
+        tableName: modelClass.tableName,
+        primaryKey: modelClass.primaryKey,
+      });
 
       // Set the primary key
       this.id = lastInsertedId;
