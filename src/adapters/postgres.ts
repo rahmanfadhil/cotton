@@ -2,8 +2,7 @@ import { PostgresClient } from "../../deps.ts";
 import {
   Adapter,
   ConnectionOptions,
-  QueryResult,
-  QueryOptions,
+  GetLastInsertedIdOptions,
 } from "./adapter.ts";
 import { SupportedDatabaseType } from "../connect.ts";
 
@@ -17,6 +16,25 @@ export class PostgresAdapter extends Adapter {
    * Postgres client
    */
   private client: PostgresClient;
+
+  public async getLastInsertedId(
+    options?: GetLastInsertedIdOptions,
+  ): Promise<number> {
+    if (!options || !options.tableName || !options.primaryKey) {
+      throw new Error(
+        "Cannot get last inserted row id without 'tableName' and 'primaryKey' in 'postgres'",
+      );
+    }
+
+    try {
+      const result = await this.client.query(
+        `SELECT currval(pg_get_serial_sequence('${options.tableName}', '${options.primaryKey}'));`,
+      );
+      return parseInt(result.rows[0][0]);
+    } catch {
+      return 0;
+    }
+  }
 
   constructor(options: ConnectionOptions) {
     super();
@@ -41,43 +59,13 @@ export class PostgresAdapter extends Adapter {
     return this.client.end();
   }
 
-  public async query<T>(
-    query: string,
-    options?: QueryOptions,
-  ): Promise<QueryResult<T>> {
-    if (options?.getLastInsertedId) {
-      // PostgreSQL driver doesn't have any special way to fetch the last inserted row id.
-      // So, we need to fetch it manually, and we need the table name and its primary key
-      // to do that.
-      if (options.info && options.info.primaryKey && options.info.primaryKey) {
-        // Run query
-        // TODO: handle error with custom error
-        const [records, lastInsertedId] = await this.client.multiQuery([
-          { text: query },
-          {
-            text:
-              `SELECT currval(pg_get_serial_sequence('${options.info.tableName}', '${options.info.primaryKey}'));`,
-          },
-        ]);
+  public async query<T>(query: string): Promise<T[]> {
+    // Run query
+    // TODO: handle error with custom error
+    const records = await this.client.query(query);
 
-        // Transform records to plain JavaScript objects
-        return {
-          records: records.rowsOfObjects() as T[],
-          lastInsertedId: Number(lastInsertedId.rows[0][0]),
-        };
-      } else {
-        throw new Error(
-          "Cannot get last inserted id in PostgreSQL without `tableName` and `primaryKey`!",
-        );
-      }
-    } else {
-      // Run query
-      // TODO: handle error with custom error
-      const records = await this.client.query(query);
-
-      // Transform records to plain JavaScript objects
-      return { records: records.rowsOfObjects() as T[], lastInsertedId: 0 };
-    }
+    // Transform records to plain JavaScript objects
+    return records.rowsOfObjects() as T[];
   }
 
   // TODO: handle error with custom error

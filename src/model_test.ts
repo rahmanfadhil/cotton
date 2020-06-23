@@ -1,27 +1,25 @@
 import { testDB } from "./testutils.ts";
-import { Model, FieldType } from "./model.ts";
+import { Model, Field } from "./model.ts";
 import { assertEquals } from "../testdeps.ts";
 import { DateUtils } from "./utils/date.ts";
 
 class User extends Model {
   static tableName = "users";
-  static fields = {
-    email: { type: FieldType.STRING },
-    age: { type: FieldType.NUMBER },
-    created_at: { type: FieldType.DATE },
-  };
 
+  @Field()
   email!: string;
+
+  @Field()
   age!: number;
+
+  @Field()
   created_at!: Date;
 }
 
 class Product extends Model {
   static tableName = "products";
-  static fields = {
-    name: { type: FieldType.STRING },
-  };
 
+  @Field()
   name!: string;
 }
 
@@ -112,7 +110,7 @@ testDB("Model: save", async (client) => {
   let users = await User.find();
   assertEquals(users.length, 0);
 
-  const user = new User();
+  let user = new User();
   user.email = "a@b.com";
   user.age = 16;
   user.created_at = date;
@@ -130,9 +128,15 @@ testDB("Model: save", async (client) => {
   assertEquals(users[0].email, "a@b.com");
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
+
+  // user.email = "b@c.com";
+  // await user.save();
+
+  // user = await User.findOne(1) as User;
+  // assertEquals(user.email, "c@d.com");
 });
 
-testDB("Model: insert", async (client) => {
+testDB("Model: insert single", async (client) => {
   const date = new Date("5 June, 2020");
 
   client.addModel(User);
@@ -158,6 +162,31 @@ testDB("Model: insert", async (client) => {
   assertEquals(users[0].email, "a@b.com");
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
+});
+
+testDB("Model: insert multiple", async (client) => {
+  const date = new Date("5 June, 2020");
+
+  client.addModel(User);
+
+  assertEquals((await User.find()).length, 0);
+
+  let users = await User.insert([
+    { email: "a@b.com", age: 16, created_at: date },
+    { email: "a@b.com", created_at: date },
+    { email: "a@b.com", age: 16 },
+  ]);
+  users.forEach((user, index) => {
+    assertEquals(user.id, index + 1);
+    assertEquals(user instanceof User, true);
+  });
+
+  users = await User.find();
+  assertEquals(users.length, 3);
+  users.forEach((user, index) => {
+    assertEquals(user.id, index + 1);
+    assertEquals(user instanceof User, true);
+  });
 });
 
 testDB("Model: truncate", async (client) => {
@@ -190,4 +219,62 @@ testDB("Model: remove", async (client) => {
   await user.remove();
 
   assertEquals(await User.findOne(1), null);
+});
+
+testDB("Model: isSaved", async (client) => {
+  client.addModel(User);
+
+  let user = await User.insert({
+    email: "a@b.com",
+    created_at: new Date("5 June, 2020"),
+    age: 16,
+  });
+
+  assertEquals(user.isSaved(), true);
+
+  user = new User();
+  user.email = "a@b.com";
+  user.created_at = new Date("5 June, 2020");
+  user.age = 16;
+
+  assertEquals(user.isSaved(), false);
+
+  await user.save();
+
+  assertEquals(user.isSaved(), true);
+});
+
+testDB("Model: isDirty", async (client) => {
+  client.addModel(User);
+
+  let user = await User.insert({
+    email: "a@b.com",
+    created_at: new Date("5 June, 2020"),
+    age: 16,
+  });
+
+  assertEquals(user.isDirty(), false);
+
+  user = await User.findOne(1) as User;
+
+  assertEquals(user.isDirty(), false);
+
+  user.email = "c@d.com";
+
+  assertEquals(user.isDirty(), true);
+
+  user = new User();
+  user.email = "a@b.com";
+  user.created_at = new Date("5 June, 2020");
+  user.age = 16;
+
+  assertEquals(user.isDirty(), true);
+
+  await user.save();
+
+  assertEquals(user.isDirty(), false);
+
+  user.email = "c@d.com";
+
+  assertEquals(user.isDirty(), true);
 });

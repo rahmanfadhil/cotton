@@ -19,13 +19,6 @@ There are still a lot of room for improvements. Here are some features that are 
 - Seeder
 - Factory
 
-[Migrations](./src/migrations)
-
-- Add index in [TableBuilder](./src/migrations/tablebuilder.ts)
-- [TableUpdater](./src/migrations/tableupdater.ts) (for altering a table)
-- Seeder
-- Factory
-
 ## Roadmap
 
 - Database Adapters

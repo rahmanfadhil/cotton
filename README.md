@@ -75,16 +75,33 @@ import { Model } from "https://deno.land/x/cotton/mod.ts";
 
 class User extends Model {
   static tableName = "users";
-  static fields = {
-    email: { type: FieldType.STRING },
-    age: { type: FieldType.NUMBER },
-    created_at: { type: FieldType.DATE },
-  };
 
+  @Field()
   email!: string;
+
+  @Field()
   age!: number;
+
+  @Field()
   created_at!: Date;
 }
+```
+
+Keep in mind that you need to override the default TypeScript configration in order to use this decorator feature.
+
+```json
+// tsconfig.json
+
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
+```
+
+```
+$ deno run -c tsconfig.json main.ts
 ```
 
 To do CRUD operations to our model, we can use the provided method in our model:
@@ -120,6 +137,15 @@ const user = await User.insert({
   age: 16,
   created_at: new Date("1 June, 2020"),
 });
+```
+
+To insert multiple records, you can simply pass an array as the parameter.
+
+```ts
+const user = await User.insert([
+  { email: "a@b.com", age: 16, created_at: new Date("1 June, 2020") },
+  { email: "b@c.com", age: 17, created_at: new Date("2 June, 2020") },
+]);
 ```
 
 ## Query Builder

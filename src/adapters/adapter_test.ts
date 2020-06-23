@@ -1,27 +1,25 @@
-import { Model, FieldType } from "../model.ts";
+import { Model, Field } from "../model.ts";
 import { testDB } from "../testutils.ts";
 import { assertEquals } from "../../testdeps.ts";
 import { QueryBuilder } from "../querybuilder.ts";
 
 class User extends Model {
   static tableName = "users";
-  static fields = {
-    email: { type: FieldType.STRING },
-    age: { type: FieldType.NUMBER },
-    created_at: { type: FieldType.DATE },
-  };
 
+  @Field()
   email!: string;
+
+  @Field()
   age!: number;
+
+  @Field()
   created_at!: Date;
 }
 
 class Product extends Model {
   static tableName = "products";
-  static fields = {
-    name: { type: FieldType.STRING },
-  };
 
+  @Field()
   name!: string;
 }
 

@@ -1,27 +1,69 @@
 import { Adapter } from "./adapters/adapter.ts";
+import { Reflect } from "./utils/reflect.ts";
+
+function range(start: number, end: number): number[] {
+  var arr = [];
+  while (start <= end) {
+    arr.push(start++);
+  }
+  return arr;
+}
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 
 /**
  * Transform database value to JavaScript types
  */
-export enum FieldType {
-  STRING = "string",
-  NUMBER = "number",
-  DATE = "date",
-}
+export type FieldType = "string" | "number" | "date" | "boolean";
 
 /**
  * Information about table the table column
  */
-export interface FieldDescription {
+export interface ColumnDescription {
   type: FieldType;
+  name: string;
 }
 
 export interface FindOptions<T> {
   limit?: number;
   offset?: number;
   where?: Partial<T>;
+}
+
+export function Field(type?: FieldType) {
+  return (target: Object, propertyKey: string) => {
+    let columns: ColumnDescription[] = [];
+
+    if (Reflect.hasMetadata("db:columns", target)) {
+      columns = Reflect.getMetadata("db:columns", target);
+    }
+
+    if (type) {
+      columns.push({ type, name: propertyKey });
+    } else {
+      const fieldType = Reflect.getMetadata(
+        "design:type",
+        target,
+        propertyKey,
+      );
+
+      if (fieldType === String) {
+        columns.push({ type: "string", name: propertyKey });
+      } else if (fieldType === Number) {
+        columns.push({ type: "number", name: propertyKey });
+      } else if (fieldType === Date) {
+        columns.push({ type: "date", name: propertyKey });
+      } else if (fieldType === Boolean) {
+        columns.push({ type: "boolean", name: propertyKey });
+      } else {
+        throw new Error(
+          `Cannot assign column '${propertyKey}' without a type!`,
+        );
+      }
+    }
+
+    Reflect.defineMetadata("db:columns", columns, target);
+  };
 }
 
 /**
@@ -31,9 +73,25 @@ export abstract class Model {
   static tableName: string;
   static primaryKey: string = "id";
   static adapter: Adapter;
-  static fields: { [key: string]: FieldDescription };
 
   public id!: number;
+
+  private _isSaved: boolean = false;
+  private _original?: Model;
+
+  /**
+   * Check if this instance's fields are changed
+   */
+  public isDirty(): boolean {
+    return this._compareWithOriginal().isDirty;
+  }
+
+  /**
+   * Check if a this instance is saved to the database
+   */
+  public isSaved(): boolean {
+    return this._isSaved;
+  }
 
   /**
    * Get the first record in a table or null null if none can be found
@@ -88,10 +146,10 @@ export abstract class Model {
 
     // If the record is not found, return null.
     // Otherwise, return the model instance with the data
-    if (result.records.length < 1) {
+    if (result.length < 1) {
       return null;
     } else {
-      return this.createModel(result.records[0]);
+      return this.createModel(result[0], true);
     }
   }
 
@@ -128,47 +186,57 @@ export abstract class Model {
     // Execute query
     const result = await query.execute();
 
-    return this.createModels(result.records);
+    return this.createModels(result, true);
   }
 
   /**
    * Save model to the database
-   * 
-   * TODO: if the model is already exists, update.
-   * TODO: set the primary key property when saved. (SQLite use `select seq from sqlite_sequence where name='users';`)
    */
   public async save(): Promise<this> {
     // Get the actual class to access static properties
     const modelClass = <typeof Model> this.constructor;
 
     // Normalize fields data
-    for (const item of Object.keys(modelClass.fields)) {
-      (this as any)[item] = modelClass.normalizeData(
-        (this as any)[item],
-        modelClass.fields[item].type,
-      );
-    }
+    this._normalize();
 
-    // Bind all values to the `data` variable
-    const data: { [key: string]: any } = {};
-    for (const [key, value] of Object.entries(this)) {
-      data[key] = value;
-    }
+    // If the primary key is defined, we assume that the user want to update the record.
+    // Otherwise, create a new record to the database.
+    if (this._isSaved) {
+      const { isDirty, changedFields } = this._compareWithOriginal();
 
-    // Save record to the database
-    const { lastInsertedId } = await modelClass.adapter
-      .queryBuilder(modelClass.tableName)
-      .insert(data)
-      .execute({
-        getLastInsertedId: true,
-        info: {
-          tableName: modelClass.tableName,
-          primaryKey: modelClass.primaryKey,
-        },
+      if (isDirty) {
+        // Bind all values to the `data` variable
+        const data = this._getValues(changedFields);
+
+        // Save record to the database
+        await modelClass.adapter
+          .queryBuilder(modelClass.tableName)
+          .where(modelClass.primaryKey, this.id)
+          .update(data)
+          .execute();
+      }
+    } else {
+      // Bind all values to the `data` variable
+      const data = this._getValues();
+
+      // Save record to the database
+      await modelClass.adapter
+        .queryBuilder(modelClass.tableName)
+        .insert(data)
+        .execute();
+
+      // Get last inserted id
+      const lastInsertedId = await modelClass.adapter.getLastInsertedId({
+        tableName: modelClass.tableName,
+        primaryKey: modelClass.primaryKey,
       });
 
-    // Set the primary key
-    this.id = lastInsertedId as number;
+      // Set the primary key
+      this.id = lastInsertedId;
+      this._isSaved = true;
+    }
+
+    this._original = this._clone();
 
     return this;
   }
@@ -190,17 +258,72 @@ export abstract class Model {
   /**
    * Create a model instance and save it to the database.
    * 
-   * @param data model fields
-   * 
-   * TODO: set the primary key property when saved. (SQLite use `select seq from sqlite_sequence where name='users';`)
+   * @param data record data
    */
   public static async insert<T extends Model>(
     this: ExtendedModel<T>,
     data: Partial<T>,
-  ): Promise<T> {
-    const model = (this as typeof Model).createModel<T>(data);
-    await model.save();
-    return model;
+  ): Promise<T>;
+
+  /**
+   * Create a model instance and save it to the database.
+   * 
+   * @param data array of records
+   */
+  public static async insert<T extends Model>(
+    this: ExtendedModel<T>,
+    data: Partial<T>[],
+  ): Promise<T[]>;
+
+  /**
+   * Create a model instance and save it to the database.
+   * 
+   * @param data model fields
+   */
+  public static async insert<T extends Model>(
+    this: ExtendedModel<T>,
+    data: Partial<T> | Partial<T>[],
+  ): Promise<T | T[]> {
+    if (Array.isArray(data)) {
+      const models = this.createModels<T>(data);
+      return this._bulkSave<T>(models);
+    } else {
+      const model = this.createModel<T>(data);
+      await model.save();
+      return model;
+    }
+  }
+
+  /**
+   * Save multiple records to the database efficiently
+   */
+  public static async _bulkSave<T extends Model>(models: T[]): Promise<T[]> {
+    // Get all model values
+    const values = models.map((model) => model._getValues());
+
+    // Execute query
+    await this.adapter
+      .queryBuilder(this.tableName)
+      .insert(values)
+      .execute();
+
+    // Get last inserted id
+    const lastInsertedId = await this.adapter.getLastInsertedId({
+      tableName: this.tableName,
+      primaryKey: this.primaryKey,
+    });
+
+    console.log(lastInsertedId);
+
+    // Set the model primary keys
+    const ids = range(lastInsertedId + 1 - models.length, lastInsertedId);
+    models.forEach((model, index) => {
+      model.id = ids[index];
+      model._isSaved = true;
+      model._original = model._clone();
+    });
+
+    return models;
   }
 
   /**
@@ -221,16 +344,21 @@ export abstract class Model {
   /**
    * Transform single plain JavaScript object to Model class
    * 
-   * @param model The database model
    * @param data List of plain JavaScript objects
+   * @param fromDatabase Check wether the data is saved to the database or not
    */
-  private static createModel<T>(data: { [key: string]: any }): T {
+  private static createModel<T>(
+    data: { [key: string]: any },
+    fromDatabase: boolean = false,
+  ): T {
     const model = Object.create(this.prototype);
-    const result = Object.assign(model, data);
+    const result = Object.assign(model, data, { _isSaved: fromDatabase });
 
-    for (const [field, type] of Object.entries(this.fields)) {
-      result[field] = this.normalizeData(result[field], type.type);
-    }
+    // Normalize input data
+    result._normalize();
+
+    // Save the original values
+    result._original = result._clone();
 
     return result;
   }
@@ -238,28 +366,121 @@ export abstract class Model {
   /**
    * Transform multiple plain JavaScript objects to Model classes
    * 
-   * @param model The database model
    * @param data List of plain JavaScript objects
+   * @param fromDatabase Check wether the data is saved to the database or not
    */
-  private static createModels<T>(data: { [key: string]: any }[]): T[] {
-    return data.map((item) => this.createModel(item));
+  private static createModels<T>(
+    data: { [key: string]: any }[],
+    fromDatabase: boolean = false,
+  ): T[] {
+    return data.map((item) => this.createModel(item, fromDatabase));
+  }
+
+  // --------------------------------------------------------------------------------
+  // PRIVATE HELPER METHODS
+  // --------------------------------------------------------------------------------
+
+  /**
+   * Get all columns information
+   */
+  private _getColumns(): ColumnDescription[] {
+    if (!Reflect.hasMetadata("db:columns", this)) {
+      throw new Error("A model should have at least one column!");
+    }
+
+    return Reflect.getMetadata("db:columns", this);
+  }
+
+  /**
+   * Normalize model value
+   */
+  private _normalize() {
+    const columns = this._getColumns();
+
+    for (const column of columns) {
+      (this as any)[column.name] = this._normalizeValue(
+        (this as any)[column.name],
+        column.type,
+      );
+    }
   }
 
   /**
    * Normalize data with the expected type
    * 
-   * @param value the value to be normalize
+   * @param value the value to be normalized
    * @param type the expected data type
    */
-  private static normalizeData(value: any, type: FieldType): any {
-    if (type === FieldType.DATE && !(value instanceof Date)) {
-      value = new Date(value);
-    } else if (type === FieldType.STRING && typeof value !== "string") {
-      value = new String(value).toString();
-    } else if (type === FieldType.NUMBER && typeof value !== "number") {
-      value = new Number(value);
+  private _normalizeValue(value: any, type: FieldType): any {
+    if (typeof value === "undefined" || value === null) {
+      return null;
+    } else if (type === "date" && !(value instanceof Date)) {
+      return new Date(value);
+    } else if (type === "string" && typeof value !== "string") {
+      return value.toString();
+    } else if (type === "number" && typeof value !== "number") {
+      return parseInt(value);
+    } else if (type === "boolean" && typeof value !== "boolean") {
+      return Boolean(value);
     }
 
     return value;
+  }
+
+  /**
+   * Clone the instance, used for comparing with the original instance
+   */
+  private _clone() {
+    const clone = Object.assign({}, this);
+    Object.setPrototypeOf(clone, Model.prototype);
+    return clone;
+  }
+
+  /**
+   * Compare the current values with the last saved data
+   */
+  private _compareWithOriginal(): {
+    isDirty: boolean;
+    changedFields: string[];
+  } {
+    // If this._original is not defined, it means the object is not saved to the database yet which is dirty
+    if (this._original) {
+      let isDirty = false;
+      const changedFields: string[] = [];
+
+      // Loop for the fields, if one of the fields doesn't match, the object is dirty
+      for (const column of this._getColumns()) {
+        const value = (this as any)[column.name];
+        const originalValue = (this._original as any)[column.name];
+
+        if (value !== originalValue) {
+          isDirty = true;
+          changedFields.push(column.name);
+        }
+      }
+
+      return { isDirty, changedFields };
+    } else {
+      return { isDirty: true, changedFields: [] };
+    }
+  }
+
+  /**
+   * Get model values as a plain JavaScript object
+   * 
+   * @param columns the columns to be retrieved
+   */
+  private _getValues(columns?: string[]): { [key: string]: any } {
+    const selectedColumns: string[] = columns
+      ? columns
+      : this._getColumns().map((item) => item.name);
+
+    const data: { [key: string]: any } = {};
+
+    for (const column of selectedColumns) {
+      data[column] = (this as any)[column];
+    }
+
+    return data;
   }
 }
