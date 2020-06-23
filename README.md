@@ -87,6 +87,23 @@ class User extends Model {
 }
 ```
 
+Keep in mind that you need to override the default TypeScript configration in order to use this decorator feature.
+
+```json
+// tsconfig.json
+
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
+```
+
+```
+$ deno run -c tsconfig.json main.ts
+```
+
 To do CRUD operations to our model, we can use the provided method in our model:
 
 ```ts
