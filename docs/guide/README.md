@@ -27,7 +27,7 @@ Cotton provides an easy-to-use query builder which allows you to perform queries
 
 ```ts
 // Execute "SELECT * FROM users;"
-const users = await db.queryBuilder("users").execute();
+const users = await db.table("users").execute();
 
 for (const user in users) {
   console.log(user.email);

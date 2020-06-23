@@ -128,7 +128,7 @@ export abstract class Model {
     options?: number | Partial<T>,
   ): Promise<T | null> {
     // Initialize query builder
-    const query = this.adapter.queryBuilder(this.tableName);
+    const query = this.adapter.table(this.tableName);
 
     // If the options is a number, we assume that the user want to find based on the primary key.
     // Otherwise, query the columns.
@@ -163,7 +163,7 @@ export abstract class Model {
     options?: FindOptions<T>,
   ): Promise<T[]> {
     // Initialize query builder
-    const query = this.adapter.queryBuilder(this.tableName);
+    const query = this.adapter.table(this.tableName);
 
     // Add where clauses (if exists)
     if (options && options.where) {
@@ -210,7 +210,7 @@ export abstract class Model {
 
         // Save record to the database
         await modelClass.adapter
-          .queryBuilder(modelClass.tableName)
+          .table(modelClass.tableName)
           .where(modelClass.primaryKey, this.id)
           .update(data)
           .execute();
@@ -221,7 +221,7 @@ export abstract class Model {
 
       // Save record to the database
       await modelClass.adapter
-        .queryBuilder(modelClass.tableName)
+        .table(modelClass.tableName)
         .insert(data)
         .execute();
 
@@ -249,7 +249,7 @@ export abstract class Model {
     const modelClass = <typeof Model> this.constructor;
 
     // Delete from the database
-    await modelClass.adapter.queryBuilder(modelClass.tableName)
+    await modelClass.adapter.table(modelClass.tableName)
       .where(modelClass.primaryKey, this.id)
       .delete()
       .execute();
@@ -303,7 +303,7 @@ export abstract class Model {
 
     // Execute query
     await this.adapter
-      .queryBuilder(this.tableName)
+      .table(this.tableName)
       .insert(values)
       .execute();
 

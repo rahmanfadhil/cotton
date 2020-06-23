@@ -80,9 +80,9 @@ testDB(
 );
 
 testDB(
-  "BaseAdapter: `queryBuilder` should contains actual query builder",
+  "BaseAdapter: `table` should contains actual query builder",
   (client) => {
-    const query = client.queryBuilder("users");
+    const query = client.table("users");
     assertEquals(query instanceof QueryBuilder, true);
   },
 );
