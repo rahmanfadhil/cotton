@@ -23,13 +23,13 @@ export class TableInfo {
         const sqliteQuery = await this.adapter.query(
           `SELECT name FROM sqlite_master WHERE type='table' AND name='${this.tableName}'`,
         );
-        return sqliteQuery.records.length === 1;
+        return sqliteQuery.length === 1;
       case "postgres":
         const postgresQuery = await this.adapter.query(
           `SELECT EXISTS (SELECT FROM pg_tables WHERE tablename = '${this.tableName}')`,
         );
-        if (postgresQuery.records[0]) {
-          let result = postgresQuery.records[0] as any;
+        if (postgresQuery[0]) {
+          let result = postgresQuery[0] as any;
           return result.exists;
         } else {
           return false;
@@ -38,7 +38,7 @@ export class TableInfo {
         const mysqlQuery = await this.adapter.query(
           `SELECT * FROM information_schema.tables WHERE table_name = '${this.tableName}' LIMIT 1`,
         );
-        return mysqlQuery.records.length === 1;
+        return mysqlQuery.length === 1;
       default:
         return false;
     }

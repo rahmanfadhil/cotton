@@ -44,7 +44,7 @@ export class Migration {
 
     // Perform query
     const result = await this.adapter.query(query.join(" "));
-    return result.records.length === 1;
+    return result.length === 1;
   }
 
   /** Drop multiple tables */
