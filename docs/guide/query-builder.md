@@ -4,7 +4,7 @@
 
 ```ts
 await db
-  .queryBuilder("users")
+  .table("users")
   .where("email", "a@b.com")
   .where("name", "john")
   .execute();
@@ -14,11 +14,11 @@ await db
 ### orWhere and notWhere
 
 ```ts
-await db.queryBuilder("users").notWhere("name", "kevin").execute();
+await db.table("users").notWhere("name", "kevin").execute();
 // SELECT * FROM users WHERE NOT name = 'kevin';
 
 await db
-  .queryBuilder("users")
+  .table("users")
   .where("name", "kevin")
   .orWhere("name", "john")
   .execute();
@@ -28,20 +28,20 @@ await db
 ### Select columns
 
 ```ts
-await db.queryBuilder("users").select("email").execute();
+await db.table("users").select("email").execute();
 // SELECT (email) FROM users;
 
-await db.queryBuilder("users").select("id", "email").execute();
+await db.table("users").select("id", "email").execute();
 // SELECT (id, email) FROM users;
 
-await db.queryBuilder("users").select("id").select("email").execute();
+await db.table("users").select("id").select("email").execute();
 // SELECT (id, email) FROM users;
 ```
 
 ### Pagination
 
 ```ts
-await db.queryBuilder("users").limit(5).offset(5).execute(); // Skip 5 row and take 5
+await db.table("users").limit(5).offset(5).execute(); // Skip 5 row and take 5
 // SELECT * FROM users LIMIT 5 OFFSET 5;
 ```
 
@@ -49,7 +49,7 @@ await db.queryBuilder("users").limit(5).offset(5).execute(); // Skip 5 row and t
 
 ```ts
 await db
-  .queryBuilder("users")
+  .table("users")
   .insert({
     email: "a@b.com",
     age: 16,
@@ -63,7 +63,7 @@ await db
 
 ```ts
 await db
-  .queryBuilder("users")
+  .table("users")
   .replace({
     email: "a@b.com",
     age: 16,
@@ -76,7 +76,7 @@ await db
 ### Delete data
 
 ```ts
-await db.queryBuilder("users").where("email", "a@b.com").delete().execute();
+await db.table("users").where("email", "a@b.com").delete().execute();
 // DELETE FROM users WHERE email = 'a@b.com';
 ```
 
@@ -84,7 +84,7 @@ await db.queryBuilder("users").where("email", "a@b.com").delete().execute();
 
 ```ts
 await db
-  .queryBuilder("users")
+  .table("users")
   .where("email", "a@b.com")
   .update({ name: "John" })
   .execute();
