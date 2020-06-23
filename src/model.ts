@@ -1,27 +1,66 @@
 import { Adapter } from "./adapters/adapter.ts";
+import { Reflect } from "./utils/reflect.ts";
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 
 /**
  * Transform database value to JavaScript types
  */
-export enum FieldType {
+export enum ColumnType {
   STRING = "string",
   NUMBER = "number",
   DATE = "date",
+  BOOLEAN = "boolean",
 }
 
 /**
  * Information about table the table column
  */
-export interface FieldDescription {
-  type: FieldType;
+export interface ColumnDescription {
+  type: ColumnType;
+  name: string;
 }
 
 export interface FindOptions<T> {
   limit?: number;
   offset?: number;
   where?: Partial<T>;
+}
+
+export function Field(type?: ColumnType) {
+  return (target: Object, propertyKey: string) => {
+    let columns: ColumnDescription[] = [];
+
+    if (Reflect.hasMetadata("db:columns", target)) {
+      columns = Reflect.getMetadata("db:columns", target);
+    }
+
+    if (type) {
+      columns.push({ type, name: propertyKey });
+    } else {
+      const fieldType = Reflect.getMetadata(
+        "design:type",
+        target,
+        propertyKey,
+      );
+
+      if (fieldType === String) {
+        columns.push({ type: ColumnType.STRING, name: propertyKey });
+      } else if (fieldType === Number) {
+        columns.push({ type: ColumnType.NUMBER, name: propertyKey });
+      } else if (fieldType === Date) {
+        columns.push({ type: ColumnType.DATE, name: propertyKey });
+      } else if (fieldType === Boolean) {
+        columns.push({ type: ColumnType.DATE, name: propertyKey });
+      } else {
+        throw new Error(
+          `Cannot assign column '${propertyKey}' without a type!`,
+        );
+      }
+    }
+
+    Reflect.defineMetadata("db:columns", columns, target);
+  };
 }
 
 /**
@@ -31,7 +70,6 @@ export abstract class Model {
   static tableName: string;
   static primaryKey: string = "id";
   static adapter: Adapter;
-  static fields: { [key: string]: FieldDescription };
 
   public id!: number;
 
@@ -156,7 +194,7 @@ export abstract class Model {
     const modelClass = <typeof Model> this.constructor;
 
     // Normalize fields data
-    modelClass.normalizeModel(this);
+    this._normalize();
 
     // If the primary key is defined, we assume that the user want to update the record.
     // Otherwise, create a new record to the database.
@@ -182,8 +220,8 @@ export abstract class Model {
     } else {
       // Bind all values to the `data` variable
       const data: { [key: string]: any } = {};
-      for (const key of Object.keys(modelClass.fields)) {
-        data[key] = (this as any)[key];
+      for (const { name } of this._getColumns()) {
+        data[name] = (this as any)[name];
       }
 
       // Save record to the database
@@ -249,43 +287,6 @@ export abstract class Model {
     await this.adapter.execute(`${truncateCommand} ${this.tableName};`);
   }
 
-  /**
-   * Clone the instance, used for comparing with the original instance
-   */
-  private _clone() {
-    const clone = Object.assign({}, this);
-    Object.setPrototypeOf(clone, Model.prototype);
-    return clone;
-  }
-
-  private _compareWithOriginal(): {
-    isDirty: boolean;
-    changedFields: string[];
-  } {
-    // If this._original is not defined, it means the object is not saved to the database yet which is dirty
-    if (this._original) {
-      const modelClass = <typeof Model> this.constructor;
-
-      let isDirty = false;
-      const changedFields: string[] = [];
-
-      // Loop for the fields, if one of the fields doesn't match, the object is dirty
-      for (const field of Object.keys(modelClass.fields)) {
-        const value = (this as any)[field];
-        const originalValue = (this._original as any)[field];
-
-        if (value !== originalValue) {
-          isDirty = true;
-          changedFields.push(field);
-        }
-      }
-
-      return { isDirty, changedFields };
-    } else {
-      return { isDirty: true, changedFields: [] };
-    }
-  }
-
   // --------------------------------------------------------------------------------
   // TRANSFORM OBJECT TO MODEL CLASS
   // --------------------------------------------------------------------------------
@@ -295,8 +296,6 @@ export abstract class Model {
    * 
    * @param data List of plain JavaScript objects
    * @param fromDatabase Check wether the data is saved to the database or not
-   * 
-   * TODO: implement fromDatabase
    */
   private static createModel<T>(
     data: { [key: string]: any },
@@ -305,8 +304,10 @@ export abstract class Model {
     const model = Object.create(this.prototype);
     const result = Object.assign(model, data, { _isSaved: fromDatabase });
 
-    this.normalizeModel(result);
+    // Normalize input data
+    result._normalize();
 
+    // Save the original values
     result._original = result._clone();
 
     return result;
@@ -325,35 +326,92 @@ export abstract class Model {
     return data.map((item) => this.createModel(item, fromDatabase));
   }
 
+  // --------------------------------------------------------------------------------
+  // PRIVATE HELPER METHODS
+  // --------------------------------------------------------------------------------
+
+  /**
+   * Get all columns information
+   */
+  private _getColumns(): ColumnDescription[] {
+    if (!Reflect.hasMetadata("db:columns", this)) {
+      throw new Error("A model should have at least one column!");
+    }
+
+    return Reflect.getMetadata("db:columns", this);
+  }
+
+  /**
+   * Normalize model value
+   */
+  private _normalize() {
+    const columns = this._getColumns();
+
+    for (const column of columns) {
+      (this as any)[column.name] = this._normalizeValue(
+        (this as any)[column.name],
+        column.type,
+      );
+    }
+  }
+
   /**
    * Normalize data with the expected type
    * 
-   * @param value the value to be normalize
+   * @param value the value to be normalized
    * @param type the expected data type
    */
-  private static normalizeValue(value: any, type: FieldType): any {
-    if (type === FieldType.DATE && !(value instanceof Date)) {
+  private _normalizeValue(value: any, type: ColumnType): any {
+    if (type === ColumnType.DATE && !(value instanceof Date)) {
       value = new Date(value);
-    } else if (type === FieldType.STRING && typeof value !== "string") {
-      value = new String(value).toString();
-    } else if (type === FieldType.NUMBER && typeof value !== "number") {
-      value = new Number(value);
+    } else if (type === ColumnType.STRING && typeof value !== "string") {
+      value = value.toString();
+    } else if (type === ColumnType.NUMBER && typeof value !== "number") {
+      value = parseInt(value);
+    } else if (type === ColumnType.BOOLEAN && typeof value !== "boolean") {
+      value = Boolean(value);
     }
 
     return value;
   }
 
   /**
-   * Normalize the whole model fields
+   * Clone the instance, used for comparing with the original instance
    */
-  private static normalizeModel<T>(model: T): T {
-    for (const [field, type] of Object.entries(this.fields)) {
-      (model as any)[field] = this.normalizeValue(
-        (model as any)[field],
-        type.type,
-      );
-    }
+  private _clone() {
+    const clone = Object.assign({}, this);
+    Object.setPrototypeOf(clone, Model.prototype);
+    return clone;
+  }
 
-    return model;
+  /**
+   * Compare the current values with the last saved data
+   */
+  private _compareWithOriginal(): {
+    isDirty: boolean;
+    changedFields: string[];
+  } {
+    // If this._original is not defined, it means the object is not saved to the database yet which is dirty
+    if (this._original) {
+      const modelClass = <typeof Model> this.constructor;
+
+      let isDirty = false;
+      const changedFields: string[] = [];
+
+      // Loop for the fields, if one of the fields doesn't match, the object is dirty
+      for (const column of this._getColumns()) {
+        const value = (this as any)[column.name];
+        const originalValue = (this._original as any)[column.name];
+
+        if (value !== originalValue) {
+          isDirty = true;
+          changedFields.push(column.name);
+        }
+      }
+
+      return { isDirty, changedFields };
+    } else {
+      return { isDirty: true, changedFields: [] };
+    }
   }
 }
