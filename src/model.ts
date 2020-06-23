@@ -196,8 +196,6 @@ export abstract class Model {
     if (this._isSaved) {
       const { isDirty, changedFields } = this._compareWithOriginal();
 
-      console.log("UPDATE!!");
-
       if (isDirty) {
         // Bind all values to the `data` variable
         const data: { [key: string]: any } = {};
@@ -388,8 +386,6 @@ export abstract class Model {
   } {
     // If this._original is not defined, it means the object is not saved to the database yet which is dirty
     if (this._original) {
-      const modelClass = <typeof Model> this.constructor;
-
       let isDirty = false;
       const changedFields: string[] = [];
 
