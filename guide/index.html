@@ -7,8 +7,8 @@
     <meta name="generator" content="VuePress 1.5.2">
     
     <meta name="description" content="SQL Database Toolkit for Deno">
-    <link rel="preload" href="/cotton/assets/css/0.styles.38e782c1.css" as="style"><link rel="preload" href="/cotton/assets/js/app.a5eac428.js" as="script"><link rel="preload" href="/cotton/assets/js/2.fb3d3699.js" as="script"><link rel="preload" href="/cotton/assets/js/6.5a579f4d.js" as="script"><link rel="prefetch" href="/cotton/assets/js/3.cebbd2f5.js"><link rel="prefetch" href="/cotton/assets/js/4.8d717f55.js"><link rel="prefetch" href="/cotton/assets/js/5.874aafbe.js"><link rel="prefetch" href="/cotton/assets/js/7.a7c7c30a.js"><link rel="prefetch" href="/cotton/assets/js/8.00a2e902.js">
-    <link rel="stylesheet" href="/cotton/assets/css/0.styles.38e782c1.css">
+    <link rel="preload" href="/cotton/assets/css/0.styles.291f37bd.css" as="style"><link rel="preload" href="/cotton/assets/js/app.068da73a.js" as="script"><link rel="preload" href="/cotton/assets/js/2.8fe6702c.js" as="script"><link rel="preload" href="/cotton/assets/js/6.5c422324.js" as="script"><link rel="prefetch" href="/cotton/assets/js/3.0cfd82bf.js"><link rel="prefetch" href="/cotton/assets/js/4.2790f88f.js"><link rel="prefetch" href="/cotton/assets/js/5.1c7a9dfd.js"><link rel="prefetch" href="/cotton/assets/js/7.e1bf15fe.js"><link rel="prefetch" href="/cotton/assets/js/8.e7921df0.js">
+    <link rel="stylesheet" href="/cotton/assets/css/0.styles.291f37bd.css">
   </head>
   <body>
     <div id="app" data-server-rendered="true"><div class="theme-container"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/cotton/" class="home-link router-link-active"><!----> <span class="site-name">Cotton</span></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <nav class="nav-links can-hide"><div class="nav-item"><a href="/cotton/" class="nav-link">
@@ -37,7 +37,7 @@
   );
 </span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 </code></pre></div><p>Cotton provides an easy-to-use query builder which allows you to perform queries without writing raw SQL.</p> <div class="language-ts extra-class"><pre class="language-ts"><code><span class="token comment">// Execute &quot;SELECT * FROM users;&quot;</span>
-<span class="token keyword">const</span> users <span class="token operator">=</span> <span class="token keyword">await</span> db<span class="token punctuation">.</span><span class="token function">queryBuilder</span><span class="token punctuation">(</span><span class="token string">&quot;users&quot;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> users <span class="token operator">=</span> <span class="token keyword">await</span> db<span class="token punctuation">.</span><span class="token function">table</span><span class="token punctuation">(</span><span class="token string">&quot;users&quot;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 
 <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> user <span class="token keyword">in</span> users<span class="token punctuation">)</span> <span class="token punctuation">{</span>
   <span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>user<span class="token punctuation">.</span>email<span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -49,6 +49,6 @@
 <span class="token punctuation">}</span>
 </code></pre></div><p>Once, you've finished using the database, disconnect it.</p> <div class="language-ts extra-class"><pre class="language-ts"><code><span class="token keyword">await</span> db<span class="token punctuation">.</span><span class="token function">disconnect</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 </code></pre></div></div> <footer class="page-edit"><!----> <!----></footer> <!----> </main></div><div class="global-ui"></div></div>
-    <script src="/cotton/assets/js/app.a5eac428.js" defer></script><script src="/cotton/assets/js/2.fb3d3699.js" defer></script><script src="/cotton/assets/js/6.5a579f4d.js" defer></script>
+    <script src="/cotton/assets/js/app.068da73a.js" defer></script><script src="/cotton/assets/js/2.8fe6702c.js" defer></script><script src="/cotton/assets/js/6.5c422324.js" defer></script>
   </body>
 </html>
