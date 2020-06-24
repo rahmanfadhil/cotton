@@ -59,7 +59,6 @@ export class MysqlAdapter extends Adapter {
     }
 
     if (records.lastInsertId && records.affectedRows) {
-      // console.log(records);
       this._lastInsertedId = records.lastInsertId + records.affectedRows - 1;
     }
 

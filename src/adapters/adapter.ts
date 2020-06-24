@@ -27,7 +27,7 @@ export abstract class Adapter {
   public abstract type: SupportedDatabaseType;
 
   public abstract getLastInsertedId(
-    options?: GetLastInsertedIdOptions,
+    options: GetLastInsertedIdOptions,
   ): Promise<number>;
 
   /**

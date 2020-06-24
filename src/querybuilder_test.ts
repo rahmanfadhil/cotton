@@ -356,11 +356,55 @@ Deno.test("QueryBuilder: throw an error if the `insert` method gets called witho
   );
 });
 
+Deno.test("QueryBuilder: throw an error if the `insert` method gets called with an empty object", () => {
+  assertThrows(
+    () => {
+      const query: any = new QueryBuilder("users");
+      query.insert({}).toSQL();
+    },
+    Error,
+    "Cannot perform insert query without values!",
+  );
+});
+
+Deno.test("QueryBuilder: throw an error if the `insert` method gets called with an empty array", () => {
+  assertThrows(
+    () => {
+      const query: any = new QueryBuilder("users");
+      query.insert([]).toSQL();
+    },
+    Error,
+    "Cannot perform insert query without values!",
+  );
+});
+
+Deno.test("QueryBuilder: throw an error if the `insert` method gets called with an empty array of objects", () => {
+  assertThrows(
+    () => {
+      const query: any = new QueryBuilder("users");
+      query.insert([{}, {}]).toSQL();
+    },
+    Error,
+    "Cannot perform insert query without values!",
+  );
+});
+
 Deno.test("QueryBuilder: throw an error if the `update` method gets called without any values", () => {
   assertThrows(
     () => {
       const query: any = new QueryBuilder("users");
       query.update().toSQL();
+    },
+    Error,
+    "Cannot perform update query without values!",
+  );
+});
+
+Deno.test("QueryBuilder: throw an error if the `update` method gets called with an empty object", () => {
+  assertThrows(
+    () => {
+      const query: any = new QueryBuilder("users");
+      query.update({}).toSQL();
     },
     Error,
     "Cannot perform update query without values!",
@@ -449,22 +493,44 @@ Deno.test("QueryBuilder: basic replace with returning multiple columns", () => {
   );
 });
 
-Deno.test("QueryBuilder: throw an type error if the `replace` method gets called with undefined", () => {
+Deno.test("QueryBuilder: throw an error if the `replace` method gets called without any values", () => {
   assertThrows(
     () => {
       const query: any = new QueryBuilder("users");
       query.replace().toSQL();
     },
-    TypeError,
-    "Cannot convert undefined or null to object",
+    Error,
+    "Cannot perform replace query without values!",
   );
 });
 
-Deno.test("QueryBuilder: throw an error if the `replace` method gets called without any values", () => {
+Deno.test("QueryBuilder: throw an error if the `replace` method gets called with an empty object", () => {
   assertThrows(
     () => {
       const query: any = new QueryBuilder("users");
       query.replace({}).toSQL();
+    },
+    Error,
+    "Cannot perform replace query without values!",
+  );
+});
+
+Deno.test("QueryBuilder: throw an error if the `replace` method gets called with an empty array", () => {
+  assertThrows(
+    () => {
+      const query: any = new QueryBuilder("users");
+      query.replace([]).toSQL();
+    },
+    Error,
+    "Cannot perform replace query without values!",
+  );
+});
+
+Deno.test("QueryBuilder: throw an error if the `replace` method gets called with an empty array of objects", () => {
+  assertThrows(
+    () => {
+      const query: any = new QueryBuilder("users");
+      query.replace([{}, {}]).toSQL();
     },
     Error,
     "Cannot perform replace query without values!",

@@ -89,10 +89,19 @@ testDB(
 );
 
 testDB("BaseAdapter: `query` bind values", async (client) => {
-  await client.query(
-    `insert into users (email, age, created_at) values (?, ?, ?)`,
-    ["a@b.com", 16, DateUtils.formatDate(new Date())],
-  );
+  let query: string;
+
+  switch (client.type) {
+    case "mysql":
+    case "sqlite":
+      query = "insert into users (email, age, created_at) values (?, ?, ?)";
+      break;
+    case "postgres":
+      query = "insert into users (email, age, created_at) values ($1, $2, $3)";
+      break;
+  }
+
+  await client.query(query, ["a@b.com", 16, DateUtils.formatDate(new Date())]);
 
   const result = await client.query<{
     id: number;

@@ -311,8 +311,6 @@ export abstract class Model {
       primaryKey: this.primaryKey,
     });
 
-    console.log(lastInsertedId);
-
     // Set the model primary keys
     const ids = NumberUtils.range(
       lastInsertedId + 1 - models.length,

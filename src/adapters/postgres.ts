@@ -60,21 +60,11 @@ export class PostgresAdapter extends Adapter {
   }
 
   public async query<T>(query: string, values?: any[]): Promise<T[]> {
-    if (!Array.isArray(values)) {
-      const records = await this.client.query(query);
-      return records.rowsOfObjects() as T[];
-    } else {
-      const queryString = query
-        .split("?")
-        .reduce((previousValue, currentValue, currentIndex) =>
-          previousValue + "$" + currentIndex + currentValue
-        );
-      const records = await this.client.query({
-        text: queryString,
-        args: values,
-      });
-      return records.rowsOfObjects() as T[];
-    }
+    let result = Array.isArray(values)
+      ? await this.client.query({ text: query, args: values })
+      : await this.client.query(query);
+
+    return result.rowsOfObjects() as T[];
   }
 
   // TODO: handle error with custom error
