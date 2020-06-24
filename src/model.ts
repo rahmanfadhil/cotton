@@ -1,13 +1,6 @@
 import { Adapter } from "./adapters/adapter.ts";
 import { Reflect } from "./utils/reflect.ts";
-
-function range(start: number, end: number): number[] {
-  var arr = [];
-  while (start <= end) {
-    arr.push(start++);
-  }
-  return arr;
-}
+import { NumberUtils } from "./utils/number.ts";
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 
@@ -316,7 +309,10 @@ export abstract class Model {
     console.log(lastInsertedId);
 
     // Set the model primary keys
-    const ids = range(lastInsertedId + 1 - models.length, lastInsertedId);
+    const ids = NumberUtils.range(
+      lastInsertedId + 1 - models.length,
+      lastInsertedId,
+    );
     models.forEach((model, index) => {
       model.id = ids[index];
       model._isSaved = true;
