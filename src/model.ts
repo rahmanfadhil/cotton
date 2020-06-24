@@ -23,6 +23,11 @@ export interface FindOptions<T> {
   where?: Partial<T>;
 }
 
+/**
+ * Model field
+ * 
+ * @param type the JavaScript type which will be transformed
+ */
 export function Field(type?: FieldType) {
   return (target: Object, propertyKey: string) => {
     let columns: ColumnDescription[] = [];

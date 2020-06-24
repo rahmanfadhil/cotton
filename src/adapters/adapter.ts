@@ -35,7 +35,7 @@ export abstract class Adapter {
    *
    * @param query SQL query to run (ex: "SELECT * FROM users;")
    */
-  public abstract query<T>(query: string): Promise<T[]>;
+  public abstract query<T>(query: string, values?: any[]): Promise<T[]>;
 
   /**
    * Execute SQL statement and save changes to database
