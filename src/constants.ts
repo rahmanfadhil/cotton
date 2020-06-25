@@ -35,8 +35,8 @@ export const COLUMN_TYPES = {
   },
   integer: {
     postgres: "integer",
-    mysql: "int",
-    sqlite: "int",
+    mysql: "integer",
+    sqlite: "integer",
   },
   smallIncrements: {
     postgres: "smallserial",

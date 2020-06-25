@@ -6,15 +6,21 @@ import { TableInfo } from "./tableinfo.ts";
 /**
  * Database schema migration helper
  */
-export class Migration {
+export class Schema {
   constructor(
     /** The database adapter */
     private adapter: Adapter,
   ) {}
 
   /** Create a table */
-  public createTable(tableName: string, options?: CreateTableOptions) {
-    return new TableBuilder(tableName, this.adapter, options);
+  public async createTable(
+    tableName: string,
+    fn: (builder: TableBuilder) => void,
+    options?: CreateTableOptions,
+  ) {
+    const builder = new TableBuilder(tableName, this.adapter, options);
+    fn(builder);
+    await builder.execute();
   }
 
   /** Alter table columns */

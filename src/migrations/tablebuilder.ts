@@ -6,6 +6,12 @@ export interface CreateTableOptions {
   createIfNotExists?: boolean;
 }
 
+export interface ColumnOptions {
+  primaryKey?: boolean;
+  notNull?: boolean;
+  unique?: boolean;
+}
+
 /**
  * The table builder
  */
@@ -25,11 +31,89 @@ export class TableBuilder {
     this.options = Object.assign({}, { createIfNotExists: false }, options);
   }
 
-  /** Add column */
-  public addColumn(column: ColumnDefinition) {
-    this.columns.push(column);
-    return this;
+  // --------------------------------------------------------------------------------
+  // AUTO INCREMENTAL
+  // --------------------------------------------------------------------------------
+
+  /** Add an auto incremented integer column */
+  public id() {
+    this.increments("id", { primaryKey: true });
   }
+
+  public increments(column: string, options?: ColumnOptions) {
+    this.columns.push({ type: "increments", name: column, ...options });
+  }
+
+  /** Add a big auto incremented integer column */
+  public bigIncrements(column: string, options?: ColumnOptions) {
+    this.columns.push({ type: "bigIncrements", name: column, ...options });
+  }
+
+  /** Add a small auto incremented integer column */
+  public smallIncrements(column: string, options?: ColumnOptions) {
+    this.columns.push({ type: "smallIncrements", name: column, ...options });
+  }
+
+  // --------------------------------------------------------------------------------
+  // TEXT
+  // --------------------------------------------------------------------------------
+
+  /** Add a varchar column */
+  public string(column: string, size?: number, options?: ColumnOptions) {
+    this.columns.push({ type: "varchar", size, name: column, ...options });
+  }
+
+  /** Add a large text column */
+  public text(column: string, options?: ColumnOptions) {
+    this.columns.push({ type: "text", name: column, ...options });
+  }
+
+  // --------------------------------------------------------------------------------
+  // INTEGER
+  // --------------------------------------------------------------------------------
+
+  /** Add an integer column */
+  public integer(column: string, options?: ColumnOptions) {
+    this.columns.push({ type: "integer", name: column, ...options });
+  }
+
+  /** Add a big integer column */
+  public bigInteger(column: string, options?: ColumnOptions) {
+    this.columns.push({ type: "bigInteger", name: column, ...options });
+  }
+
+  /** Add a small integer column */
+  public smallInteger(column: string, options?: ColumnOptions) {
+    this.columns.push({ type: "smallInteger", name: column, ...options });
+  }
+
+  // --------------------------------------------------------------------------------
+  // DATE & TIME
+  // --------------------------------------------------------------------------------
+
+  /** Add a datetime column */
+  public datetime(column: string, options?: ColumnOptions) {
+    this.columns.push({ type: "dateTime", name: column, ...options });
+  }
+
+  /** Record timestamps when creation and update */
+  public timestamps() {
+    this.columns.push({ name: "created_at", type: "dateTime" });
+    this.columns.push({ name: "updated_at", type: "dateTime" });
+  }
+
+  // --------------------------------------------------------------------------------
+  // OTHER COLUMN TYPES
+  // --------------------------------------------------------------------------------
+
+  /** Add a boolean column */
+  public boolean(column: string, options?: ColumnOptions) {
+    this.columns.push({ type: "boolean", name: column, ...options });
+  }
+
+  // --------------------------------------------------------------------------------
+  // SQL QUERY
+  // --------------------------------------------------------------------------------
 
   /**
    * Generate SQL statement for creating the table
@@ -51,11 +135,13 @@ export class TableBuilder {
       // Set the column name and its type (for a specific database dialect)
       let sizeStr = "";
       if (
-        COLUMN_TYPES[column.type][this.adapter.type] == "varchar" &&
-        !column.size
+        COLUMN_TYPES[column.type][this.adapter.type] == "varchar"
       ) {
-        sizeStr = "(2048)";
+        sizeStr = typeof column.size === "undefined"
+          ? "(255)"
+          : `(${column.size})`;
       }
+
       const columnSQL = [
         `${column.name} ${
           COLUMN_TYPES[column.type][this.adapter.type]
@@ -70,10 +156,13 @@ export class TableBuilder {
         columnSQL.push("not null");
       }
 
+      const isIncrement = column.type === "increments" ||
+        column.type === "smallIncrements" || column.type === "bigIncrements";
+
       // In sqlite and mysql, we need to explicitly call AUTO_INCREMENT or AUTOINCREMENT
       // to enable the auto increment feature. Unlike postgres which only uses SERIAL type.
       if (
-        column.autoIncrement &&
+        isIncrement &&
         (this.adapter.type === "mysql" || this.adapter.type === "sqlite")
       ) {
         // Get database specific column type for auto increment
@@ -91,7 +180,9 @@ export class TableBuilder {
     return sql.join(" ") + ";";
   }
 
+  /** Execute the SQL query */
   public async execute(): Promise<void> {
+    console.log(this.toSQL());
     await this.adapter.query(this.toSQL());
   }
 }

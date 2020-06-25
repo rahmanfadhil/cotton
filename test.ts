@@ -9,5 +9,5 @@ import "./src/utils/date_test.ts";
 import "./src/utils/number_test.ts";
 import "./src/model_test.ts";
 import "./src/adapters/adapter_test.ts";
-import "./src/migrations/migration_test.ts";
+import "./src/migrations/schema_test.ts";
 import "./src/migrations/tablebuilder_test.ts";

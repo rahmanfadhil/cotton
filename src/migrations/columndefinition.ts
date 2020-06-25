@@ -7,4 +7,5 @@ export interface ColumnDefinition {
   notNull?: boolean;
   autoIncrement?: boolean;
   size?: number;
+  unique?: boolean;
 }
