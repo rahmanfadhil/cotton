@@ -59,13 +59,12 @@ export class PostgresAdapter extends Adapter {
     return this.client.end();
   }
 
-  public async query<T>(query: string): Promise<T[]> {
-    // Run query
-    // TODO: handle error with custom error
-    const records = await this.client.query(query);
+  public async query<T>(query: string, values?: any[]): Promise<T[]> {
+    let result = Array.isArray(values)
+      ? await this.client.query({ text: query, args: values })
+      : await this.client.query(query);
 
-    // Transform records to plain JavaScript objects
-    return records.rowsOfObjects() as T[];
+    return result.rowsOfObjects() as T[];
   }
 
   // TODO: handle error with custom error

@@ -48,11 +48,17 @@ export class SqliteAdapter extends Adapter {
     });
   }
 
-  public query<T>(query: string): Promise<T[]> {
+  public query<T>(query: string, values?: any[]): Promise<T[]> {
     return new Promise((resolve, reject) => {
       // Execute query
       // TODO: handle error with custom error
-      const result = this.client!.query(query);
+      let result: any;
+
+      if (!Array.isArray(values)) {
+        result = this.client!.query(query);
+      } else {
+        result = this.client!.query(query, values);
+      }
 
       // Store fetch records temporarily
       const records: T[] = [];

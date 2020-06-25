@@ -49,8 +49,14 @@ export class MysqlAdapter extends Adapter {
   }
 
   // TODO: handle error with custom error
-  async query<T>(query: string): Promise<T[]> {
-    const records = await this.client.query(query);
+  async query<T>(query: string, values?: any[]): Promise<T[]> {
+    let records: any;
+
+    if (!Array.isArray(values)) {
+      records = await this.client.query(query);
+    } else {
+      records = await this.client.query(query, values);
+    }
 
     if (records.lastInsertId && records.affectedRows) {
       this._lastInsertedId = records.lastInsertId + records.affectedRows - 1;

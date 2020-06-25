@@ -56,6 +56,11 @@ export type QueryValues = {
   [key: string]: number | string | boolean | Date;
 };
 
+interface ExecutableQuery {
+  text: string;
+  values: any[];
+}
+
 /**
  * All information about the query
  */
@@ -127,11 +132,7 @@ export class QueryBuilder {
     // Change the query type from `select` (default) to `insert`
     this.description.type = QueryType.Insert;
 
-    // Throw an error if the data is not provided
-    if (!data) {
-      throw new Error("Cannot perform insert query without values!");
-    }
-
+    // Set the query values
     this.description.values = data;
 
     return this;
@@ -147,18 +148,11 @@ export class QueryBuilder {
    * @param data A JSON Object representing columnname-value pairs. Example: { firstname: "John", age: 22, ... }
    */
   public replace(data: QueryValues): QueryBuilder {
-    // Change the query type from `select` (default) to `insert`
+    // Change the query type from `select` (default) to `replace`
     this.description.type = QueryType.Replace;
 
-    // Holds the cleaned data
-    let cleanedData: QueryValues = {};
-
-    // Transform values to the format that the database can understand and store it to `cleanedData`
-    for (const [key, value] of Object.entries(data)) {
-      cleanedData[key] = this.toDatabaseValue(value);
-    }
-
-    this.description.values = cleanedData;
+    // Set the query values
+    this.description.values = data;
 
     return this;
   }
@@ -320,20 +314,8 @@ export class QueryBuilder {
     // Change the query type from `select` (default) to `update`
     this.description.type = QueryType.Update;
 
-    // Throw an error if the data is not provided
-    if (!data) {
-      throw new Error("Cannot perform update query without values!");
-    }
-
-    // Holds the cleaned data
-    let cleanedData: QueryValues = {};
-
-    // Transform values to the format that the database can understand and store it to `cleanedData`
-    for (const [key, value] of Object.entries(data)) {
-      cleanedData[key] = this.toDatabaseValue(value);
-    }
-
-    this.description.values = cleanedData;
+    // Set the query values
+    this.description.values = data;
 
     return this;
   }
@@ -370,7 +352,7 @@ export class QueryBuilder {
       case QueryType.Insert:
         return this.toInsertSQL();
       case QueryType.Replace:
-        return this.toReplaceSQL();
+        return this.toInsertSQL(true);
       case QueryType.Update:
         return this.toUpdateSQL();
       case QueryType.Delete:
@@ -386,16 +368,23 @@ export class QueryBuilder {
   private toUpdateSQL(): string {
     let query: string[] = [`UPDATE ${this.description.tableName} SET`];
 
-    if (this.description.values) {
-      const values = [];
-      for (const [key, value] of Object.entries(this.description.values)) {
-        values.push(`${key} = ${value}`);
-      }
-      query.push(values.join(", "));
-    } else {
-      throw new Error("Cannot perform insert query without values!");
+    // Prevent to continue if there is no value
+    if (!this.description.values) {
+      throw new Error("Cannot perform update query without values!");
     }
 
+    // Map values to query string
+    const values = Object.entries(this.description.values)
+      .map(([key, value]) => `${key} = ${this.toDatabaseValue(value)}`);
+
+    // Prevent to continue if there is no value
+    if (!(values.length >= 1)) {
+      throw new Error("Cannot perform update query without values!");
+    }
+
+    query.push(values.join(", "));
+
+    // Add RETURNING statement if exists
     if (this.description.returning.length > 0) {
       query.push("RETURNING", this.description.returning.join(", "));
     }
@@ -409,15 +398,32 @@ export class QueryBuilder {
   /**
    * Generate `INSERT` query string
    */
-  private toInsertSQL(): string {
-    // Query strings
-    let query: string[] = [`INSERT INTO ${this.description.tableName}`];
+  private toInsertSQL(replace: boolean = false): string {
+    // Initialize query string
+    // Decide wether to use REPLACE or INSERT
+    let query: string[] = replace
+      ? [`REPLACE INTO ${this.description.tableName}`]
+      : [`INSERT INTO ${this.description.tableName}`];
 
+    // Prevent to continue if there is no value
     if (!this.description.values) {
-      throw new Error("Cannot perform insert query without values!");
+      throw new Error(
+        `Cannot perform ${
+          replace ? "replace" : "insert"
+        } query without values!`,
+      );
     }
 
+    // If the user passes multiple records, map the values differently
     if (Array.isArray(this.description.values)) {
+      if (!(this.description.values.length >= 1)) {
+        throw new Error(
+          `Cannot perform ${
+            replace ? "replace" : "insert"
+          } query without values!`,
+        );
+      }
+
       // Get all inserted columns from the values
       const fields = this.description.values
         .map((v) => Object.keys(v))
@@ -431,7 +437,15 @@ export class QueryBuilder {
           return accumulator;
         });
 
-      // Transform values to the format that the database can understand and store it to `cleanedData`
+      if (!(fields.length >= 1)) {
+        throw new Error(
+          `Cannot perform ${
+            replace ? "replace" : "insert"
+          } query without values!`,
+        );
+      }
+
+      // Map values to query string
       const values = this.description.values.map((item) => {
         const itemValues = fields.map((field) =>
           this.toDatabaseValue((item[field]))
@@ -441,43 +455,23 @@ export class QueryBuilder {
 
       query.push(`(${fields.join(", ")})`, "VALUES", values.join(", "));
     } else {
-      const fields = Object.keys(this.description.values).join(", ");
+      const fields = Object.keys(this.description.values);
+
+      if (!(fields.length >= 1)) {
+        throw new Error(
+          `Cannot perform ${
+            replace ? "replace" : "insert"
+          } query without values!`,
+        );
+      }
+
       const values = Object.values(this.description.values)
         .map((i) => this.toDatabaseValue(i))
         .join(", ");
-      query.push(`(${fields}) VALUES (${values})`);
+      query.push(`(${fields.join(", ")}) VALUES (${values})`);
     }
 
-    if (this.description.returning.length > 0) {
-      query.push("RETURNING", this.description.returning.join(", "));
-    }
-
-    return query.join(" ") + ";";
-  }
-
-  /**
-   * Generate `REPLACE` query string
-   */
-  private toReplaceSQL(): string {
-    // Query strings
-    let query: string[] = [`REPLACE INTO ${this.description.tableName}`];
-
-    if (this.description.values) {
-      // Only call Object.keys once for performance reasons(this function can get really slow on bigger Objects)
-      let keys = Object.keys(this.description.values);
-      if (keys.length >= 1) {
-        const fields = `(${keys.join(", ")})`;
-        const values = `(${Object.values(this.description.values).join(", ")})`;
-        query.push(fields, "VALUES", values);
-      } else {
-        throw new Error("Cannot perform replace query without values!");
-      }
-    } else {
-      // This is probably redundant and will never be triggered,
-      // because insert() will throw a default error if the type is not matching.
-      throw new TypeError("Cannot perform replace with undefined Parameters!");
-    }
-
+    // Add RETURNING statement if exists
     if (this.description.returning.length > 0) {
       query.push("RETURNING", this.description.returning.join(", "));
     }

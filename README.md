@@ -207,6 +207,12 @@ await db
   })
   .execute();
 // INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '2020-06-05 00:00:00');
+
+await db
+  .table("users")
+  .insert([{ email: "a@b.com" }, { email: "b@c.com" }])
+  .execute();
+// INSERT INTO users (email) VALUES ('a@b.com'), ('a@b.com');
 ```
 
 ### Replace data

@@ -2,6 +2,7 @@ import { Model, Field } from "../model.ts";
 import { testDB } from "../testutils.ts";
 import { assertEquals } from "../../testdeps.ts";
 import { QueryBuilder } from "../querybuilder.ts";
+import { DateUtils } from "../utils/date.ts";
 
 class User extends Model {
   static tableName = "users";
@@ -86,3 +87,50 @@ testDB(
     assertEquals(query instanceof QueryBuilder, true);
   },
 );
+
+testDB("BaseAdapter: `query` bind values", async (client) => {
+  let query: string;
+
+  switch (client.type) {
+    case "mysql":
+    case "sqlite":
+      query = "insert into users (email, age, created_at) values (?, ?, ?)";
+      break;
+    case "postgres":
+      query = "insert into users (email, age, created_at) values ($1, $2, $3)";
+      break;
+  }
+
+  await client.query(query, ["a@b.com", 16, DateUtils.formatDate(new Date())]);
+
+  const result = await client.query<{
+    id: number;
+    email: string;
+    age: number;
+  }>(
+    `select id, email, age from users;`,
+  );
+  assertEquals(Array.isArray(result), true);
+  assertEquals(result.length, 1);
+  assertEquals(result[0].id, 1);
+  assertEquals(result[0].email, "a@b.com");
+  assertEquals(result[0].age, 16);
+});
+
+testDB("BaseAdapter: `getLastInsertedId`", async (client) => {
+  assertEquals(
+    await client.getLastInsertedId({ tableName: "users", primaryKey: "id" }),
+    0,
+  );
+
+  await client.query(
+    `insert into users (email, age, created_at) values ('a@b.com', 16, '${
+      DateUtils.formatDate(new Date())
+    }')`,
+  );
+
+  assertEquals(
+    await client.getLastInsertedId({ tableName: "users", primaryKey: "id" }),
+    1,
+  );
+});
