@@ -1,6 +1,6 @@
 import { testDB } from "../testutils.ts";
 import { Schema } from "./schema.ts";
-import { assertEquals } from "../../testdeps.ts";
+import { assertEquals, assertThrows } from "../../testdeps.ts";
 
 testDB("Schema: getTableInfo", async (client) => {
   const schema = new Schema(client);
@@ -57,4 +57,22 @@ testDB("Schema: createTable and dropTable", async (client) => {
 
   // The table should be dropped
   assertEquals(await tableInfo.exists(), false);
+});
+
+testDB("Schema: dropTable and dropTables", async (client) => {
+  const schema = new Schema(client);
+
+  // Create tables
+  await schema.createTable("posts", (table) => table.id());
+  await schema.createTable("articles", (table) => table.id());
+  await schema.createTable("chats", (table) => table.id());
+  await schema.createTable("votes", (table) => table.id());
+
+  await schema.dropTable("posts");
+  assertEquals(await schema.getTableInfo("posts").exists(), false);
+
+  await schema.dropTables(["articles", "chats", "votes"]);
+  assertEquals(await schema.getTableInfo("articles").exists(), false);
+  assertEquals(await schema.getTableInfo("chats").exists(), false);
+  assertEquals(await schema.getTableInfo("votes").exists(), false);
 });

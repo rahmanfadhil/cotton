@@ -38,24 +38,28 @@ export class Schema {
   /** Drop a table */
   public async dropTable(
     tableName: string,
-    options?: { ifExists: boolean },
+    options?: { ifExists?: boolean },
   ) {
     // Populate options with default values
     options = Object.assign({}, options, { ifExists: false });
 
     // Build query string
     const query = [`DROP TABLE`];
-    if (options.ifExists) query.push(`IF EXISTS`);
     query.push(tableName);
+    if (options.ifExists) query.push(`IF EXISTS`);
 
     // Perform query
-    const result = await this.adapter.query(query.join(" "));
-    return result.length === 1;
+    await this.adapter.query(query.join(" "));
   }
 
   /** Drop multiple tables */
-  public dropTables(tableNames: string[]) {
-    throw new Error("Not implemented yet!");
+  public async dropTables(
+    tableNames: string[],
+    options?: { ifExists?: boolean },
+  ) {
+    for (const table of tableNames) {
+      await this.dropTable(table, options);
+    }
   }
 
   /** Get table info */

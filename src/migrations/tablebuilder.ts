@@ -37,7 +37,15 @@ export class TableBuilder {
 
   /** Add an auto incremented integer column */
   public id() {
-    this.increments("id", { primaryKey: true });
+    switch (this.adapter.type) {
+      case "mysql":
+      case "postgres":
+        this.bigIncrements("id", { primaryKey: true });
+        break;
+      default:
+        this.increments("id", { primaryKey: true });
+        break;
+    }
   }
 
   public increments(column: string, options?: ColumnOptions) {
@@ -182,7 +190,6 @@ export class TableBuilder {
 
   /** Execute the SQL query */
   public async execute(): Promise<void> {
-    console.log(this.toSQL());
     await this.adapter.query(this.toSQL());
   }
 }
