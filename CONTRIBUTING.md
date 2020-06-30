@@ -7,6 +7,8 @@ There are still a lot of room for improvements. Here are some features that are 
 - Left Join
 - Inner Join
 - Input Sanitization.
+- MIN and MAX
+- IN operator
 
 [Adapter](./src/adapters)
 
@@ -15,9 +17,18 @@ There are still a lot of room for improvements. Here are some features that are 
 [Migrations](./src/migrations)
 
 - Add index in [TableBuilder](./src/migrations/tablebuilder.ts)
-- [TableUpdater](./src/migrations/tableupdater.ts) (for altering a table)
+- [TableUpdater](./src/migrations/tableupdater.ts) (to alter a table)
+- [MigrationRunner](./src/migrations/migrationrunner.ts) (to perform migrations)
+- [CLI](./cli.ts) (to generate, run, and revert migrations)
 - Seeder
 - Factory
+
+[Model](./src/migrations)
+
+- Column relation
+- Delete a single record with complex query
+- Count records
+- Update records (without querying)
 
 ## Roadmap
 
