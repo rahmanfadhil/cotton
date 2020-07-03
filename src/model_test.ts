@@ -301,7 +301,7 @@ testDB("Model: delete", async (client) => {
       await User.delete({});
     },
     Error,
-    "Cannot perform delete without where clause, use `truncate` to remove all records!",
+    "Cannot perform delete without where clause, use `truncate` to delete all records!",
   );
 });
 
