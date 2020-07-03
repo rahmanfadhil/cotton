@@ -332,6 +332,7 @@ export abstract class Model {
     this: ExtendedModel<T>,
     id: number,
   ): Promise<void> {
+    // TODO: Add options to query using where clause
     await this.adapter.table(this.tableName)
       .where(this.primaryKey, id)
       .delete()
@@ -358,7 +359,7 @@ export abstract class Model {
       }
     } else {
       throw new Error(
-        "Cannot perform delete without where clause, use `truncate` to remove all records!",
+        "Cannot perform delete without where clause, use `truncate` to delete all records!",
       );
     }
 
@@ -379,10 +380,10 @@ export abstract class Model {
    */
   public static async truncate(): Promise<void> {
     // sqlite TRUNCATE is a different command
-    const truncateCommand = this.adapter.type === "sqlite"
+    const truncateCommand = this.adapter.dialect === "sqlite"
       ? "DELETE FROM"
       : "TRUNCATE";
-    await this.adapter.execute(`${truncateCommand} ${this.tableName};`);
+    await this.adapter.query(`${truncateCommand} ${this.tableName};`);
   }
 
   // --------------------------------------------------------------------------------

@@ -27,7 +27,7 @@ testDB("Model: find", async (client) => {
   const date = new Date("5 June, 2020");
   const formattedDate = DateUtils.formatDate(date);
 
-  await client.execute(
+  await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${formattedDate}')`,
   );
 
@@ -43,11 +43,11 @@ testDB("Model: find", async (client) => {
 });
 
 testDB("Model: find with options", async (client) => {
-  await client.execute(`INSERT INTO products (name) VALUES ('Cheese')`);
-  await client.execute(`INSERT INTO products (name) VALUES ('Spoon')`);
-  await client.execute(`INSERT INTO products (name) VALUES ('Spoon')`);
-  await client.execute(`INSERT INTO products (name) VALUES ('Spoon')`);
-  await client.execute(`INSERT INTO products (name) VALUES ('Table')`);
+  await client.query(`INSERT INTO products (name) VALUES ('Cheese')`);
+  await client.query(`INSERT INTO products (name) VALUES ('Spoon')`);
+  await client.query(`INSERT INTO products (name) VALUES ('Spoon')`);
+  await client.query(`INSERT INTO products (name) VALUES ('Spoon')`);
+  await client.query(`INSERT INTO products (name) VALUES ('Table')`);
 
   client.addModel(Product);
 
@@ -73,13 +73,13 @@ testDB("Model: findOne", async (client) => {
   const date = new Date("5 June, 2020");
   const formattedDate = DateUtils.formatDate(date);
 
-  await client.execute(
+  await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${formattedDate}')`,
   );
-  await client.execute(
+  await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('b@c.com', 16, '${formattedDate}')`,
   );
-  await client.execute(
+  await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('c@d.com', 16, '${formattedDate}')`,
   );
 
@@ -193,10 +193,10 @@ testDB("Model: truncate", async (client) => {
   const date = new Date("5 June, 2020");
   const formattedDate = DateUtils.formatDate(date);
 
-  await client.execute(
+  await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${formattedDate}')`,
   );
-  await client.execute(
+  await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('b@c.com', 16, '${formattedDate}')`,
   );
 

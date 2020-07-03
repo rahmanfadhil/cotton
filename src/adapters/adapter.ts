@@ -1,6 +1,6 @@
 import { QueryBuilder } from "../querybuilder.ts";
 import { Model } from "../model.ts";
-import { SupportedDatabaseType } from "../connect.ts";
+import { DatabaseDialect } from "../connect.ts";
 
 export interface GetLastInsertedIdOptions {
   tableName: string;
@@ -24,7 +24,7 @@ export interface ConnectionOptions {
  */
 export abstract class Adapter {
   private models: Array<typeof Model> = [];
-  public abstract type: SupportedDatabaseType;
+  public abstract dialect: DatabaseDialect;
 
   public abstract getLastInsertedId(
     options: GetLastInsertedIdOptions,
@@ -36,14 +36,6 @@ export abstract class Adapter {
    * @param query SQL query to run (ex: "SELECT * FROM users;")
    */
   public abstract query<T>(query: string, values?: any[]): Promise<T[]>;
-
-  /**
-   * Execute SQL statement and save changes to database
-   *
-   * @param query SQL query to run (ex: "INSERT INTO users (email) VALUES ('a@b.com');")
-   * @param values Bind values to query to prevent SQL injection
-   */
-  public abstract execute(query: string, values?: any[]): Promise<void>;
 
   /**
    * Connect database

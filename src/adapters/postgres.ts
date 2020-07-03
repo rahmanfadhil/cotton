@@ -4,13 +4,13 @@ import {
   ConnectionOptions,
   GetLastInsertedIdOptions,
 } from "./adapter.ts";
-import { SupportedDatabaseType } from "../connect.ts";
+import { DatabaseDialect } from "../connect.ts";
 
 /**
  * PostgreSQL database adapter
  */
 export class PostgresAdapter extends Adapter {
-  public type: SupportedDatabaseType = "postgres";
+  public dialect: DatabaseDialect = "postgres";
 
   /**
    * Postgres client
@@ -65,10 +65,5 @@ export class PostgresAdapter extends Adapter {
       : await this.client.query(query);
 
     return result.rowsOfObjects() as T[];
-  }
-
-  // TODO: handle error with custom error
-  public async execute(query: string, values: any[] = []): Promise<void> {
-    await this.client.query(query, ...values);
   }
 }
