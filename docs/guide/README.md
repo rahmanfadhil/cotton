@@ -15,7 +15,7 @@ const db = await connect({
 You can run an SQL statement using the `execute` method.
 
 ```ts
-await db.execute(`
+await db.query(`
   CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email VARCHAR(255),

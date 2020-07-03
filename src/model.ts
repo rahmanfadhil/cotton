@@ -140,7 +140,7 @@ export abstract class Model {
     }
 
     // Execute query
-    const result = await query.execute();
+    const result = await query.first().execute();
 
     // If the record is not found, return null.
     // Otherwise, return the model instance with the data
@@ -295,7 +295,7 @@ export abstract class Model {
   /**
    * Save multiple records to the database efficiently
    */
-  public static async _bulkSave<T extends Model>(models: T[]): Promise<T[]> {
+  private static async _bulkSave<T extends Model>(models: T[]): Promise<T[]> {
     // Get all model values
     const values = models.map((model) => model._getValues());
 
@@ -326,14 +326,64 @@ export abstract class Model {
   }
 
   /**
+   * Delete a single record by id
+   */
+  public static async deleteOne<T extends Model>(
+    this: ExtendedModel<T>,
+    id: number,
+  ): Promise<void> {
+    // TODO: Add options to query using where clause
+    await this.adapter.table(this.tableName)
+      .where(this.primaryKey, id)
+      .delete()
+      .execute();
+  }
+
+  /**
+   * Delete multiple records
+   * 
+   * @param options query options
+   */
+  public static async delete<T extends Model>(
+    this: ExtendedModel<T>,
+    options: FindOptions<T>,
+  ): Promise<void> {
+    // Initialize query builder
+    const query = this.adapter.table(this.tableName);
+
+    // Add where clauses (if exists)
+    if (options && options.where) {
+      for (const [column, value] of Object.entries(options.where)) {
+        // TODO: allow user to use different operator
+        query.where(column, value);
+      }
+    } else {
+      throw new Error(
+        "Cannot perform delete without where clause, use `truncate` to delete all records!",
+      );
+    }
+
+    if (options && options.limit) {
+      query.limit(options.limit);
+    }
+
+    if (options && options.offset) {
+      query.offset(options.offset);
+    }
+
+    // Execute query
+    await query.delete().execute();
+  }
+
+  /**
    * Remove all records from a table.
    */
   public static async truncate(): Promise<void> {
     // sqlite TRUNCATE is a different command
-    const truncateCommand = this.adapter.type === "sqlite"
+    const truncateCommand = this.adapter.dialect === "sqlite"
       ? "DELETE FROM"
       : "TRUNCATE";
-    await this.adapter.execute(`${truncateCommand} ${this.tableName};`);
+    await this.adapter.query(`${truncateCommand} ${this.tableName};`);
   }
 
   // --------------------------------------------------------------------------------
