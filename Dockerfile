@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY deps.ts .
 COPY testdeps.ts .
-RUN deno cache deps.ts testdeps.ts
+RUN deno cache --unstable deps.ts testdeps.ts
 
 ADD . .
 
@@ -16,4 +16,4 @@ RUN chmod +x ./wait
 
 ENTRYPOINT []
 
-CMD ./wait && deno test -c tsconfig.json --allow-net --allow-read --allow-env test.ts
+CMD ./wait && deno test -c tsconfig.json --allow-net --allow-read --allow-env --unstable test.ts

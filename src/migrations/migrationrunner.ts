@@ -1,8 +1,14 @@
 import { Adapter } from "../adapters/adapter.ts";
 import { Migration } from "./migration.ts";
 import { walk, writeFileStr, ensureDir } from "../../deps.ts";
-import { TableInfo } from "./tableinfo.ts";
 import { Schema } from "./schema.ts";
+
+interface MigrationInfo {
+  migration: Migration;
+  name: string;
+  timestamp: number;
+  isExecuted: boolean;
+}
 
 /**
  * Run migration classes
@@ -17,6 +23,8 @@ export class MigrationRunner {
 
   /**
    * Create a new migration script
+   * 
+   * @param name the name of the migration
    */
   public async createMigrationFile(name: string): Promise<string> {
     // Create the migrations folder if not exists
@@ -40,13 +48,8 @@ export class MigrationRunner {
   /**
    * Get all migration classes
    */
-  public async getAllMigrations() {
-    const migrations: {
-      migration: Migration;
-      name: string;
-      timestamp: number;
-      isExecuted: boolean;
-    }[] = [];
+  public async getAllMigrations(): Promise<MigrationInfo[]> {
+    const migrations: MigrationInfo[] = [];
 
     // Loop through all files
     for await (const file of walk(this.migrationDir)) {
@@ -88,13 +91,12 @@ export class MigrationRunner {
    * Create the `migrations` table if it doesn't exist yet
    */
   public async createMigrationsTable() {
-    const tableInfo = new TableInfo("migrations", this.adapter);
-    if (await tableInfo.exists()) {
-      const schema = new Schema(this.adapter);
+    const schema = new Schema(this.adapter);
+    if (await schema.hasTable("migrations")) {
       await schema.createTable("migrations", (table) => {
         table.id();
-        table.string("name", 255, { notNull: true });
-        table.bigInteger("timestamp", { notNull: true });
+        table.varchar("name", 255).notNull();
+        table.bigInteger("timestamp").notNull();
       });
     }
   }
