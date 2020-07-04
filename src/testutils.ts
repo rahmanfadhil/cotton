@@ -52,7 +52,7 @@ export async function testDB(
       });
 
       // Create dummy table `users`
-      await db.execute(`
+      await db.query(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           email VARCHAR(255),
@@ -62,7 +62,7 @@ export async function testDB(
       `);
 
       // Create dummy table `products`
-      await db.execute(`
+      await db.query(`
         CREATE TABLE IF NOT EXISTS products (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name VARCHAR(255)
@@ -73,10 +73,10 @@ export async function testDB(
       await fn(db);
 
       // Drop dummy table `users`
-      await db.execute("DROP TABLE users;");
+      await db.query("DROP TABLE users;");
 
       // Drop dummy table `products`
-      await db.execute("DROP TABLE products;");
+      await db.query("DROP TABLE products;");
 
       // Disconnect to database
       await db.disconnect();
@@ -93,7 +93,7 @@ export async function testDB(
       });
 
       // Create dummy table `users`
-      await db.execute(`
+      await db.query(`
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
           email VARCHAR(255),
@@ -103,7 +103,7 @@ export async function testDB(
       `);
 
       // Create dummy table `products`
-      await db.execute(`
+      await db.query(`
         CREATE TABLE IF NOT EXISTS products (
           id SERIAL PRIMARY KEY,
           name VARCHAR(255)
@@ -114,10 +114,10 @@ export async function testDB(
       await fn(db);
 
       // Drop dummy table `users`
-      await db.execute("DROP TABLE users;");
+      await db.query("DROP TABLE users;");
 
       // Drop dummy table `products`
-      await db.execute("DROP TABLE products;");
+      await db.query("DROP TABLE products;");
 
       // Disconnect to database
       await db.disconnect();
@@ -134,7 +134,7 @@ export async function testDB(
       });
 
       // Create dummy table `users`
-      await db.execute(`
+      await db.query(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTO_INCREMENT,
           email VARCHAR(255),
@@ -144,7 +144,7 @@ export async function testDB(
       `);
 
       // Create dummy table `products`
-      await db.execute(`
+      await db.query(`
         CREATE TABLE IF NOT EXISTS products (
           id INTEGER PRIMARY KEY AUTO_INCREMENT,
           name VARCHAR(255)
@@ -155,10 +155,10 @@ export async function testDB(
       await fn(db);
 
       // Drop dummy table `users`
-      await db.execute("DROP TABLE users;");
+      await db.query("DROP TABLE users;");
 
       // Drop dummy table `products`
-      await db.execute("DROP TABLE products;");
+      await db.query("DROP TABLE products;");
 
       // Disconnect to database
       await db.disconnect();

@@ -6,7 +6,7 @@ export const COLUMN_TYPES = {
   bigIncrements: {
     postgres: "bigserial",
     mysql: "bigint",
-    sqlite: "bigint",
+    sqlite: "integer",
   },
   bigInteger: {
     postgres: "bigint",
@@ -41,7 +41,7 @@ export const COLUMN_TYPES = {
   smallIncrements: {
     postgres: "smallserial",
     mysql: "smallint",
-    sqlite: "smallint",
+    sqlite: "integer",
   },
   smallInteger: {
     postgres: "smallint",
@@ -93,7 +93,7 @@ export const COLUMN_TYPES = {
     mysql: "date",
     sqlite: "date",
   },
-  dateTime: {
+  datetime: {
     postgres: "timestamp",
     mysql: "datetime",
     sqlite: "datetime",

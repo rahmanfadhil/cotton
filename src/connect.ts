@@ -4,10 +4,10 @@ import { MysqlAdapter } from "./adapters/mysql.ts";
 import { PostgresAdapter } from "./adapters/postgres.ts";
 import { SqliteAdapter } from "./adapters/sqlite.ts";
 
-export type SupportedDatabaseType = "mysql" | "postgres" | "sqlite";
+export type DatabaseDialect = "mysql" | "postgres" | "sqlite";
 
 interface ConnectionConfig extends ConnectionOptions {
-  type: SupportedDatabaseType;
+  type: DatabaseDialect;
 }
 
 /**

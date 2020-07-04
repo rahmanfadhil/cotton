@@ -91,7 +91,7 @@ testDB(
 testDB("BaseAdapter: `query` bind values", async (client) => {
   let query: string;
 
-  switch (client.type) {
+  switch (client.dialect) {
     case "mysql":
     case "sqlite":
       query = "insert into users (email, age, created_at) values (?, ?, ?)";
@@ -107,9 +107,8 @@ testDB("BaseAdapter: `query` bind values", async (client) => {
     id: number;
     email: string;
     age: number;
-  }>(
-    `select id, email, age from users;`,
-  );
+  }>(`select id, email, age from users;`);
+
   assertEquals(Array.isArray(result), true);
   assertEquals(result.length, 1);
   assertEquals(result[0].id, 1);

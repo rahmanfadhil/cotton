@@ -1,6 +1,6 @@
 import { testDB } from "./testutils.ts";
 import { Model, Field } from "./model.ts";
-import { assertEquals } from "../testdeps.ts";
+import { assertEquals, assertThrowsAsync } from "../testdeps.ts";
 import { DateUtils } from "./utils/date.ts";
 
 class User extends Model {
@@ -27,7 +27,7 @@ testDB("Model: find", async (client) => {
   const date = new Date("5 June, 2020");
   const formattedDate = DateUtils.formatDate(date);
 
-  await client.execute(
+  await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${formattedDate}')`,
   );
 
@@ -43,11 +43,11 @@ testDB("Model: find", async (client) => {
 });
 
 testDB("Model: find with options", async (client) => {
-  await client.execute(`INSERT INTO products (name) VALUES ('Cheese')`);
-  await client.execute(`INSERT INTO products (name) VALUES ('Spoon')`);
-  await client.execute(`INSERT INTO products (name) VALUES ('Spoon')`);
-  await client.execute(`INSERT INTO products (name) VALUES ('Spoon')`);
-  await client.execute(`INSERT INTO products (name) VALUES ('Table')`);
+  await client.query(`INSERT INTO products (name) VALUES ('Cheese')`);
+  await client.query(`INSERT INTO products (name) VALUES ('Spoon')`);
+  await client.query(`INSERT INTO products (name) VALUES ('Spoon')`);
+  await client.query(`INSERT INTO products (name) VALUES ('Spoon')`);
+  await client.query(`INSERT INTO products (name) VALUES ('Table')`);
 
   client.addModel(Product);
 
@@ -73,13 +73,13 @@ testDB("Model: findOne", async (client) => {
   const date = new Date("5 June, 2020");
   const formattedDate = DateUtils.formatDate(date);
 
-  await client.execute(
+  await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${formattedDate}')`,
   );
-  await client.execute(
+  await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('b@c.com', 16, '${formattedDate}')`,
   );
-  await client.execute(
+  await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('c@d.com', 16, '${formattedDate}')`,
   );
 
@@ -193,10 +193,10 @@ testDB("Model: truncate", async (client) => {
   const date = new Date("5 June, 2020");
   const formattedDate = DateUtils.formatDate(date);
 
-  await client.execute(
+  await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${formattedDate}')`,
   );
-  await client.execute(
+  await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('b@c.com', 16, '${formattedDate}')`,
   );
 
@@ -277,4 +277,62 @@ testDB("Model: isDirty", async (client) => {
   user.email = "c@d.com";
 
   assertEquals(user.isDirty(), true);
+});
+
+testDB("Model: delete", async (client) => {
+  client.addModel(User);
+
+  const formattedDate = DateUtils.formatDate(new Date());
+  await client.query(
+    `INSERT INTO users (id, email, age, created_at) VALUES
+      (1, 'a@b.com', 16, '${formattedDate}'),
+      (2, 'b@c.com', 16, '${formattedDate}'),
+      (3, 'c@d.com', 18, '${formattedDate}');`,
+  );
+
+  await User.delete({ where: { age: 16 } });
+
+  const users = await client.query<{ age: number }>("SELECT * FROM users;");
+  assertEquals(users.length, 1);
+  assertEquals(users[0].age, 18);
+
+  await assertThrowsAsync(
+    async () => {
+      await User.delete({});
+    },
+    Error,
+    "Cannot perform delete without where clause, use `truncate` to delete all records!",
+  );
+});
+
+testDB("Model: deleteOne", async (client) => {
+  client.addModel(User);
+
+  const formattedDate = DateUtils.formatDate(new Date());
+  await client.query(
+    `INSERT INTO users (id, email, age, created_at) VALUES
+      (1, 'a@b.com', 16, '${formattedDate}'),
+      (2, 'b@c.com', 16, '${formattedDate}'),
+      (3, 'c@d.com', 18, '${formattedDate}');`,
+  );
+
+  await User.deleteOne(1);
+
+  let result = await client.query<{ email: string; id: number }>(
+    "SELECT * FROM users",
+  );
+  assertEquals(result.length, 2);
+  assertEquals(result[0].email, "b@c.com");
+  assertEquals(result[0].id, 2);
+  assertEquals(result[1].email, "c@d.com");
+  assertEquals(result[1].id, 3);
+
+  await User.deleteOne(2);
+
+  result = await client.query<{ email: string; id: number }>(
+    "SELECT * FROM users",
+  );
+  assertEquals(result.length, 1);
+  assertEquals(result[0].email, "c@d.com");
+  assertEquals(result[0].id, 3);
 });

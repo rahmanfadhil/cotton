@@ -1,12 +1,12 @@
 import { Adapter, ConnectionOptions } from "./adapter.ts";
 import { SqliteDB } from "../../deps.ts";
-import { SupportedDatabaseType } from "../connect.ts";
+import { DatabaseDialect } from "../connect.ts";
 
 /**
  * SQLite database adapter
  */
 export class SqliteAdapter extends Adapter {
-  public type: SupportedDatabaseType = "sqlite";
+  public dialect: DatabaseDialect = "sqlite";
 
   public getLastInsertedId(): Promise<number> {
     return Promise.resolve(this.client?.lastInsertRowId || 0);
@@ -87,15 +87,6 @@ export class SqliteAdapter extends Adapter {
       } catch {
         resolve([]);
       }
-    });
-  }
-
-  // TODO: handle error with custom error
-  public execute(query: string, values: any[] = []): Promise<void> {
-    return new Promise((resolve, reject) => {
-      // Execute SQL statement
-      this.client!.query(query, values);
-      resolve();
     });
   }
 }

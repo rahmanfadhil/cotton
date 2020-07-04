@@ -1,6 +1,6 @@
 import { MysqlClient, MysqlClientConfig } from "../../deps.ts";
 import { Adapter, ConnectionOptions } from "./adapter.ts";
-import { SupportedDatabaseType } from "../connect.ts";
+import { DatabaseDialect } from "../connect.ts";
 
 /**
  * MySQL database adapter
@@ -12,7 +12,7 @@ export class MysqlAdapter extends Adapter {
     return Promise.resolve(this._lastInsertedId);
   }
 
-  public type: SupportedDatabaseType = "mysql";
+  public dialect: DatabaseDialect = "mysql";
 
   /**
    * MySQL library database client
@@ -63,10 +63,5 @@ export class MysqlAdapter extends Adapter {
     }
 
     return Array.isArray(records) ? records : [];
-  }
-
-  // TODO: handle error with custom error
-  async execute(query: string, values: any[] = []): Promise<void> {
-    await this.client.execute(query, values);
   }
 }
