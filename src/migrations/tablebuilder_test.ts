@@ -1,94 +1,109 @@
 import { TableBuilder } from "./tablebuilder.ts";
 import { assertEquals } from "../../testdeps.ts";
-import { SupportedDatabaseType } from "../connect.ts";
+import { DatabaseDialect } from "../connect.ts";
+import { Column } from "./column.ts";
 
-function isTableQueryValid(
-  builder: TableBuilder,
-  dialect: SupportedDatabaseType,
-  query: string,
-) {
-  (builder as any).adapter.type = dialect;
-  assertEquals(builder.toSQL(), query);
-}
-
-Deno.test("TableBuilder: create basic table", () => {
-  const builder = new TableBuilder("posts", {} as any);
+function createBasicTable(dialect: DatabaseDialect) {
+  const builder = new TableBuilder("posts", { dialect } as any);
 
   builder.id();
-  builder.string("title", 100);
-  builder.string("description");
+  builder.varchar("title", 100);
+  builder.varchar("description");
   builder.text("content");
   builder.integer("likes");
   builder.bigInteger("price");
   builder.boolean("is_published");
   builder.datetime("published_at");
+  builder.date("date_approved");
   builder.timestamps();
 
-  isTableQueryValid(
-    builder,
-    "mysql",
-    `create table posts (id integer primary key auto_increment, title varchar(100), description varchar(255), content longtext, likes integer, price bigint, is_published tinyint, published_at datetime, created_at datetime, updated_at datetime);`,
-  );
+  return builder;
+}
 
-  isTableQueryValid(
-    builder,
-    "sqlite",
-    `create table posts (id integer primary key autoincrement, title varchar(100), description varchar(255), content text, likes integer, price bigint, is_published boolean, published_at datetime, created_at datetime, updated_at datetime);`,
-  );
-
-  isTableQueryValid(
-    builder,
-    "postgres",
-    `create table posts (id serial primary key, title varchar(100), description varchar(255), content text, likes integer, price bigint, is_published boolean, published_at timestamp, created_at timestamp, updated_at timestamp);`,
+Deno.test("TableBuilder: mysql basic table", () => {
+  const builder = createBasicTable("mysql");
+  assertEquals(
+    builder.toSQL(),
+    "CREATE TABLE posts (id BIGINT PRIMARY KEY AUTO_INCREMENT, title VARCHAR(100), description VARCHAR(255), content LONGTEXT, likes INTEGER, price BIGINT, is_published TINYINT, published_at DATETIME, date_approved DATE, created_at DATETIME, updated_at DATETIME);",
   );
 });
 
-Deno.test("TableBuilder: smallIncrements", async () => {
-  const builder = new TableBuilder("posts", {} as any);
-  builder.smallIncrements("votes");
-
-  isTableQueryValid(
-    builder,
-    "mysql",
-    `create table posts (votes smallint auto_increment);`,
-  );
-
-  // This query actually doesn't work, since SQLite's auto increment system
-  // only accepts the INTEGER type
-  isTableQueryValid(
-    builder,
-    "sqlite",
-    `create table posts (votes smallint autoincrement);`,
-  );
-
-  isTableQueryValid(
-    builder,
-    "postgres",
-    `create table posts (votes smallserial);`,
+Deno.test("TableBuilder: postgres basic table", () => {
+  const builder = createBasicTable("postgres");
+  assertEquals(
+    builder.toSQL(),
+    "CREATE TABLE posts (id BIGSERIAL PRIMARY KEY, title VARCHAR(100), description VARCHAR(255), content TEXT, likes INTEGER, price BIGINT, is_published BOOLEAN, published_at TIMESTAMP, date_approved DATE, created_at TIMESTAMP, updated_at TIMESTAMP);",
   );
 });
 
-Deno.test("TableBuilder: bigIncrements", async () => {
-  const builder = new TableBuilder("posts", {} as any);
-  builder.bigIncrements("votes");
-
-  isTableQueryValid(
-    builder,
-    "mysql",
-    `create table posts (votes bigint auto_increment);`,
+Deno.test("TableBuilder: sqlite basic table", () => {
+  const builder = createBasicTable("sqlite");
+  assertEquals(
+    builder.toSQL(),
+    "CREATE TABLE posts (id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(100), description VARCHAR(255), content TEXT, likes INTEGER, price BIGINT, is_published BOOLEAN, published_at DATETIME, date_approved DATE, created_at DATETIME, updated_at DATETIME);",
   );
+});
 
-  // This query actually doesn't work, since SQLite's auto increment system
-  // only accepts the INTEGER type
-  isTableQueryValid(
-    builder,
-    "sqlite",
-    `create table posts (votes bigint autoincrement);`,
-  );
+const methods: (keyof TableBuilder)[] = [
+  "increments",
+  "bigIncrements",
+  "smallIncrements",
+  "varchar",
+  "text",
+  "integer",
+  "smallInteger",
+  "bigInteger",
+  "boolean",
+  "datetime",
+  "date",
+];
 
-  isTableQueryValid(
-    builder,
-    "postgres",
-    `create table posts (votes bigserial);`,
-  );
+for (const method of methods) {
+  Deno.test(`TableBuilder: ${method}`, () => {
+    ["sqlite", "postgres", "mysql"].forEach(() => {
+      const builder = new TableBuilder("users", {} as any);
+
+      const column = builder[method]("name");
+      assertEquals(column instanceof Column, true);
+      assertEquals((column as any).name, "name");
+      assertEquals((column as any).type, method);
+    });
+  });
+}
+
+Deno.test("TableBuilder: id", () => {
+  for (const dialect of ["sqlite", "postgres", "mysql"]) {
+    const builder = new TableBuilder("users", { dialect } as any);
+    const column = builder.id();
+    assertEquals((column as any).type, "bigIncrements");
+    assertEquals((builder as any).columns.length, 1);
+    assertEquals((builder as any).columns[0], column);
+  }
+});
+
+Deno.test("TableBuilder: varchar", () => {
+  const builder = new TableBuilder("users", {} as any);
+
+  let column = builder.varchar("name");
+  assertEquals((column as any).type, "varchar");
+  assertEquals((column as any).length, undefined);
+
+  column = builder.varchar("name", 100);
+  assertEquals((column as any).type, "varchar");
+  assertEquals((column as any).length, 100);
+});
+
+Deno.test("TableBuilder: timestamps", () => {
+  for (const dialect of ["sqlite", "postgres", "mysql"]) {
+    const builder = new TableBuilder("users", { dialect } as any);
+    let columns = builder.timestamps();
+    assertEquals(columns.length, 2);
+    assertEquals((columns[0] as any).name, "created_at");
+    assertEquals((columns[0] as any).type, "datetime");
+    assertEquals((columns[1] as any).name, "updated_at");
+    assertEquals((columns[1] as any).type, "datetime");
+    assertEquals((builder as any).columns.length, 2);
+    assertEquals((builder as any).columns[0], columns[0]);
+    assertEquals((builder as any).columns[1], columns[1]);
+  }
 });

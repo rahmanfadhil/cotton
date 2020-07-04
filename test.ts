@@ -11,3 +11,4 @@ import "./src/model_test.ts";
 import "./src/adapters/adapter_test.ts";
 import "./src/migrations/schema_test.ts";
 import "./src/migrations/tablebuilder_test.ts";
+import "./src/migrations/column_test.ts";
