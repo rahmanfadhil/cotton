@@ -229,9 +229,19 @@ export class QueryCompiler {
 
         let expression: string;
 
-        expression = `${this.quote(column)} ${operator} ${
-          this.toDatabaseValue(value)
-        }`;
+        if (operator === "between") {
+          if (!Array.isArray(value) || value.length !== 2) {
+            throw new Error("BETWEEN must have two values!");
+          }
+
+          expression = `${this.quote(column)} ${operator} ${
+            this.toDatabaseValue(value[0])
+          } and ${this.toDatabaseValue(value[1])}`;
+        } else {
+          expression = `${this.quote(column)} ${operator} ${
+            this.toDatabaseValue(value)
+          }`;
+        }
 
         if (index === 0) {
           // The first where clause should have `WHERE` explicitly.

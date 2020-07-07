@@ -1,4 +1,4 @@
-import { WhereType, QueryType } from "./querybuilder.ts";
+import { WhereType, QueryType, QueryBuilder } from "./querybuilder.ts";
 import { testQueryBuilder } from "./testutils.ts";
 
 // Where
@@ -25,6 +25,19 @@ testQueryBuilder(
       column: "age",
       operator: ">",
       value: 16,
+    }],
+  },
+);
+
+testQueryBuilder(
+  "`where` with multiple values",
+  (query) => query.where("id", "in", [1, 2, 3]),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "id",
+      operator: "in",
+      value: [1, 2, 3],
     }],
   },
 );
@@ -63,8 +76,8 @@ testQueryBuilder(
 );
 
 testQueryBuilder(
-  "`orWhere`",
-  (query) => query.orWhere("email", "a@b.com"),
+  "`or`",
+  (query) => query.or("email", "a@b.com"),
   {
     wheres: [{
       type: WhereType.Or,
@@ -76,8 +89,8 @@ testQueryBuilder(
 );
 
 testQueryBuilder(
-  "`orWhere` with custom operator",
-  (query) => query.orWhere("age", ">", 16),
+  "`or` with custom operator",
+  (query) => query.or("age", ">", 16),
   {
     wheres: [{
       type: WhereType.Or,
@@ -89,8 +102,8 @@ testQueryBuilder(
 );
 
 testQueryBuilder(
-  "`notWhere`",
-  (query) => query.notWhere("email", "a@b.com"),
+  "`not`",
+  (query) => query.not("email", "a@b.com"),
   {
     wheres: [{
       type: WhereType.Not,
@@ -102,8 +115,8 @@ testQueryBuilder(
 );
 
 testQueryBuilder(
-  "`notWhere` with custom operator",
-  (query) => query.notWhere("age", ">", 16),
+  "`not` with custom operator",
+  (query) => query.not("age", ">", 16),
   {
     wheres: [{
       type: WhereType.Not,
@@ -115,12 +128,12 @@ testQueryBuilder(
 );
 
 testQueryBuilder(
-  "`orWhere` and `notWhere`",
+  "`or` and `not`",
   (query) =>
     query
       .where("email", "a@b.com")
-      .orWhere("name", "LIKE", "%john%")
-      .notWhere("age", ">", 16),
+      .or("name", "like", "%john%")
+      .not("age", ">", 16),
   {
     wheres: [{
       type: WhereType.Default,
@@ -130,7 +143,7 @@ testQueryBuilder(
     }, {
       type: WhereType.Or,
       column: "name",
-      operator: "LIKE",
+      operator: "like",
       value: "%john%",
     }, {
       type: WhereType.Not,

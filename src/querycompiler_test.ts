@@ -122,20 +122,20 @@ testQueryCompiler("`where` in", {
   wheres: [{
     column: "role",
     value: ["guest", "author"],
-    operator: "IN",
+    operator: "in",
     type: WhereType.Default,
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `role` IN (?, ?);",
+    text: "SELECT * FROM `users` WHERE `role` in (?, ?);",
     values: ["guest", "author"],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `role` IN (?, ?);",
+    text: "SELECT * FROM `users` WHERE `role` in (?, ?);",
     values: ["guest", "author"],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "role" IN ($1, $2);',
+    text: 'SELECT * FROM "users" WHERE "role" in ($1, $2);',
     values: ["guest", "author"],
   },
 });
@@ -144,20 +144,20 @@ testQueryCompiler("`where` in number value", {
   wheres: [{
     column: "id",
     value: [5, 7, 11, 12],
-    operator: "IN",
+    operator: "in",
     type: WhereType.Default,
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `id` IN (?, ?, ?, ?);",
+    text: "SELECT * FROM `users` WHERE `id` in (?, ?, ?, ?);",
     values: [5, 7, 11, 12],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `id` IN (?, ?, ?, ?);",
+    text: "SELECT * FROM `users` WHERE `id` in (?, ?, ?, ?);",
     values: [5, 7, 11, 12],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "id" IN ($1, $2, $3, $4);',
+    text: 'SELECT * FROM "users" WHERE "id" in ($1, $2, $3, $4);',
     values: [5, 7, 11, 12],
   },
 });
@@ -166,22 +166,106 @@ testQueryCompiler("`where` like", {
   wheres: [{
     column: "name",
     value: "%john%",
-    operator: "LIKE",
+    operator: "like",
     type: WhereType.Default,
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `name` LIKE ?;",
+    text: "SELECT * FROM `users` WHERE `name` like ?;",
     values: ["%john%"],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `name` LIKE ?;",
+    text: "SELECT * FROM `users` WHERE `name` like ?;",
     values: ["%john%"],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "name" LIKE $1;',
+    text: 'SELECT * FROM "users" WHERE "name" like $1;',
     values: ["%john%"],
   },
+});
+
+testQueryCompiler("`where` between", {
+  wheres: [{
+    column: "age",
+    value: [1, 5],
+    operator: "between",
+    type: WhereType.Default,
+  }],
+}, {
+  mysql: {
+    text: "SELECT * FROM `users` WHERE `age` between ? and ?;",
+    values: [1, 5],
+  },
+  sqlite: {
+    text: "SELECT * FROM `users` WHERE `age` between ? and ?;",
+    values: [1, 5],
+  },
+  postgres: {
+    text: 'SELECT * FROM "users" WHERE "age" between $1 and $2;',
+    values: [1, 5],
+  },
+});
+
+Deno.test("QueryCompiler: BETWEEN must have two values", () => {
+  assertThrows(
+    () => {
+      new QueryCompiler({
+        type: QueryType.Select,
+        wheres: [{
+          type: WhereType.Default,
+          column: "age",
+          operator: "between",
+          value: [1, 2, 5],
+        }],
+        columns: [],
+        orders: [],
+        returning: [],
+        tableName: "`users`",
+      }, "" as any).compile();
+    },
+    Error,
+    "BETWEEN must have two values!",
+  );
+
+  assertThrows(
+    () => {
+      new QueryCompiler({
+        type: QueryType.Select,
+        wheres: [{
+          type: WhereType.Default,
+          column: "age",
+          operator: "between",
+          value: [1],
+        }],
+        columns: [],
+        orders: [],
+        returning: [],
+        tableName: "`users`",
+      }, "" as any).compile();
+    },
+    Error,
+    "BETWEEN must have two values!",
+  );
+
+  assertThrows(
+    () => {
+      new QueryCompiler({
+        type: QueryType.Select,
+        wheres: [{
+          type: WhereType.Default,
+          column: "age",
+          operator: "between",
+          value: "blah",
+        }],
+        columns: [],
+        orders: [],
+        returning: [],
+        tableName: "`users`",
+      }, "" as any).compile();
+    },
+    Error,
+    "BETWEEN must have two values!",
+  );
 });
 
 testQueryCompiler("`where` not", {
@@ -291,7 +375,7 @@ testQueryCompiler("`where` and not", {
 // DELETE
 // --------------------------------------------------------------------------------
 
-Deno.test("cannot perform `delete` without any constraints", () => {
+Deno.test("QueryCompiler: cannot perform `delete` without any constraints", () => {
   assertThrows(
     () => {
       new QueryCompiler({

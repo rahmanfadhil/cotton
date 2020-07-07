@@ -4,7 +4,16 @@ import { QueryCompiler } from "./querycompiler.ts";
 /**
  * WHERE operators
  */
-export type WhereOperator = ">" | ">=" | "<" | "<=" | "=" | "!=" | "LIKE";
+export type WhereOperator =
+  | ">"
+  | ">="
+  | "<"
+  | "<="
+  | "="
+  | "!="
+  | "like"
+  | "in"
+  | "between";
 
 /**
  * Combine WHERE operators with OR or NOT
@@ -25,7 +34,7 @@ export type OrderDirection = "DESC" | "ASC";
  */
 interface WhereBinding {
   column: string;
-  operator: WhereOperator | "IN" | "BETWEEN";
+  operator: WhereOperator;
   value: any;
   type: WhereType;
 }
@@ -170,9 +179,9 @@ export class QueryBuilder {
     // Default operation, which is `=`. Otherwise, it will use the custom
     // operation defined by the user.
     if (typeof value === "undefined") {
-      this.addWhereClause({ column, value: operator });
+      this.addWhereClause({ column, value: operator, type: WhereType.Default });
     } else {
-      this.addWhereClause({ column, operator, value });
+      this.addWhereClause({ column, operator, value, type: WhereType.Default });
     }
 
     return this;
@@ -181,13 +190,9 @@ export class QueryBuilder {
   /**
    * Add WHERE NOT clause to query
    */
-  public notWhere(column: string, value: any): QueryBuilder;
-  public notWhere(
-    column: string,
-    operator: WhereOperator,
-    value: any,
-  ): QueryBuilder;
-  public notWhere(
+  public not(column: string, value: any): QueryBuilder;
+  public not(column: string, operator: WhereOperator, value: any): QueryBuilder;
+  public not(
     column: string,
     operator: WhereOperator,
     value?: any,
@@ -207,13 +212,9 @@ export class QueryBuilder {
   /**
    * Add WHERE ... OR clause to query
    */
-  public orWhere(column: string, value: any): QueryBuilder;
-  public orWhere(
-    column: string,
-    operator: WhereOperator,
-    value: any,
-  ): QueryBuilder;
-  public orWhere(
+  public or(column: string, value: any): QueryBuilder;
+  public or(column: string, operator: WhereOperator, value: any): QueryBuilder;
+  public or(
     column: string,
     operator: WhereOperator,
     value?: any,
@@ -227,37 +228,6 @@ export class QueryBuilder {
       this.addWhereClause({ column, operator, value, type: WhereType.Or });
     }
 
-    return this;
-  }
-
-  /**
-   * Add a WHERE columnName IN (...) clause
-   * 
-   * @param column the name of the column
-   * @param values the values to be tested against
-   */
-  public whereIn(column: string, values: any[]): QueryBuilder {
-    this.addWhereClause({
-      operator: "IN",
-      column,
-      value: values,
-    });
-    return this;
-  }
-
-  /**
-   * Add a WHERE columnName IN (...) clause
-   * 
-   * @param column the name of the column
-   * @param values the values to be tested against
-   */
-  public whereNotIn(column: string, values: any[]): QueryBuilder {
-    this.addWhereClause({
-      operator: "IN",
-      type: WhereType.Not,
-      column,
-      value: values,
-    });
     return this;
   }
 
@@ -396,14 +366,14 @@ export class QueryBuilder {
   private addWhereClause(
     options: {
       column: string;
-      operator?: WhereOperator | "BETWEEN" | "IN";
+      operator?: WhereOperator;
       value: any;
-      type?: WhereType;
+      type: WhereType;
     },
   ) {
     // Populate options with default values
     const clause: WhereBinding = {
-      type: options.type || WhereType.Default,
+      type: options.type,
       column: options.column,
       operator: options.operator || "=",
       value: options.value,
