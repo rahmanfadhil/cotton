@@ -218,16 +218,24 @@ export abstract class Model {
       const data = this._getValues();
 
       // Save record to the database
-      await modelClass.adapter
+      const query = modelClass.adapter
         .table(modelClass.tableName)
-        .insert(data)
-        .execute();
+        .insert(data);
+
+      if (modelClass.adapter.dialect === "postgres") {
+        query.returning("id");
+      }
+
+      const result = await query.execute<{ id: number }>();
 
       // Get last inserted id
-      const lastInsertedId = await modelClass.adapter.getLastInsertedId({
-        tableName: modelClass.tableName,
-        primaryKey: modelClass.primaryKey,
-      });
+      let lastInsertedId: number;
+
+      if (modelClass.adapter.dialect === "postgres") {
+        lastInsertedId = result[result.length - 1].id;
+      } else {
+        lastInsertedId = modelClass.adapter.lastInsertedId;
+      }
 
       // Set the primary key
       this.id = lastInsertedId;
@@ -300,16 +308,24 @@ export abstract class Model {
     const values = models.map((model) => model._getValues());
 
     // Execute query
-    await this.adapter
+    const query = this.adapter
       .table(this.tableName)
-      .insert(values)
-      .execute();
+      .insert(values);
+
+    if (this.adapter.dialect === "postgres") {
+      query.returning("id");
+    }
+
+    const result = await query.execute<{ id: number }>();
 
     // Get last inserted id
-    const lastInsertedId = await this.adapter.getLastInsertedId({
-      tableName: this.tableName,
-      primaryKey: this.primaryKey,
-    });
+    let lastInsertedId: number;
+
+    if (this.adapter.dialect === "postgres") {
+      lastInsertedId = result[result.length - 1].id;
+    } else {
+      lastInsertedId = this.adapter.lastInsertedId;
+    }
 
     // Set the model primary keys
     const ids = NumberUtils.range(

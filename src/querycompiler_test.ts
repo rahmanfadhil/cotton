@@ -385,6 +385,33 @@ testQueryCompiler("basic `insert`", {
   },
 });
 
+testQueryCompiler("`insert` with returning", {
+  type: QueryType.Insert,
+  values: {
+    email: "a@b.com",
+    age: 16,
+    is_active: true,
+    birthday: new Date("6 July, 2020"),
+  },
+  returning: ["id", "name"],
+}, {
+  mysql: {
+    text:
+      "INSERT INTO users (email, age, is_active, birthday) VALUES (?, ?, ?, ?) RETURNING id, name;",
+    values: ["a@b.com", 16, 1, "2020-07-06 00:00:00"],
+  },
+  sqlite: {
+    text:
+      "INSERT INTO users (email, age, is_active, birthday) VALUES (?, ?, ?, ?) RETURNING id, name;",
+    values: ["a@b.com", 16, 1, "2020-07-06 00:00:00"],
+  },
+  postgres: {
+    text:
+      "INSERT INTO users (email, age, is_active, birthday) VALUES ($1, $2, $3, $4) RETURNING id, name;",
+    values: ["a@b.com", 16, true, "2020-07-06 00:00:00"],
+  },
+});
+
 testQueryCompiler("`insert` multiple", {
   type: QueryType.Insert,
   values: [{
@@ -525,6 +552,33 @@ testQueryCompiler("basic `replace`", {
   postgres: {
     text:
       "REPLACE INTO users (email, age, is_active, birthday) VALUES ($1, $2, $3, $4);",
+    values: ["a@b.com", 16, true, "2020-07-06 00:00:00"],
+  },
+});
+
+testQueryCompiler("`replace` with returning", {
+  type: QueryType.Replace,
+  values: {
+    email: "a@b.com",
+    age: 16,
+    is_active: true,
+    birthday: new Date("6 July, 2020"),
+  },
+  returning: ["id", "name"],
+}, {
+  mysql: {
+    text:
+      "REPLACE INTO users (email, age, is_active, birthday) VALUES (?, ?, ?, ?) RETURNING id, name;",
+    values: ["a@b.com", 16, 1, "2020-07-06 00:00:00"],
+  },
+  sqlite: {
+    text:
+      "REPLACE INTO users (email, age, is_active, birthday) VALUES (?, ?, ?, ?) RETURNING id, name;",
+    values: ["a@b.com", 16, 1, "2020-07-06 00:00:00"],
+  },
+  postgres: {
+    text:
+      "REPLACE INTO users (email, age, is_active, birthday) VALUES ($1, $2, $3, $4) RETURNING id, name;",
     values: ["a@b.com", 16, true, "2020-07-06 00:00:00"],
   },
 });

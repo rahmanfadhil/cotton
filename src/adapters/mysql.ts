@@ -6,11 +6,7 @@ import { DatabaseDialect } from "../connect.ts";
  * MySQL database adapter
  */
 export class MysqlAdapter extends Adapter {
-  private _lastInsertedId: number = 0;
-
-  public getLastInsertedId(): Promise<number> {
-    return Promise.resolve(this._lastInsertedId);
-  }
+  public lastInsertedId: number = 0;
 
   public dialect: DatabaseDialect = "mysql";
 
@@ -59,7 +55,7 @@ export class MysqlAdapter extends Adapter {
     }
 
     if (records.lastInsertId && records.affectedRows) {
-      this._lastInsertedId = records.lastInsertId + records.affectedRows - 1;
+      this.lastInsertedId = records.lastInsertId + records.affectedRows - 1;
     }
 
     return Array.isArray(records) ? records : [];

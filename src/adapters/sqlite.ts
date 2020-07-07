@@ -8,8 +8,8 @@ import { DatabaseDialect } from "../connect.ts";
 export class SqliteAdapter extends Adapter {
   public dialect: DatabaseDialect = "sqlite";
 
-  public getLastInsertedId(): Promise<number> {
-    return Promise.resolve(this.client?.lastInsertRowId || 0);
+  public get lastInsertedId(): number {
+    return this.client?.lastInsertRowId || 0;
   }
 
   /**
