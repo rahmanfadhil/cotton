@@ -1,6 +1,8 @@
 import { QueryType, WhereType } from "./querybuilder.ts";
 import { DateUtils } from "./utils/date.ts";
 import { testQueryCompiler } from "./testutils.ts";
+import { assertThrows } from "../testdeps.ts";
+import { QueryCompiler } from "./querycompiler.ts";
 
 // --------------------------------------------------------------------------------
 // SELECT
@@ -288,6 +290,23 @@ testQueryCompiler("`where` and not", {
 // --------------------------------------------------------------------------------
 // DELETE
 // --------------------------------------------------------------------------------
+
+Deno.test("cannot perform `delete` without any constraints", () => {
+  assertThrows(
+    () => {
+      new QueryCompiler({
+        type: QueryType.Delete,
+        wheres: [],
+        columns: [],
+        orders: [],
+        returning: [],
+        tableName: "users",
+      }, "" as any).compile();
+    },
+    Error,
+    "Cannot perform delete without any constraints!",
+  );
+});
 
 testQueryCompiler("`delete` and `where`", {
   type: QueryType.Delete,

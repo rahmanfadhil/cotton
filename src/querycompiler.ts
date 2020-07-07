@@ -187,7 +187,11 @@ export class QueryCompiler {
     let query: string[] = [`DELETE FROM ${this.description.tableName}`];
 
     // Add all query constraints
-    query = query.concat(this.collectConstraints());
+    const constraints = this.collectConstraints();
+    if (!(constraints.length >= 1)) {
+      throw new Error("Cannot perform delete without any constraints!");
+    }
+    query = query.concat(constraints);
 
     return query.join(" ") + ";";
   }
