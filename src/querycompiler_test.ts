@@ -440,18 +440,18 @@ testQueryCompiler(
   {
     mysql: {
       text:
-        "INSERT INTO users (email, age) VALUES (?, NULL), (NULL, ?), (?, ?)",
-      values: ["a@b.com", 16, "a@b.com", 16],
+        "INSERT INTO users (email, age) VALUES (?, NULL), (NULL, ?), (?, ?);",
+      values: ["b@c.com", 16, "a@b.com", 16],
     },
     sqlite: {
       text:
-        "INSERT INTO users (email, age) VALUES (?, NULL), (NULL, ?), (?, ?)",
-      values: ["a@b.com", 16, "a@b.com", 16],
+        "INSERT INTO users (email, age) VALUES (?, NULL), (NULL, ?), (?, ?);",
+      values: ["b@c.com", 16, "a@b.com", 16],
     },
     postgres: {
       text:
-        "INSERT INTO users (email, age) VALUES ($1, NULL), (NULL, $2), ($3, $4)",
-      values: ["a@b.com", 16, "a@b.com", 16],
+        "INSERT INTO users (email, age) VALUES ($1, NULL), (NULL, $2), ($3, $4);",
+      values: ["b@c.com", 16, "a@b.com", 16],
     },
   },
 );
@@ -584,18 +584,18 @@ testQueryCompiler(
   {
     mysql: {
       text:
-        "REPLACE INTO users (email, age) VALUES (?, NULL), (NULL, ?), (?, ?)",
-      values: ["a@b.com", 16, "a@b.com", 16],
+        "REPLACE INTO users (email, age) VALUES (?, NULL), (NULL, ?), (?, ?);",
+      values: ["b@c.com", 16, "a@b.com", 16],
     },
     sqlite: {
       text:
-        "REPLACE INTO users (email, age) VALUES (?, NULL), (NULL, ?), (?, ?)",
-      values: ["a@b.com", 16, "a@b.com", 16],
+        "REPLACE INTO users (email, age) VALUES (?, NULL), (NULL, ?), (?, ?);",
+      values: ["b@c.com", 16, "a@b.com", 16],
     },
     postgres: {
       text:
-        "REPLACE INTO users (email, age) VALUES ($1, NULL), (NULL, $2), ($3, $4)",
-      values: ["a@b.com", 16, "a@b.com", 16],
+        "REPLACE INTO users (email, age) VALUES ($1, NULL), (NULL, $2), ($3, $4);",
+      values: ["b@c.com", 16, "a@b.com", 16],
     },
   },
 );

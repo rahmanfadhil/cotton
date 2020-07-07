@@ -410,7 +410,7 @@ testQueryBuilder(
   "`insert` with returning all columns",
   (query) => query.insert({ email: "a@b.com" }).returning("*"),
   {
-    values: { email: "a@b.com", age: 16 },
+    values: { email: "a@b.com" },
     returning: ["*"],
     type: QueryType.Insert,
   },
@@ -418,10 +418,9 @@ testQueryBuilder(
 
 testQueryBuilder(
   "`insert` with returning several columns",
-  (query) =>
-    query.insert({ email: "a@b.com", age: 16 }).returning("email", "age"),
+  (query) => query.insert({ email: "a@b.com" }).returning("email", "age"),
   {
-    values: { email: "a@b.com", age: 16 },
+    values: { email: "a@b.com" },
     returning: ["email", "age"],
     type: QueryType.Insert,
   },
@@ -450,7 +449,7 @@ testQueryBuilder(
       is_active: true,
       birthday: new Date("7 July, 2020"),
     },
-    type: QueryType.Insert,
+    type: QueryType.Replace,
   },
 );
 
@@ -458,19 +457,18 @@ testQueryBuilder(
   "`replace` with returning all columns",
   (query) => query.replace({ email: "a@b.com" }).returning("*"),
   {
-    values: { email: "a@b.com", age: 16 },
+    values: { email: "a@b.com" },
     returning: ["*"],
-    type: QueryType.Insert,
+    type: QueryType.Replace,
   },
 );
 
 testQueryBuilder(
   "`replace` with returning several columns",
-  (query) =>
-    query.replace({ email: "a@b.com", age: 16 }).returning("email", "age"),
+  (query) => query.replace({ email: "a@b.com" }).returning("email", "age"),
   {
-    values: { email: "a@b.com", age: 16 },
+    values: { email: "a@b.com" },
     returning: ["email", "age"],
-    type: QueryType.Insert,
+    type: QueryType.Replace,
   },
 );
