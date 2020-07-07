@@ -129,11 +129,11 @@ testDB("Model: save", async (client) => {
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
 
-  // user.email = "b@c.com";
-  // await user.save();
+  user.email = "b@c.com";
+  await user.save();
 
-  // user = await User.findOne(1) as User;
-  // assertEquals(user.email, "c@d.com");
+  user = await User.findOne(1) as User;
+  assertEquals(user.email, "b@c.com");
 });
 
 testDB("Model: insert single", async (client) => {

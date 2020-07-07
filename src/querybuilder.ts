@@ -1,18 +1,18 @@
-import { VALID_WHERE_OPERATIONS } from "./constants.ts";
 import { Adapter } from "./adapters/adapter.ts";
-import { DateUtils } from "./utils/date.ts";
+import { QueryCompiler } from "./querycompiler.ts";
 
 /**
  * WHERE operators
  */
-export type WhereOperator = ">" | ">=" | "<" | "<=" | "=" | "like";
+export type WhereOperator = ">" | ">=" | "<" | "<=" | "=" | "!=" | "LIKE";
 
 /**
  * Combine WHERE operators with OR or NOT
  */
 export enum WhereType {
-  OR = "OR",
-  NOT = "NOT",
+  Or = 1,
+  Not = 2,
+  Default = 3,
 }
 
 /**
@@ -24,24 +24,24 @@ export type OrderDirection = "DESC" | "ASC";
  * WHERE clause informations
  */
 interface WhereBinding {
-  fieldName: string;
-  operator: WhereOperator;
+  column: string;
+  operator: WhereOperator | "IN" | "BETWEEN";
   value: any;
-  type?: WhereType;
+  type: WhereType;
 }
 
 /**
  * ORDER BY clause informations
  */
 interface OrderBinding {
-  fieldName: string;
+  column: string;
   order: OrderDirection;
 }
 
 /**
  * Valid query types
  */
-enum QueryType {
+export enum QueryType {
   Select = "select",
   Insert = "insert",
   Delete = "delete",
@@ -55,11 +55,6 @@ enum QueryType {
 export type QueryValues = {
   [key: string]: number | string | boolean | Date;
 };
-
-interface ExecutableQuery {
-  text: string;
-  values: any[];
-}
 
 /**
  * All information about the query
@@ -107,7 +102,7 @@ export class QueryBuilder {
     /** The table which the query is targeting */
     tableName: string,
     /** The database adapter to perform query */
-    private adapter?: Adapter,
+    private adapter: Adapter,
   ) {
     this.description = {
       tableName,
@@ -160,14 +155,14 @@ export class QueryBuilder {
   /**
    * Add basic WHERE clause to query
    */
-  public where(fieldName: string, value: any): QueryBuilder;
+  public where(column: string, value: any): QueryBuilder;
   public where(
-    fieldName: string,
+    column: string,
     operator: WhereOperator,
     value: any,
   ): QueryBuilder;
   public where(
-    fieldName: string,
+    column: string,
     operator: WhereOperator,
     value?: any,
   ): QueryBuilder {
@@ -175,9 +170,9 @@ export class QueryBuilder {
     // Default operation, which is `=`. Otherwise, it will use the custom
     // operation defined by the user.
     if (typeof value === "undefined") {
-      this.addWhereClause({ fieldName, value: operator });
+      this.addWhereClause({ column, value: operator });
     } else {
-      this.addWhereClause({ fieldName, operator, value });
+      this.addWhereClause({ column, operator, value });
     }
 
     return this;
@@ -186,14 +181,14 @@ export class QueryBuilder {
   /**
    * Add WHERE NOT clause to query
    */
-  public notWhere(fieldName: string, value: any): QueryBuilder;
+  public notWhere(column: string, value: any): QueryBuilder;
   public notWhere(
-    fieldName: string,
+    column: string,
     operator: WhereOperator,
     value: any,
   ): QueryBuilder;
   public notWhere(
-    fieldName: string,
+    column: string,
     operator: WhereOperator,
     value?: any,
   ): QueryBuilder {
@@ -201,9 +196,9 @@ export class QueryBuilder {
     // Default operation, which is `=`. Otherwise, it will use the custom
     // operation defined by the user.
     if (typeof value === "undefined") {
-      this.addWhereClause({ fieldName, value: operator, type: WhereType.NOT });
+      this.addWhereClause({ column, value: operator, type: WhereType.Not });
     } else {
-      this.addWhereClause({ fieldName, operator, value, type: WhereType.NOT });
+      this.addWhereClause({ column, operator, value, type: WhereType.Not });
     }
 
     return this;
@@ -212,14 +207,14 @@ export class QueryBuilder {
   /**
    * Add WHERE ... OR clause to query
    */
-  public orWhere(fieldName: string, value: any): QueryBuilder;
+  public orWhere(column: string, value: any): QueryBuilder;
   public orWhere(
-    fieldName: string,
+    column: string,
     operator: WhereOperator,
     value: any,
   ): QueryBuilder;
   public orWhere(
-    fieldName: string,
+    column: string,
     operator: WhereOperator,
     value?: any,
   ): QueryBuilder {
@@ -227,24 +222,55 @@ export class QueryBuilder {
     // Default operation, which is `=`. Otherwise, it will use the custom
     // operation defined by the user.
     if (typeof value === "undefined") {
-      this.addWhereClause({ fieldName, value: operator, type: WhereType.OR });
+      this.addWhereClause({ column, value: operator, type: WhereType.Or });
     } else {
-      this.addWhereClause({ fieldName, operator, value, type: WhereType.OR });
+      this.addWhereClause({ column, operator, value, type: WhereType.Or });
     }
 
     return this;
   }
 
   /**
-   * Select table fields
+   * Add a WHERE columnName IN (...) clause
    * 
-   * @param fields Table fields to select
+   * @param column the name of the column
+   * @param values the values to be tested against
    */
-  public select(...fields: string[]): QueryBuilder {
-    // Merge the `fields` array with `this.description.columns` without any duplicate.
-    fields.forEach((item) => {
-      if (!this.description.columns.includes(item)) {
-        this.description.columns.push(item);
+  public whereIn(column: string, values: any[]): QueryBuilder {
+    this.addWhereClause({
+      operator: "IN",
+      column,
+      value: values,
+    });
+    return this;
+  }
+
+  /**
+   * Add a WHERE columnName IN (...) clause
+   * 
+   * @param column the name of the column
+   * @param values the values to be tested against
+   */
+  public whereNotIn(column: string, values: any[]): QueryBuilder {
+    this.addWhereClause({
+      operator: "IN",
+      type: WhereType.Not,
+      column,
+      value: values,
+    });
+    return this;
+  }
+
+  /**
+   * Select table columns
+   * 
+   * @param columns Table columns to select
+   */
+  public select(...columns: string[]): QueryBuilder {
+    // Merge the `columns` array with `this.description.columns` without any duplicate.
+    columns.forEach((column) => {
+      if (!this.description.columns.includes(column)) {
+        this.description.columns.push(column);
       }
     });
 
@@ -286,14 +312,14 @@ export class QueryBuilder {
   /**
    * Add an "order by" clause to the query.
    * 
-   * @param fieldName Table field
+   * @param column Table field
    * @param direction "ASC" or "DESC"
    */
   public orderBy(
-    fieldName: string,
+    column: string,
     direction: OrderDirection = "ASC",
   ): QueryBuilder {
-    this.description.orders.push({ fieldName, order: direction });
+    this.description.orders.push({ column, order: direction });
     return this;
   }
 
@@ -323,8 +349,6 @@ export class QueryBuilder {
   /**
    * Sets the returning value for the query.
    * 
-   * TODO: check if the database supports RETURNING (mysql and sqlite doesn't support it)
-   * 
    * @param columns Table column name
    */
   public returning(...columns: string[]): QueryBuilder {
@@ -336,259 +360,6 @@ export class QueryBuilder {
     });
 
     return this;
-  }
-
-  // --------------------------------------------------------------------------------
-  // GENERATE QUERY STRING
-  // --------------------------------------------------------------------------------
-
-  /**
-   * Generate executable SQL statement
-   */
-  public toSQL(): string {
-    switch (this.description.type) {
-      case QueryType.Select:
-        return this.toSelectSQL();
-      case QueryType.Insert:
-        return this.toInsertSQL();
-      case QueryType.Replace:
-        return this.toInsertSQL(true);
-      case QueryType.Update:
-        return this.toUpdateSQL();
-      case QueryType.Delete:
-        return this.toDeleteSQL();
-      default:
-        throw new Error(`Query type '${this.description.type}' is invalid!`);
-    }
-  }
-
-  /**
-   * Generate `UPDATE` query string
-   */
-  private toUpdateSQL(): string {
-    let query: string[] = [`UPDATE ${this.description.tableName} SET`];
-
-    // Prevent to continue if there is no value
-    if (!this.description.values) {
-      throw new Error("Cannot perform update query without values!");
-    }
-
-    // Map values to query string
-    const values = Object.entries(this.description.values)
-      .map(([key, value]) => `${key} = ${this.toDatabaseValue(value)}`);
-
-    // Prevent to continue if there is no value
-    if (!(values.length >= 1)) {
-      throw new Error("Cannot perform update query without values!");
-    }
-
-    query.push(values.join(", "));
-
-    // Add RETURNING statement if exists
-    if (this.description.returning.length > 0) {
-      query.push("RETURNING", this.description.returning.join(", "));
-    }
-
-    // Add all query constraints
-    query = query.concat(this.collectConstraints());
-
-    return query.join(" ") + ";";
-  }
-
-  /**
-   * Generate `INSERT` query string
-   */
-  private toInsertSQL(replace: boolean = false): string {
-    // Initialize query string
-    // Decide wether to use REPLACE or INSERT
-    let query: string[] = replace
-      ? [`REPLACE INTO ${this.description.tableName}`]
-      : [`INSERT INTO ${this.description.tableName}`];
-
-    // Prevent to continue if there is no value
-    if (!this.description.values) {
-      throw new Error(
-        `Cannot perform ${
-          replace ? "replace" : "insert"
-        } query without values!`,
-      );
-    }
-
-    // If the user passes multiple records, map the values differently
-    if (Array.isArray(this.description.values)) {
-      if (!(this.description.values.length >= 1)) {
-        throw new Error(
-          `Cannot perform ${
-            replace ? "replace" : "insert"
-          } query without values!`,
-        );
-      }
-
-      // Get all inserted columns from the values
-      const fields = this.description.values
-        .map((v) => Object.keys(v))
-        .reduce((accumulator, currentValue) => {
-          for (const field of currentValue) {
-            if (!accumulator.includes(field)) {
-              accumulator.push(field);
-            }
-          }
-
-          return accumulator;
-        });
-
-      if (!(fields.length >= 1)) {
-        throw new Error(
-          `Cannot perform ${
-            replace ? "replace" : "insert"
-          } query without values!`,
-        );
-      }
-
-      // Map values to query string
-      const values = this.description.values.map((item) => {
-        const itemValues = fields.map((field) =>
-          this.toDatabaseValue((item[field]))
-        );
-        return `(${itemValues.join(", ")})`;
-      });
-
-      query.push(`(${fields.join(", ")})`, "VALUES", values.join(", "));
-    } else {
-      const fields = Object.keys(this.description.values);
-
-      if (!(fields.length >= 1)) {
-        throw new Error(
-          `Cannot perform ${
-            replace ? "replace" : "insert"
-          } query without values!`,
-        );
-      }
-
-      const values = Object.values(this.description.values)
-        .map((i) => this.toDatabaseValue(i))
-        .join(", ");
-      query.push(`(${fields.join(", ")}) VALUES (${values})`);
-    }
-
-    // Add RETURNING statement if exists
-    if (this.description.returning.length > 0) {
-      query.push("RETURNING", this.description.returning.join(", "));
-    }
-
-    return query.join(" ") + ";";
-  }
-
-  /**
-   * Generate `SELECT` query string
-   */
-  private toSelectSQL(): string {
-    // Query strings
-    let query: string[] = [`SELECT`];
-
-    // Select table columns
-    if (this.description.columns.length > 0) {
-      query.push(`(${this.description.columns.join(", ")})`);
-    } else {
-      query.push("*");
-    }
-
-    // Add table name
-    query.push(`FROM ${this.description.tableName}`);
-
-    // Add all query constraints
-    query = query.concat(this.collectConstraints());
-
-    return query.join(" ") + ";";
-  }
-
-  /**
-   * Generate `DELETE` query string
-   */
-  private toDeleteSQL(): string {
-    // Query strings
-    let query: string[] = [`DELETE FROM ${this.description.tableName}`];
-
-    // Add all query constraints
-    query = query.concat(this.collectConstraints());
-
-    return query.join(" ") + ";";
-  }
-
-  /**
-   * Collect query constraints in the current query
-   * 
-   * Example result:
-   * 
-   * ```
-   * ["WHERE email = 'a@b.com'", "LIMIT 1"]
-   * ```
-   */
-  private collectConstraints(): string[] {
-    // Query strings (that contain constraints only)
-    let query: string[] = [];
-
-    // Add where clauses if exists
-    if (this.description.wheres.length > 0) {
-      for (let index = 0; index < this.description.wheres.length; index++) {
-        const whereClause = this.description.wheres[index];
-
-        if (index === 0) {
-          // The first where clause should have `WHERE` explicitly.
-          if (whereClause.type === WhereType.NOT) {
-            query.push(
-              `WHERE NOT ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
-            );
-          } else {
-            query.push(
-              `WHERE ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
-            );
-          }
-        } else {
-          // The rest of them use `AND`
-          switch (whereClause.type) {
-            case WhereType.NOT:
-              query.push(
-                `AND NOT ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
-              );
-              break;
-            case WhereType.OR:
-              query.push(
-                `OR ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
-              );
-              break;
-            default:
-              query.push(
-                `AND ${whereClause.fieldName} ${whereClause.operator} ${whereClause.value}`,
-              );
-              break;
-          }
-        }
-      }
-    }
-
-    // Add "order by" clauses
-    if (this.description.orders.length > 0) {
-      query.push(`ORDER BY`);
-
-      query.push(
-        this.description.orders
-          .map((order) => `${order.fieldName} ${order.order}`)
-          .join(", "),
-      );
-    }
-
-    // Add query limit if exists
-    if (this.description.limit && this.description.limit > 0) {
-      query.push(`LIMIT ${this.description.limit}`);
-    }
-
-    // Add query offset if exists
-    if (this.description.offset && this.description.offset > 0) {
-      query.push(`OFFSET ${this.description.offset}`);
-    }
-
-    return query;
   }
 
   // --------------------------------------------------------------------------------
@@ -607,7 +378,12 @@ export class QueryBuilder {
       throw new Error("Cannot run query, adapter is not provided!");
     }
 
-    return await currentAdapter.query(this.toSQL());
+    const { text, values } = new QueryCompiler(
+      this.description,
+      this.adapter.dialect,
+    ).compile();
+
+    return await currentAdapter.query(text, values);
   }
 
   // --------------------------------------------------------------------------------
@@ -619,63 +395,21 @@ export class QueryBuilder {
    */
   private addWhereClause(
     options: {
-      fieldName: string;
-      operator?: WhereOperator;
+      column: string;
+      operator?: WhereOperator | "BETWEEN" | "IN";
       value: any;
       type?: WhereType;
     },
   ) {
     // Populate options with default values
-    const { fieldName, operator, value, type } = Object.assign(
-      {},
-      { operator: "=" },
-      options,
-    );
-
-    // Check wether the custom WHERE operation is valid
-    if (!VALID_WHERE_OPERATIONS.includes(operator)) {
-      throw new Error("Invalid operation!");
-    }
+    const clause: WhereBinding = {
+      type: options.type || WhereType.Default,
+      column: options.column,
+      operator: options.operator || "=",
+      value: options.value,
+    };
 
     // Push to `wheres` description
-    this.description.wheres.push({
-      fieldName,
-      operator,
-      type,
-      value: this.toDatabaseValue(value),
-    });
-  }
-
-  /**
-   * Transform value to a format that the database can understand
-   * 
-   * @param value The value to be sanitized
-   * 
-   * TODO: Sanitize value to prevent SQL injection
-   */
-  private toDatabaseValue(value: any): string {
-    let cleanedValue = "";
-
-    if (typeof value === "string") {
-      cleanedValue = `'${value}'`;
-    }
-
-    if (typeof value === "boolean") {
-      cleanedValue = value ? "1" : "0";
-    }
-
-    if (typeof value === "number") {
-      cleanedValue = value.toString();
-    }
-
-    if (typeof value === "undefined" || value === null) {
-      cleanedValue = "NULL";
-    }
-
-    if (value instanceof Date) {
-      cleanedValue = `'${DateUtils.formatDate(value)}'`;
-    }
-
-    return cleanedValue;
+    this.description.wheres.push(clause);
   }
 }

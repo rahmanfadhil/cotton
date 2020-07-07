@@ -34,6 +34,7 @@ export abstract class Adapter {
    * Run SQL query and get the result
    *
    * @param query SQL query to run (ex: "SELECT * FROM users;")
+   * @param values provides values to query placeholders
    */
   public abstract query<T>(query: string, values?: any[]): Promise<T[]>;
 

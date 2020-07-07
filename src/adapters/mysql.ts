@@ -52,10 +52,10 @@ export class MysqlAdapter extends Adapter {
   async query<T>(query: string, values?: any[]): Promise<T[]> {
     let records: any;
 
-    if (!Array.isArray(values)) {
-      records = await this.client.query(query);
-    } else {
+    if (Array.isArray(values) && values.length >= 1) {
       records = await this.client.query(query, values);
+    } else {
+      records = await this.client.query(query);
     }
 
     if (records.lastInsertId && records.affectedRows) {
