@@ -2,6 +2,9 @@ import { QueryDescription, QueryType, WhereType } from "./querybuilder.ts";
 import { DatabaseDialect } from "./connect.ts";
 import { DateUtils } from "./utils/date.ts";
 
+/**
+ * Transform QueryDescription to an executable SQL query string
+ */
 export class QueryCompiler {
   private values: any[] = [];
 
@@ -43,7 +46,9 @@ export class QueryCompiler {
    * Generate `UPDATE` query string
    */
   private toUpdateSQL(): string {
-    let query: string[] = [`UPDATE ${this.description.tableName} SET`];
+    let query: string[] = [
+      `UPDATE ${this.quote(this.description.tableName)} SET`,
+    ];
 
     // Prevent to continue if there is no value
     if (!this.description.values) {
@@ -51,8 +56,11 @@ export class QueryCompiler {
     }
 
     // Map values to query string
-    const values = Object.entries(this.description.values)
-      .map(([key, value]) => `${key} = ${this.toDatabaseValue(value)}`);
+    const values = Object
+      .entries(this.description.values)
+      .map(([key, value]) =>
+        `${this.quote(key)} = ${this.toDatabaseValue(value)}`
+      );
 
     // Prevent to continue if there is no value
     if (!(values.length >= 1)) {
@@ -79,8 +87,8 @@ export class QueryCompiler {
     // Initialize query string
     // Decide wether to use REPLACE or INSERT
     let query: string[] = replace
-      ? [`REPLACE INTO ${this.description.tableName}`]
-      : [`INSERT INTO ${this.description.tableName}`];
+      ? [`REPLACE INTO ${this.quote(this.description.tableName)}`]
+      : [`INSERT INTO ${this.quote(this.description.tableName)}`];
 
     // Prevent to continue if there is no value
     if (!this.description.values) {
@@ -130,7 +138,8 @@ export class QueryCompiler {
         return `(${itemValues.join(", ")})`;
       });
 
-      query.push(`(${fields.join(", ")})`, "VALUES", values.join(", "));
+      const columns = fields.map((field) => this.quote(field)).join(", ");
+      query.push(`(${columns})`, "VALUES", values.join(", "));
     } else {
       const fields = Object.keys(this.description.values);
 
@@ -145,7 +154,8 @@ export class QueryCompiler {
       const values = Object.values(this.description.values)
         .map((i) => this.toDatabaseValue(i))
         .join(", ");
-      query.push(`(${fields.join(", ")}) VALUES (${values})`);
+      const columns = fields.map((field) => this.quote(field)).join(", ");
+      query.push(`(${columns}) VALUES (${values})`);
     }
 
     // Add RETURNING statement if exists
@@ -171,7 +181,7 @@ export class QueryCompiler {
     }
 
     // Add table name
-    query.push(`FROM ${this.description.tableName}`);
+    query.push(`FROM ${this.quote(this.description.tableName)}`);
 
     // Add all query constraints
     query = query.concat(this.collectConstraints());
@@ -184,7 +194,9 @@ export class QueryCompiler {
    */
   private toDeleteSQL(): string {
     // Query strings
-    let query: string[] = [`DELETE FROM ${this.description.tableName}`];
+    let query: string[] = [
+      `DELETE FROM ${this.quote(this.description.tableName)}`,
+    ];
 
     // Add all query constraints
     const constraints = this.collectConstraints();
@@ -217,7 +229,9 @@ export class QueryCompiler {
 
         let expression: string;
 
-        expression = `${column} ${operator} ${this.toDatabaseValue(value)}`;
+        expression = `${this.quote(column)} ${operator} ${
+          this.toDatabaseValue(value)
+        }`;
 
         if (index === 0) {
           // The first where clause should have `WHERE` explicitly.
@@ -313,6 +327,16 @@ export class QueryCompiler {
         throw new Error(
           `Dialect '${this.dialect}' is not supported yet!`,
         );
+    }
+  }
+
+  private quote(data: string) {
+    switch (this.dialect) {
+      case "postgres":
+        return `"${data}"`;
+      case "mysql":
+      case "sqlite":
+        return `\`${data}\``;
     }
   }
 }
