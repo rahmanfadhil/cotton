@@ -1,538 +1,476 @@
-import { QueryBuilder } from "./querybuilder.ts";
-import { assertEquals, assertThrows } from "../testdeps.ts";
-import { DateUtils } from "./utils/date.ts";
+import { WhereType, QueryType } from "./querybuilder.ts";
+import { testQueryBuilder } from "./testutils.ts";
 
-Deno.test("QueryBuilder: basic query", () => {
-  const query = new QueryBuilder("users")
-    .where("email", "=", "a@b.com")
-    .toSQL();
-  assertEquals(query, "SELECT * FROM users WHERE email = 'a@b.com';");
-});
+// Where
 
-Deno.test("QueryBuilder: basic query with default operation", () => {
-  const query = new QueryBuilder("users")
-    .where("email", "a@b.com")
-    .toSQL();
-  assertEquals(query, "SELECT * FROM users WHERE email = 'a@b.com';");
-});
+testQueryBuilder(
+  "basic `where`",
+  (query) => query.where("email", "a@b.com"),
+  {
+    wheres: [{
+      column: "email",
+      operator: "=",
+      value: "a@b.com",
+      type: WhereType.Default,
+    }],
+  },
+);
 
-Deno.test("QueryBuilder: query with number value", () => {
-  const query = new QueryBuilder("users")
-    .where("age", "=", 13)
-    .toSQL();
-  assertEquals(query, "SELECT * FROM users WHERE age = 13;");
-});
+testQueryBuilder(
+  "`where` with custom operator",
+  (query) => query.where("age", ">", 16),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+  },
+);
 
-Deno.test("QueryBuilder: query with boolean true value", () => {
-  const query = new QueryBuilder("users")
-    .where("age", "=", true)
-    .toSQL();
-  assertEquals(query, "SELECT * FROM users WHERE age = 1;");
-});
+testQueryBuilder(
+  "multiple `where` clauses",
+  (query) =>
+    query
+      .where("email", "a@b.com")
+      .where("age", ">", 16)
+      .where("is_active", true)
+      .where("birthday", new Date("7 July, 2020")),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      operator: "=",
+      column: "email",
+      value: "a@b.com",
+    }, {
+      type: WhereType.Default,
+      operator: ">",
+      column: "age",
+      value: 16,
+    }, {
+      type: WhereType.Default,
+      operator: "=",
+      column: "is_active",
+      value: true,
+    }, {
+      type: WhereType.Default,
+      operator: "=",
+      column: "birthday",
+      value: new Date("7 July, 2020"),
+    }],
+  },
+);
 
-Deno.test("QueryBuilder: query with boolean true value", () => {
-  const query = new QueryBuilder("users")
-    .where("age", "=", false)
-    .toSQL();
-  assertEquals(query, "SELECT * FROM users WHERE age = 0;");
-});
+testQueryBuilder(
+  "`orWhere`",
+  (query) => query.orWhere("email", "a@b.com"),
+  {
+    wheres: [{
+      type: WhereType.Or,
+      column: "email",
+      operator: "=",
+      value: "a@b.com",
+    }],
+  },
+);
 
-Deno.test("QueryBuilder: query with date value", () => {
-  const date = new Date("14 January, 2004");
-  const dateString = DateUtils.formatDate(date);
+testQueryBuilder(
+  "`orWhere` with custom operator",
+  (query) => query.orWhere("age", ">", 16),
+  {
+    wheres: [{
+      type: WhereType.Or,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+  },
+);
 
-  const query = new QueryBuilder("users")
-    .where("email", "a@b.com")
-    .where("created_at", date)
-    .toSQL();
+testQueryBuilder(
+  "`notWhere`",
+  (query) => query.notWhere("email", "a@b.com"),
+  {
+    wheres: [{
+      type: WhereType.Not,
+      column: "email",
+      operator: "=",
+      value: "a@b.com",
+    }],
+  },
+);
 
-  assertEquals(
-    query,
-    `SELECT * FROM users WHERE email = 'a@b.com' AND created_at = '${dateString}';`,
-  );
-});
+testQueryBuilder(
+  "`notWhere` with custom operator",
+  (query) => query.notWhere("age", ">", 16),
+  {
+    wheres: [{
+      type: WhereType.Not,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+  },
+);
 
-Deno.test("QueryBuilder: multiple where query", () => {
-  const query = new QueryBuilder("users")
-    .where("email", "=", "a@b.com")
-    .where("name", "=", "john")
-    .toSQL();
-  assertEquals(
-    query,
-    "SELECT * FROM users WHERE email = 'a@b.com' AND name = 'john';",
-  );
-});
+testQueryBuilder(
+  "`orWhere` and `notWhere`",
+  (query) =>
+    query
+      .where("email", "a@b.com")
+      .orWhere("name", "LIKE", "%john%")
+      .notWhere("age", ">", 16),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "email",
+      operator: "=",
+      value: "a@b.com",
+    }, {
+      type: WhereType.Or,
+      column: "name",
+      operator: "LIKE",
+      value: "%john%",
+    }, {
+      type: WhereType.Not,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+  },
+);
 
-Deno.test("QueryBuilder: where not query", () => {
-  const query = new QueryBuilder("users")
-    .notWhere("email", "=", "a@b.com")
-    .toSQL();
-  assertEquals(
-    query,
-    "SELECT * FROM users WHERE NOT email = 'a@b.com';",
-  );
-});
+// Pagination
 
-Deno.test("QueryBuilder: multiple where not query", () => {
-  const query = new QueryBuilder("users")
-    .notWhere("email", "=", "a@b.com")
-    .notWhere("name", "=", "John")
-    .toSQL();
-  assertEquals(
-    query,
-    "SELECT * FROM users WHERE NOT email = 'a@b.com' AND NOT name = 'John';",
-  );
-});
+testQueryBuilder(
+  "`limit` should set the record limit",
+  (query) => query.where("age", ">", 16).limit(10),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+    limit: 10,
+  },
+);
 
-Deno.test("QueryBuilder: where and where not query", () => {
-  const query = new QueryBuilder("users")
-    .where("email", "=", "a@b.com")
-    .notWhere("name", "=", "John")
-    .toSQL();
-  assertEquals(
-    query,
-    "SELECT * FROM users WHERE email = 'a@b.com' AND NOT name = 'John';",
-  );
-});
+testQueryBuilder(
+  "`offset` should set the number of records to skip",
+  (query) => query.where("age", ">", 16).offset(5),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+    offset: 5,
+  },
+);
 
-Deno.test("QueryBuilder: where ... or query", () => {
-  const query = new QueryBuilder("users")
-    .where("email", "=", "a@b.com")
-    .orWhere("name", "=", "John")
-    .toSQL();
-  assertEquals(
-    query,
-    "SELECT * FROM users WHERE email = 'a@b.com' OR name = 'John';",
-  );
-});
+testQueryBuilder(
+  "`limit` and `offset`",
+  (query) => query.where("age", ">", 16).limit(7).offset(14),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+    limit: 7,
+    offset: 14,
+  },
+);
 
-Deno.test("QueryBuilder: multiple where ... or query", () => {
-  const query = new QueryBuilder("users")
-    .where("email", "=", "a@b.com")
-    .orWhere("name", "=", "John")
-    .orWhere("age", ">", 16)
-    .toSQL();
-  assertEquals(
-    query,
-    "SELECT * FROM users WHERE email = 'a@b.com' OR name = 'John' OR age > 16;",
-  );
-});
+testQueryBuilder(
+  "`first` should be the shortcut for limit(1)",
+  (query) => query.where("age", ">", 16).first(),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+    limit: 1,
+  },
+);
 
-Deno.test("QueryBuilder: should validate where operation", () => {
-  assertThrows(
-    () => {
-      new QueryBuilder("users").where(
-        "email",
-        "invalid operation" as any,
-        "a@b.com",
-      );
+// Select
+
+testQueryBuilder(
+  "`select` should add the list of all selected columns",
+  (query) => query.where("age", ">", 16).select("email"),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+    columns: ["email"],
+  },
+);
+
+testQueryBuilder(
+  "`select` multiple columns",
+  (query) =>
+    query.where("age", ">", 16)
+      .select("email")
+      .select("age")
+      .select("is_active"),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+    columns: ["email", "age", "is_active"],
+  },
+);
+
+testQueryBuilder(
+  "`select` multiple columns with a single method",
+  (query) => query.where("age", ">", 16).select("email", "age", "is_active"),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+    columns: ["email", "age", "is_active"],
+  },
+);
+
+// Order by
+
+testQueryBuilder(
+  "`orderBy` should order the result",
+  (query) => query.where("age", ">", 16).orderBy("age"),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+    orders: [{ column: "age", order: "ASC" }],
+  },
+);
+
+testQueryBuilder(
+  "`orderBy` should order the result with custom direction",
+  (query) => query.where("age", ">", 16).orderBy("age", "DESC"),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+    orders: [{ column: "age", order: "DESC" }],
+  },
+);
+
+testQueryBuilder(
+  "multiple `orderBy`",
+  (query) =>
+    query.where("age", ">", 16).orderBy("age", "DESC").orderBy("created_at"),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "age",
+      operator: ">",
+      value: 16,
+    }],
+    orders: [{
+      column: "age",
+      order: "DESC",
+    }, {
+      column: "created_at",
+      order: "ASC",
+    }],
+  },
+);
+
+// Delete
+
+testQueryBuilder(
+  "basic `delete`",
+  (query) => query.where("email", "a@b.com").delete(),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "email",
+      operator: "=",
+      value: "a@b.com",
+    }],
+    type: QueryType.Delete,
+  },
+);
+
+// Update
+
+// TODO: throw an error if the `update` method gets called without any values
+// TODO: throw an error if the `update` method gets called with an empty object
+
+testQueryBuilder(
+  "basic `update`",
+  (query) =>
+    query
+      .where("email", "a@b.com")
+      .update({
+        name: "John",
+        age: 16,
+        is_active: true,
+        birthday: new Date("7 July, 2020"),
+      }),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "email",
+      operator: "=",
+      value: "a@b.com",
+    }],
+    values: {
+      name: "John",
+      age: 16,
+      is_active: true,
+      birthday: new Date("7 July, 2020"),
     },
-    Error,
-    "Invalid operation!",
-  );
-});
+    type: QueryType.Update,
+  },
+);
 
-Deno.test("QueryBuilder: limit query", () => {
-  const query = new QueryBuilder("users").limit(5).toSQL();
-  assertEquals(query, "SELECT * FROM users LIMIT 5;");
-});
+// Insert
 
-Deno.test("QueryBuilder: limit query with offset", () => {
-  const query = new QueryBuilder("users").limit(5).offset(5).toSQL();
-  assertEquals(query, "SELECT * FROM users LIMIT 5 OFFSET 5;");
-});
+// TODO: throw an error if the `insert` method gets called without any values
+// TODO: throw an error if the `insert` method gets called with an empty object
+// TODO: throw an error if the `insert` method gets called with an empty array
+// TODO: throw an error if the `insert` method gets called with an empty array of objects
 
-Deno.test("QueryBuilder: limit query with where", () => {
-  const query = new QueryBuilder("users")
-    .where("email", "=", "a@b.com")
-    .limit(5)
-    .toSQL();
-  assertEquals(query, "SELECT * FROM users WHERE email = 'a@b.com' LIMIT 5;");
-});
-
-Deno.test("QueryBuilder: select a column", () => {
-  const query = new QueryBuilder("users").select("email").toSQL();
-  assertEquals(query, "SELECT (email) FROM users;");
-});
-
-Deno.test("QueryBuilder: select multiple columns", () => {
-  const query = new QueryBuilder("users").select("email", "password").toSQL();
-  assertEquals(query, "SELECT (email, password) FROM users;");
-});
-
-Deno.test("QueryBuilder: orderBy default to ASC", () => {
-  const query = new QueryBuilder("users").orderBy("created_at").toSQL();
-  assertEquals(query, "SELECT * FROM users ORDER BY created_at ASC;");
-});
-
-Deno.test("QueryBuilder: single orderBy", () => {
-  const query = new QueryBuilder("users").orderBy("created_at", "ASC").toSQL();
-  assertEquals(query, "SELECT * FROM users ORDER BY created_at ASC;");
-});
-
-Deno.test("QueryBuilder: multiple orderBy", () => {
-  const query = new QueryBuilder("users")
-    .orderBy("created_at", "ASC")
-    .orderBy("name", "DESC")
-    .toSQL();
-
-  assertEquals(
-    query,
-    "SELECT * FROM users ORDER BY created_at ASC, name DESC;",
-  );
-});
-
-Deno.test("QueryBuilder: basic delete query", () => {
-  const query = new QueryBuilder("users")
-    .where("email", "=", "a@b.com")
-    .delete()
-    .toSQL();
-  assertEquals(query, "DELETE FROM users WHERE email = 'a@b.com';");
-});
-
-Deno.test("QueryBuilder: basic update query", () => {
-  const query = new QueryBuilder("users")
-    .where("email", "=", "a@b.com")
-    .update({ name: "John" })
-    .toSQL();
-  assertEquals(
-    query,
-    "UPDATE users SET name = 'John' WHERE email = 'a@b.com';",
-  );
-});
-
-Deno.test("QueryBuilder: update query with number value", () => {
-  const query = new QueryBuilder("users")
-    .where("email", "=", "a@b.com")
-    .update({ name: "John", age: 16 })
-    .toSQL();
-  assertEquals(
-    query,
-    "UPDATE users SET name = 'John', age = 16 WHERE email = 'a@b.com';",
-  );
-});
-
-Deno.test("QueryBuilder: update query with boolean false value", () => {
-  const query = new QueryBuilder("users")
-    .where("email", "=", "a@b.com")
-    .update({ name: "John", is_active: false })
-    .toSQL();
-  assertEquals(
-    query,
-    "UPDATE users SET name = 'John', is_active = 0 WHERE email = 'a@b.com';",
-  );
-});
-
-Deno.test("QueryBuilder: update query with boolean true value", () => {
-  const query = new QueryBuilder("users")
-    .where("email", "=", "a@b.com")
-    .update({ name: "John", is_active: true })
-    .toSQL();
-  assertEquals(
-    query,
-    "UPDATE users SET name = 'John', is_active = 1 WHERE email = 'a@b.com';",
-  );
-});
-
-Deno.test("QueryBuilder: update query with date value", () => {
-  const date = new Date("14 January, 2004");
-  const dateString = DateUtils.formatDate(date);
-
-  const query = new QueryBuilder("users")
-    .where("email", "=", "a@b.com")
-    .update({ name: "John", created_at: date })
-    .toSQL();
-  assertEquals(
-    query,
-    `UPDATE users SET name = 'John', created_at = '${dateString}' WHERE email = 'a@b.com';`,
-  );
-});
-
-Deno.test("QueryBuilder: basic insert", () => {
-  const query = new QueryBuilder("users")
-    .insert({ email: "a@b.com", password: "12345" })
-    .toSQL();
-
-  assertEquals(
-    query,
-    "INSERT INTO users (email, password) VALUES ('a@b.com', '12345');",
-  );
-});
-
-Deno.test("QueryBuilder: basic multiple insert", () => {
-  const query = new QueryBuilder("users")
-    .insert([
-      { email: "a@b.com" },
-      { age: 16 },
-      { email: "a@b.com", age: 16 },
-    ])
-    .toSQL();
-
-  assertEquals(
-    query,
-    "INSERT INTO users (email, age) VALUES ('a@b.com', NULL), (NULL, 16), ('a@b.com', 16);",
-  );
-});
-
-Deno.test("QueryBuilder: basic insert with number value", () => {
-  const query = new QueryBuilder("users")
-    .insert({ email: "a@b.com", age: 16 })
-    .toSQL();
-
-  assertEquals(
-    query,
-    "INSERT INTO users (email, age) VALUES ('a@b.com', 16);",
-  );
-});
-
-Deno.test("QueryBuilder: basic insert with boolean true value", () => {
-  const query = new QueryBuilder("users")
-    .insert({ email: "a@b.com", is_active: true })
-    .toSQL();
-
-  assertEquals(
-    query,
-    "INSERT INTO users (email, is_active) VALUES ('a@b.com', 1);",
-  );
-});
-
-Deno.test("QueryBuilder: basic insert with boolean false value", () => {
-  const query = new QueryBuilder("users")
-    .insert({ email: "a@b.com", is_active: false })
-    .toSQL();
-
-  assertEquals(
-    query,
-    "INSERT INTO users (email, is_active) VALUES ('a@b.com', 0);",
-  );
-});
-
-Deno.test("QueryBuilder: basic insert with date value", () => {
-  const date = new Date("14 January, 2004");
-  const dateString = DateUtils.formatDate(date);
-
-  const query = new QueryBuilder("users")
-    .insert({ email: "a@b.com", created_at: date })
-    .toSQL();
-
-  assertEquals(
-    query,
-    `INSERT INTO users (email, created_at) VALUES ('a@b.com', '${dateString}');`,
-  );
-});
-
-Deno.test("QueryBuilder: basic insert with returning", () => {
-  const query = new QueryBuilder("users")
-    .insert({ email: "a@b.com" })
-    .returning("*")
-    .toSQL();
-
-  assertEquals(
-    query,
-    `INSERT INTO users (email) VALUES ('a@b.com') RETURNING *;`,
-  );
-});
-
-Deno.test("QueryBuilder: basic insert with returning multiple columns", () => {
-  const query = new QueryBuilder("users")
-    .insert({ email: "a@b.com" })
-    .returning("id", "email")
-    .toSQL();
-
-  assertEquals(
-    query,
-    `INSERT INTO users (email) VALUES ('a@b.com') RETURNING id, email;`,
-  );
-});
-
-Deno.test("QueryBuilder: throw an error if the `insert` method gets called without any values", () => {
-  assertThrows(
-    () => {
-      const query: any = new QueryBuilder("users");
-      query.insert().toSQL();
+testQueryBuilder(
+  "basic `insert`",
+  (query) =>
+    query.insert({
+      name: "John",
+      age: 16,
+      is_active: true,
+      birthday: new Date("7 July, 2020"),
+    }),
+  {
+    values: {
+      name: "John",
+      age: 16,
+      is_active: true,
+      birthday: new Date("7 July, 2020"),
     },
-    Error,
-    "Cannot perform insert query without values!",
-  );
-});
+    type: QueryType.Insert,
+  },
+);
 
-Deno.test("QueryBuilder: throw an error if the `insert` method gets called with an empty object", () => {
-  assertThrows(
-    () => {
-      const query: any = new QueryBuilder("users");
-      query.insert({}).toSQL();
+testQueryBuilder(
+  "`insert` with multiple values",
+  (query) =>
+    query
+      .insert([{
+        name: "John",
+        age: 16,
+        is_active: true,
+        birthday: new Date("7 July, 2020"),
+      }, {
+        name: "Doe",
+        age: 17,
+        is_active: false,
+        birthday: new Date("8 July, 2020"),
+      }]),
+  {
+    values: [{
+      name: "John",
+      age: 16,
+      is_active: true,
+      birthday: new Date("7 July, 2020"),
+    }, {
+      name: "Doe",
+      age: 17,
+      is_active: false,
+      birthday: new Date("8 July, 2020"),
+    }],
+    type: QueryType.Insert,
+  },
+);
+
+testQueryBuilder(
+  "`insert` with returning all columns",
+  (query) => query.insert({ email: "a@b.com" }).returning("*"),
+  {
+    values: { email: "a@b.com", age: 16 },
+    returning: ["*"],
+    type: QueryType.Insert,
+  },
+);
+
+testQueryBuilder(
+  "`insert` with returning several columns",
+  (query) =>
+    query.insert({ email: "a@b.com", age: 16 }).returning("email", "age"),
+  {
+    values: { email: "a@b.com", age: 16 },
+    returning: ["email", "age"],
+    type: QueryType.Insert,
+  },
+);
+
+// Replace
+
+// TODO: throw an error if the `replace` method gets called without any values
+// TODO: throw an error if the `replace` method gets called with an empty object
+// TODO: throw an error if the `replace` method gets called with an empty array
+// TODO: throw an error if the `replace` method gets called with an empty array of objects
+
+testQueryBuilder(
+  "basic `replace`",
+  (query) =>
+    query.replace({
+      name: "John",
+      age: 16,
+      is_active: true,
+      birthday: new Date("7 July, 2020"),
+    }),
+  {
+    values: {
+      name: "John",
+      age: 16,
+      is_active: true,
+      birthday: new Date("7 July, 2020"),
     },
-    Error,
-    "Cannot perform insert query without values!",
-  );
-});
+    type: QueryType.Insert,
+  },
+);
 
-Deno.test("QueryBuilder: throw an error if the `insert` method gets called with an empty array", () => {
-  assertThrows(
-    () => {
-      const query: any = new QueryBuilder("users");
-      query.insert([]).toSQL();
-    },
-    Error,
-    "Cannot perform insert query without values!",
-  );
-});
+testQueryBuilder(
+  "`replace` with returning all columns",
+  (query) => query.replace({ email: "a@b.com" }).returning("*"),
+  {
+    values: { email: "a@b.com", age: 16 },
+    returning: ["*"],
+    type: QueryType.Insert,
+  },
+);
 
-Deno.test("QueryBuilder: throw an error if the `insert` method gets called with an empty array of objects", () => {
-  assertThrows(
-    () => {
-      const query: any = new QueryBuilder("users");
-      query.insert([{}, {}]).toSQL();
-    },
-    Error,
-    "Cannot perform insert query without values!",
-  );
-});
-
-Deno.test("QueryBuilder: throw an error if the `update` method gets called without any values", () => {
-  assertThrows(
-    () => {
-      const query: any = new QueryBuilder("users");
-      query.update().toSQL();
-    },
-    Error,
-    "Cannot perform update query without values!",
-  );
-});
-
-Deno.test("QueryBuilder: throw an error if the `update` method gets called with an empty object", () => {
-  assertThrows(
-    () => {
-      const query: any = new QueryBuilder("users");
-      query.update({}).toSQL();
-    },
-    Error,
-    "Cannot perform update query without values!",
-  );
-});
-
-Deno.test("QueryBuilder: basic replace", () => {
-  const query = new QueryBuilder("users")
-    .replace({ email: "a@b.com", password: "12345" })
-    .toSQL();
-
-  assertEquals(
-    query,
-    "REPLACE INTO users (email, password) VALUES ('a@b.com', '12345');",
-  );
-});
-
-Deno.test("QueryBuilder: basic replace with number value", () => {
-  const query = new QueryBuilder("users")
-    .replace({ email: "a@b.com", age: 16 })
-    .toSQL();
-
-  assertEquals(
-    query,
-    "REPLACE INTO users (email, age) VALUES ('a@b.com', 16);",
-  );
-});
-
-Deno.test("QueryBuilder: basic replace with boolean true value", () => {
-  const query = new QueryBuilder("users")
-    .replace({ email: "a@b.com", is_active: true })
-    .toSQL();
-
-  assertEquals(
-    query,
-    "REPLACE INTO users (email, is_active) VALUES ('a@b.com', 1);",
-  );
-});
-
-Deno.test("QueryBuilder: basic replace with boolean false value", () => {
-  const query = new QueryBuilder("users")
-    .replace({ email: "a@b.com", is_active: false })
-    .toSQL();
-
-  assertEquals(
-    query,
-    "REPLACE INTO users (email, is_active) VALUES ('a@b.com', 0);",
-  );
-});
-
-Deno.test("QueryBuilder: basic replace with date value", () => {
-  const date = new Date("14 January, 2004");
-  const dateString = DateUtils.formatDate(date);
-
-  const query = new QueryBuilder("users")
-    .replace({ email: "a@b.com", created_at: date })
-    .toSQL();
-
-  assertEquals(
-    query,
-    `REPLACE INTO users (email, created_at) VALUES ('a@b.com', '${dateString}');`,
-  );
-});
-
-Deno.test("QueryBuilder: basic replace with returning", () => {
-  const query = new QueryBuilder("users")
-    .replace({ email: "a@b.com" })
-    .returning("*")
-    .toSQL();
-
-  assertEquals(
-    query,
-    `REPLACE INTO users (email) VALUES ('a@b.com') RETURNING *;`,
-  );
-});
-
-Deno.test("QueryBuilder: basic replace with returning multiple columns", () => {
-  const query = new QueryBuilder("users")
-    .replace({ email: "a@b.com" })
-    .returning("id", "email")
-    .toSQL();
-
-  assertEquals(
-    query,
-    `REPLACE INTO users (email) VALUES ('a@b.com') RETURNING id, email;`,
-  );
-});
-
-Deno.test("QueryBuilder: throw an error if the `replace` method gets called without any values", () => {
-  assertThrows(
-    () => {
-      const query: any = new QueryBuilder("users");
-      query.replace().toSQL();
-    },
-    Error,
-    "Cannot perform replace query without values!",
-  );
-});
-
-Deno.test("QueryBuilder: throw an error if the `replace` method gets called with an empty object", () => {
-  assertThrows(
-    () => {
-      const query: any = new QueryBuilder("users");
-      query.replace({}).toSQL();
-    },
-    Error,
-    "Cannot perform replace query without values!",
-  );
-});
-
-Deno.test("QueryBuilder: throw an error if the `replace` method gets called with an empty array", () => {
-  assertThrows(
-    () => {
-      const query: any = new QueryBuilder("users");
-      query.replace([]).toSQL();
-    },
-    Error,
-    "Cannot perform replace query without values!",
-  );
-});
-
-Deno.test("QueryBuilder: throw an error if the `replace` method gets called with an empty array of objects", () => {
-  assertThrows(
-    () => {
-      const query: any = new QueryBuilder("users");
-      query.replace([{}, {}]).toSQL();
-    },
-    Error,
-    "Cannot perform replace query without values!",
-  );
-});
+testQueryBuilder(
+  "`replace` with returning several columns",
+  (query) =>
+    query.replace({ email: "a@b.com", age: 16 }).returning("email", "age"),
+  {
+    values: { email: "a@b.com", age: 16 },
+    returning: ["email", "age"],
+    type: QueryType.Insert,
+  },
+);

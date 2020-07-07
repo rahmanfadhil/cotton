@@ -60,7 +60,7 @@ export class PostgresAdapter extends Adapter {
   }
 
   public async query<T>(query: string, values?: any[]): Promise<T[]> {
-    let result = Array.isArray(values)
+    let result = Array.isArray(values) && values.length >= 1
       ? await this.client.query({ text: query, args: values })
       : await this.client.query(query);
 

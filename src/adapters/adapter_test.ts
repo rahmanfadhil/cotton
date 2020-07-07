@@ -55,25 +55,24 @@ testDB(
     client.addModel(User);
     client.addModel(Product);
 
-    await User.insert({
-      email: "a@b.com",
-      age: 16,
-      created_at: date,
-    });
+    await client.query(
+      `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${
+        DateUtils.formatDate(date)
+      }')`,
+    );
+    await client.query(
+      `INSERT INTO users (email, age, created_at) VALUES ('b@c.com', 16, '${
+        DateUtils.formatDate(date)
+      }')`,
+    );
 
-    await User.insert({
-      email: "b@c.com",
-      age: 16,
-      created_at: date,
-    });
-
-    await Product.insert({ name: "notebook" });
-    await Product.insert({ name: "pen" });
+    await client.query(`INSERT INTO products (name) VALUES ('notebook')`);
+    await client.query(`INSERT INTO products (name) VALUES ('pen')`);
 
     await client.truncateModels();
 
-    const users = await User.find();
-    const products = await Product.find();
+    const users = await client.query("SELECT * FROM users;");
+    const products = await client.query("SELECT * FROM products;");
 
     assertEquals(users.length, 0);
     assertEquals(products.length, 0);
