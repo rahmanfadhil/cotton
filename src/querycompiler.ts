@@ -196,20 +196,7 @@ export class QueryCompiler {
     // Select table columns
     if (this.description.columns.length > 0) {
       const columns = this.description.columns
-        .map((column) => {
-          const data = column.split(".");
-
-          // If the column name contains a dot, we assume that the
-          // user wants to select a column from another table.
-          if (data.length === 1) {
-            return tableName + "." + quote(column, this.dialect);
-          } else if (data.length === 2) {
-            return quote(data[0], this.dialect) + "." +
-              quote(data[1], this.dialect);
-          } else {
-            throw new Error(`'${column}' is an invalid column name!`);
-          }
-        })
+        .map((column) => this.getColumnName(column))
         .join(", ");
 
       query.push(`${columns}`);
@@ -263,32 +250,34 @@ export class QueryCompiler {
     // Joins
     if (this.description.joins && this.description.joins.length >= 1) {
       for (const join of this.description.joins) {
-        const tableName = quote(join.table, this.dialect);
-        const columnA = tableName + "." + quote(join.columnA, this.dialect);
-        const columnB = tableName + "." + quote(join.columnB, this.dialect);
+        const joinTableName = quote(join.table, this.dialect);
+        const columnA = this.getColumnName(join.columnA);
+        const columnB = this.getColumnName(join.columnB);
 
         switch (join.type) {
           case JoinType.Right:
             query.push(
-              `RIGHT OUTER JOIN ${tableName} ON ${columnA} = ${columnB}`,
+              `RIGHT OUTER JOIN ${joinTableName} ON ${columnA} = ${columnB}`,
             );
             break;
 
           case JoinType.Left:
             query.push(
-              `LEFT OUTER JOIN ${tableName} ON ${columnA} = ${columnB}`,
+              `LEFT OUTER JOIN ${joinTableName} ON ${columnA} = ${columnB}`,
             );
             break;
 
           case JoinType.Full:
             query.push(
-              `FULL OUTER JOIN ${tableName} ON ${columnA} = ${columnB}`,
+              `FULL OUTER JOIN ${joinTableName} ON ${columnA} = ${columnB}`,
             );
             break;
 
           case JoinType.Inner:
           default:
-            query.push(`INNER JOIN ${tableName} ON ${columnA} = ${columnB}`);
+            query.push(
+              `INNER JOIN ${joinTableName} ON ${columnA} = ${columnB}`,
+            );
             break;
         }
       }
@@ -304,7 +293,7 @@ export class QueryCompiler {
         // Example: "`users`.`id` = "
         let expression = `${tableName}.${
           quote(column, this.dialect)
-        } ${operator} `;
+        } ${operator}`;
 
         // Add the value to the WHERE clause, if the operator is BETWEEN,
         // use AND keyword to seperate both values.
@@ -414,6 +403,22 @@ export class QueryCompiler {
         throw new Error(
           `Dialect '${this.dialect}' is not supported yet!`,
         );
+    }
+  }
+
+  private getColumnName(column: string): string {
+    const data = column.split(".");
+
+    // If the column name contains a dot, we assume that the
+    // user wants to select a column from another table.
+    if (data.length === 1) {
+      return quote(this.description.tableName, this.dialect) + "." +
+        quote(column, this.dialect);
+    } else if (data.length === 2) {
+      return quote(data[0], this.dialect) + "." +
+        quote(data[1], this.dialect);
+    } else {
+      throw new Error(`'${column}' is an invalid column name!`);
     }
   }
 }
