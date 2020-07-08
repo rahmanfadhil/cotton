@@ -382,11 +382,12 @@ export class QueryCompiler {
 
     if (value instanceof Date) {
       this.values.push(DateUtils.formatDate(value));
-    } else if (
-      typeof value === "boolean" &&
-      (this.dialect === "mysql" || this.dialect === "sqlite")
-    ) {
-      this.values.push(value ? 1 : 0);
+    } else if (typeof value === "boolean") {
+      if (this.dialect === "mysql" || this.dialect === "sqlite") {
+        return value ? "1" : "0";
+      } else {
+        return value ? "TRUE" : "FALSE";
+      }
     } else {
       this.values.push(value);
     }
