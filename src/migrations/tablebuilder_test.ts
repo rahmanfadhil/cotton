@@ -24,7 +24,7 @@ Deno.test("TableBuilder: mysql basic table", () => {
   const builder = createBasicTable("mysql");
   assertEquals(
     builder.toSQL(),
-    "CREATE TABLE posts (id BIGINT PRIMARY KEY AUTO_INCREMENT, title VARCHAR(100), description VARCHAR(255), content LONGTEXT, likes INTEGER, price BIGINT, is_published TINYINT, published_at DATETIME, date_approved DATE, created_at DATETIME, updated_at DATETIME);",
+    "CREATE TABLE `posts` (`id` BIGINT PRIMARY KEY AUTO_INCREMENT, `title` VARCHAR(100), `description` VARCHAR(255), `content` LONGTEXT, `likes` INTEGER, `price` BIGINT, `is_published` TINYINT, `published_at` DATETIME, `date_approved` DATE, `created_at` DATETIME, `updated_at` DATETIME);",
   );
 });
 
@@ -32,7 +32,7 @@ Deno.test("TableBuilder: postgres basic table", () => {
   const builder = createBasicTable("postgres");
   assertEquals(
     builder.toSQL(),
-    "CREATE TABLE posts (id BIGSERIAL PRIMARY KEY, title VARCHAR(100), description VARCHAR(255), content TEXT, likes INTEGER, price BIGINT, is_published BOOLEAN, published_at TIMESTAMP, date_approved DATE, created_at TIMESTAMP, updated_at TIMESTAMP);",
+    'CREATE TABLE "posts" ("id" BIGSERIAL PRIMARY KEY, "title" VARCHAR(100), "description" VARCHAR(255), "content" TEXT, "likes" INTEGER, "price" BIGINT, "is_published" BOOLEAN, "published_at" TIMESTAMP, "date_approved" DATE, "created_at" TIMESTAMP, "updated_at" TIMESTAMP);',
   );
 });
 
@@ -40,7 +40,7 @@ Deno.test("TableBuilder: sqlite basic table", () => {
   const builder = createBasicTable("sqlite");
   assertEquals(
     builder.toSQL(),
-    "CREATE TABLE posts (id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(100), description VARCHAR(255), content TEXT, likes INTEGER, price BIGINT, is_published BOOLEAN, published_at DATETIME, date_approved DATE, created_at DATETIME, updated_at DATETIME);",
+    "CREATE TABLE `posts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` VARCHAR(100), `description` VARCHAR(255), `content` TEXT, `likes` INTEGER, `price` BIGINT, `is_published` BOOLEAN, `published_at` DATETIME, `date_approved` DATE, `created_at` DATETIME, `updated_at` DATETIME);",
   );
 });
 
