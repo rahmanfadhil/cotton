@@ -1,5 +1,5 @@
 import { QueryType, WhereType, JoinType } from "./querybuilder.ts";
-import { DateUtils } from "./utils/date.ts";
+import { formatDate } from "./utils/date.ts";
 import { testQueryCompiler } from "./testutils.ts";
 import { assertThrows } from "../testdeps.ts";
 import { QueryCompiler } from "./querycompiler.ts";
@@ -106,15 +106,15 @@ testQueryCompiler("`where` with date value", {
 }, {
   mysql: {
     text: "SELECT `users`.* FROM `users` WHERE `users`.`birthday` = ?;",
-    values: [DateUtils.formatDate(new Date("6 July, 2020"))],
+    values: [formatDate(new Date("6 July, 2020"))],
   },
   sqlite: {
     text: "SELECT `users`.* FROM `users` WHERE `users`.`birthday` = ?;",
-    values: [DateUtils.formatDate(new Date("6 July, 2020"))],
+    values: [formatDate(new Date("6 July, 2020"))],
   },
   postgres: {
     text: 'SELECT "users".* FROM "users" WHERE "users"."birthday" = $1;',
-    values: [DateUtils.formatDate(new Date("6 July, 2020"))],
+    values: [formatDate(new Date("6 July, 2020"))],
   },
 });
 

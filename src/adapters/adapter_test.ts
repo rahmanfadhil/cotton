@@ -2,7 +2,7 @@ import { Model, Field } from "../model.ts";
 import { testDB } from "../testutils.ts";
 import { assertEquals } from "../../testdeps.ts";
 import { QueryBuilder } from "../querybuilder.ts";
-import { DateUtils } from "../utils/date.ts";
+import { formatDate } from "../utils/date.ts";
 
 class User extends Model {
   static tableName = "users";
@@ -57,12 +57,12 @@ testDB(
 
     await client.query(
       `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${
-        DateUtils.formatDate(date)
+        formatDate(date)
       }')`,
     );
     await client.query(
       `INSERT INTO users (email, age, created_at) VALUES ('b@c.com', 16, '${
-        DateUtils.formatDate(date)
+        formatDate(date)
       }')`,
     );
 
@@ -100,7 +100,7 @@ testDB("BaseAdapter: `query` bind values", async (client) => {
       break;
   }
 
-  await client.query(query, ["a@b.com", 16, DateUtils.formatDate(new Date())]);
+  await client.query(query, ["a@b.com", 16, formatDate(new Date())]);
 
   const result = await client.query<{
     id: number;
