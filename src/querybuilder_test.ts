@@ -1,4 +1,9 @@
-import { WhereType, QueryType, QueryBuilder } from "./querybuilder.ts";
+import {
+  WhereType,
+  QueryType,
+  QueryBuilder,
+  JoinType,
+} from "./querybuilder.ts";
 import { testQueryBuilder } from "./testutils.ts";
 
 // Where
@@ -258,6 +263,60 @@ testQueryBuilder(
       value: 16,
     }],
     columns: ["email", "age", "is_active"],
+  },
+);
+
+// Joins
+
+testQueryBuilder(
+  "basic `innerJoin`",
+  (query) => query.innerJoin("companies", "users.company_id", "companies.id"),
+  {
+    joins: [{
+      type: JoinType.Inner,
+      table: "companies",
+      columnA: "users.company_id",
+      columnB: "companies.id",
+    }],
+  },
+);
+
+testQueryBuilder(
+  "basic `fullJoin`",
+  (query) => query.fullJoin("companies", "users.company_id", "companies.id"),
+  {
+    joins: [{
+      type: JoinType.Full,
+      table: "companies",
+      columnA: "users.company_id",
+      columnB: "companies.id",
+    }],
+  },
+);
+
+testQueryBuilder(
+  "basic `leftJoin`",
+  (query) => query.leftJoin("companies", "users.company_id", "companies.id"),
+  {
+    joins: [{
+      type: JoinType.Left,
+      table: "companies",
+      columnA: "users.company_id",
+      columnB: "companies.id",
+    }],
+  },
+);
+
+testQueryBuilder(
+  "basic `rightJoin`",
+  (query) => query.rightJoin("companies", "users.company_id", "companies.id"),
+  {
+    joins: [{
+      type: JoinType.Right,
+      table: "companies",
+      columnA: "users.company_id",
+      columnB: "companies.id",
+    }],
   },
 );
 

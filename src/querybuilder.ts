@@ -51,11 +51,25 @@ interface OrderBinding {
  * Valid query types
  */
 export enum QueryType {
-  Select = "select",
-  Insert = "insert",
-  Delete = "delete",
-  Update = "update",
-  Replace = "replace",
+  Select = 1,
+  Insert = 2,
+  Delete = 3,
+  Update = 4,
+  Replace = 5,
+}
+
+export enum JoinType {
+  Inner = 1,
+  Full = 2,
+  Left = 3,
+  Right = 4,
+}
+
+interface JoinBinding {
+  table: string;
+  type: JoinType;
+  columnA: string;
+  columnB: string;
 }
 
 /**
@@ -95,6 +109,9 @@ export interface QueryDescription {
 
   /** Values to be returned by the query */
   returning: string[];
+
+  /** Tables to be joined */
+  joins: JoinBinding[];
 }
 
 /**
@@ -120,6 +137,7 @@ export class QueryBuilder {
       wheres: [],
       orders: [],
       returning: [],
+      joins: [],
     };
   }
 
@@ -327,6 +345,54 @@ export class QueryBuilder {
       if (!this.description.returning.includes(item)) {
         this.description.returning.push(item);
       }
+    });
+
+    return this;
+  }
+
+  /** SQL INNER JOIN */
+  public innerJoin(table: string, a: string, b: string): QueryBuilder {
+    this.description.joins.push({
+      type: JoinType.Inner,
+      table,
+      columnA: a,
+      columnB: b,
+    });
+
+    return this;
+  }
+
+  /** SQL FULL OUTER JOIN */
+  public fullJoin(table: string, a: string, b: string): QueryBuilder {
+    this.description.joins.push({
+      type: JoinType.Full,
+      table,
+      columnA: a,
+      columnB: b,
+    });
+
+    return this;
+  }
+
+  /** SQL LEFT OUTER JOIN */
+  public leftJoin(table: string, a: string, b: string): QueryBuilder {
+    this.description.joins.push({
+      type: JoinType.Left,
+      table,
+      columnA: a,
+      columnB: b,
+    });
+
+    return this;
+  }
+
+  /** SQL RIGHT OUTER JOIN */
+  public rightJoin(table: string, a: string, b: string): QueryBuilder {
+    this.description.joins.push({
+      type: JoinType.Right,
+      table,
+      columnA: a,
+      columnB: b,
     });
 
     return this;

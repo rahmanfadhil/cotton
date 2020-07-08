@@ -150,6 +150,8 @@ const user = await User.insert([
 
 ## Query Builder
 
+Cotton offers a simple, powerful, and database agnostic query builder. It allows you to construct SQL queries with ease. The values are replaced with a placeholder in the query string and being handled by the database to prevent SQL injection.
+
 ### Basic query
 
 ```ts
@@ -158,41 +160,43 @@ await db
   .where("email", "a@b.com")
   .where("name", "john")
   .execute();
-// SELECT * FROM users WHERE email = 'a@b.com' AND name = 'john';
+// query  : SELECT * FROM `users` WHERE `email` = ? AND `name` = ?;
+// params : ['a@b.com', 'john']
 ```
 
-### orWhere and notWhere
+Once you connected to the database, you can access the query builder via `table` method. The `table` method requires you to pass your table name which you want to fetch. You can chain all the methods you need in order to add more constraints or statements to your query.
+
+### or and not
 
 ```ts
-await db.table("users").notWhere("name", "kevin").execute();
-// SELECT * FROM users WHERE NOT name = 'kevin';
+await db.table("users").not("name", "kevin").execute();
+// query  : SELECT * FROM `users` WHERE NOT `name` = ?;
+// params : ['kevin']
 
-await db
-  .table("users")
-  .where("name", "kevin")
-  .orWhere("name", "john")
-  .execute();
-// SELECT * FROM users WHERE name = 'kevin' OR name = 'john';
+await db.table("users").where("name", "kevin").or("name", "john").execute();
+// query  : SELECT * FROM `users` WHERE `name` = ? OR `name` = ?;
+// params : ['kevin', 'john']
 ```
 
 ### Select columns
 
 ```ts
 await db.table("users").select("email").execute();
-// SELECT (email) FROM users;
+// SELECT (`email`) FROM `users`;
 
 await db.table("users").select("id", "email").execute();
-// SELECT (id, email) FROM users;
+// SELECT (`id`, `email`) FROM `users`;
 
 await db.table("users").select("id").select("email").execute();
-// SELECT (id, email) FROM users;
+// SELECT (`id`, `email`) FROM `users`;
 ```
 
 ### Pagination
 
 ```ts
-await db.table("users").limit(5).offset(5).execute(); // Skip 5 row and take 5
-// SELECT * FROM users LIMIT 5 OFFSET 5;
+await db.table("users").limit(5).offset(10).execute(); // Skip 5 row and take 10
+// query  : SELECT * FROM `users` LIMIT ? OFFSET ?;
+// params : [5, 10]
 ```
 
 ### Insert data
@@ -206,13 +210,12 @@ await db
     created_at: new Date("5 June, 2020"),
   })
   .execute();
-// INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '2020-06-05 00:00:00');
 
+// Insert multiple
 await db
   .table("users")
   .insert([{ email: "a@b.com" }, { email: "b@c.com" }])
   .execute();
-// INSERT INTO users (email) VALUES ('a@b.com'), ('a@b.com');
 ```
 
 ### Replace data
@@ -226,14 +229,12 @@ await db
     created_at: new Date("5 June, 2020"),
   })
   .execute();
-// REPLACE INTO users (email, age, created_at) VALUES ('a@b.com', 16, '2020-06-05 00:00:00');
 ```
 
 ### Delete data
 
 ```ts
 await db.table("users").where("email", "a@b.com").delete().execute();
-// DELETE FROM users WHERE email = 'a@b.com';
 ```
 
 ### Update data
@@ -244,5 +245,4 @@ await db
   .where("email", "a@b.com")
   .update({ name: "John" })
   .execute();
-// UPDATE users SET name = 'John' WHERE email = 'a@b.com';
 ```

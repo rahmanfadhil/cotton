@@ -1,4 +1,4 @@
-import { QueryType, WhereType } from "./querybuilder.ts";
+import { QueryType, WhereType, JoinType } from "./querybuilder.ts";
 import { DateUtils } from "./utils/date.ts";
 import { testQueryCompiler } from "./testutils.ts";
 import { assertThrows } from "../testdeps.ts";
@@ -17,15 +17,15 @@ testQueryCompiler("basic `where`", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `email` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`email` = ?;",
     values: ["a@b.com"],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `email` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`email` = ?;",
     values: ["a@b.com"],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "email" = $1;',
+    text: 'SELECT "users".* FROM "users" WHERE "users"."email" = $1;',
     values: ["a@b.com"],
   },
 });
@@ -39,15 +39,15 @@ testQueryCompiler("`where` with boolean true value", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `is_active` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`is_active` = ?;",
     values: [1],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `is_active` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`is_active` = ?;",
     values: [1],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "is_active" = $1;',
+    text: 'SELECT "users".* FROM "users" WHERE "users"."is_active" = $1;',
     values: [true],
   },
 });
@@ -61,15 +61,15 @@ testQueryCompiler("`where` with boolean false value", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `is_active` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`is_active` = ?;",
     values: [0],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `is_active` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`is_active` = ?;",
     values: [0],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "is_active" = $1;',
+    text: 'SELECT "users".* FROM "users" WHERE "users"."is_active" = $1;',
     values: [false],
   },
 });
@@ -83,15 +83,15 @@ testQueryCompiler("`where` with number value", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `age` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`age` = ?;",
     values: [16],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `age` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`age` = ?;",
     values: [16],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "age" = $1;',
+    text: 'SELECT "users".* FROM "users" WHERE "users"."age" = $1;',
     values: [16],
   },
 });
@@ -105,16 +105,42 @@ testQueryCompiler("`where` with date value", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `birthday` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`birthday` = ?;",
     values: [DateUtils.formatDate(new Date("6 July, 2020"))],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `birthday` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`birthday` = ?;",
     values: [DateUtils.formatDate(new Date("6 July, 2020"))],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "birthday" = $1;',
+    text: 'SELECT "users".* FROM "users" WHERE "users"."birthday" = $1;',
     values: [DateUtils.formatDate(new Date("6 July, 2020"))],
+  },
+});
+
+testQueryCompiler("`where` select columns", {
+  wheres: [{
+    column: "email",
+    value: "a@b.com",
+    operator: "=",
+    type: WhereType.Default,
+  }],
+  columns: ["id", "email"],
+}, {
+  mysql: {
+    text:
+      "SELECT `users`.`id`, `users`.`email` FROM `users` WHERE `users`.`email` = ?;",
+    values: ["a@b.com"],
+  },
+  sqlite: {
+    text:
+      "SELECT `users`.`id`, `users`.`email` FROM `users` WHERE `users`.`email` = ?;",
+    values: ["a@b.com"],
+  },
+  postgres: {
+    text:
+      'SELECT "users"."id", "users"."email" FROM "users" WHERE "users"."email" = $1;',
+    values: ["a@b.com"],
   },
 });
 
@@ -127,15 +153,15 @@ testQueryCompiler("`where` in", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `role` in (?, ?);",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`role` in (?, ?);",
     values: ["guest", "author"],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `role` in (?, ?);",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`role` in (?, ?);",
     values: ["guest", "author"],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "role" in ($1, $2);',
+    text: 'SELECT "users".* FROM "users" WHERE "users"."role" in ($1, $2);',
     values: ["guest", "author"],
   },
 });
@@ -149,15 +175,16 @@ testQueryCompiler("`where` in number value", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `id` in (?, ?, ?, ?);",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`id` in (?, ?, ?, ?);",
     values: [5, 7, 11, 12],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `id` in (?, ?, ?, ?);",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`id` in (?, ?, ?, ?);",
     values: [5, 7, 11, 12],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "id" in ($1, $2, $3, $4);',
+    text:
+      'SELECT "users".* FROM "users" WHERE "users"."id" in ($1, $2, $3, $4);',
     values: [5, 7, 11, 12],
   },
 });
@@ -171,15 +198,15 @@ testQueryCompiler("`where` like", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `name` like ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` like ?;",
     values: ["%john%"],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `name` like ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` like ?;",
     values: ["%john%"],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "name" like $1;',
+    text: 'SELECT "users".* FROM "users" WHERE "users"."name" like $1;',
     values: ["%john%"],
   },
 });
@@ -193,15 +220,16 @@ testQueryCompiler("`where` between", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `age` between ? and ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`age` between ? and ?;",
     values: [1, 5],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `age` between ? and ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`age` between ? and ?;",
     values: [1, 5],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "age" between $1 and $2;',
+    text:
+      'SELECT "users".* FROM "users" WHERE "users"."age" between $1 and $2;',
     values: [1, 5],
   },
 });
@@ -220,6 +248,7 @@ Deno.test("QueryCompiler: BETWEEN must have two values", () => {
         columns: [],
         orders: [],
         returning: [],
+        joins: [],
         tableName: "`users`",
       }, "" as any).compile();
     },
@@ -240,6 +269,7 @@ Deno.test("QueryCompiler: BETWEEN must have two values", () => {
         columns: [],
         orders: [],
         returning: [],
+        joins: [],
         tableName: "`users`",
       }, "" as any).compile();
     },
@@ -260,6 +290,7 @@ Deno.test("QueryCompiler: BETWEEN must have two values", () => {
         columns: [],
         orders: [],
         returning: [],
+        joins: [],
         tableName: "`users`",
       }, "" as any).compile();
     },
@@ -277,15 +308,15 @@ testQueryCompiler("`where` not", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE NOT `email` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE NOT `users`.`email` = ?;",
     values: ["a@b.com"],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE NOT `email` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE NOT `users`.`email` = ?;",
     values: ["a@b.com"],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE NOT "email" = $1;',
+    text: 'SELECT "users".* FROM "users" WHERE NOT "users"."email" = $1;',
     values: ["a@b.com"],
   },
 });
@@ -304,15 +335,18 @@ testQueryCompiler("`where` and", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `name` = ? AND `email` = ?;",
+    text:
+      "SELECT `users`.* FROM `users` WHERE `users`.`name` = ? AND `users`.`email` = ?;",
     values: ["john", "a@b.com"],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `name` = ? AND `email` = ?;",
+    text:
+      "SELECT `users`.* FROM `users` WHERE `users`.`name` = ? AND `users`.`email` = ?;",
     values: ["john", "a@b.com"],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "name" = $1 AND "email" = $2;',
+    text:
+      'SELECT "users".* FROM "users" WHERE "users"."name" = $1 AND "users"."email" = $2;',
     values: ["john", "a@b.com"],
   },
 });
@@ -331,15 +365,18 @@ testQueryCompiler("`where` or", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `name` = ? OR `email` = ?;",
+    text:
+      "SELECT `users`.* FROM `users` WHERE `users`.`name` = ? OR `users`.`email` = ?;",
     values: ["john", "a@b.com"],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `name` = ? OR `email` = ?;",
+    text:
+      "SELECT `users`.* FROM `users` WHERE `users`.`name` = ? OR `users`.`email` = ?;",
     values: ["john", "a@b.com"],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "name" = $1 OR "email" = $2;',
+    text:
+      'SELECT "users".* FROM "users" WHERE "users"."name" = $1 OR "users"."email" = $2;',
     values: ["john", "a@b.com"],
   },
 });
@@ -358,16 +395,127 @@ testQueryCompiler("`where` and not", {
   }],
 }, {
   mysql: {
-    text: "SELECT * FROM `users` WHERE `name` = ? AND NOT `email` = ?;",
+    text:
+      "SELECT `users`.* FROM `users` WHERE `users`.`name` = ? AND NOT `users`.`email` = ?;",
     values: ["john", "a@b.com"],
   },
   sqlite: {
-    text: "SELECT * FROM `users` WHERE `name` = ? AND NOT `email` = ?;",
+    text:
+      "SELECT `users`.* FROM `users` WHERE `users`.`name` = ? AND NOT `users`.`email` = ?;",
     values: ["john", "a@b.com"],
   },
   postgres: {
-    text: 'SELECT * FROM "users" WHERE "name" = $1 AND NOT "email" = $2;',
+    text:
+      'SELECT "users".* FROM "users" WHERE "users"."name" = $1 AND NOT "users"."email" = $2;',
     values: ["john", "a@b.com"],
+  },
+});
+
+testQueryCompiler("`where` inner join", {
+  tableName: "orders",
+  joins: [{
+    table: "users",
+    type: JoinType.Inner,
+    columnA: "user_id",
+    columnB: "id",
+  }],
+  columns: ["*", "users.id"],
+}, {
+  mysql: {
+    text:
+      "SELECT `orders`.*, `users`.`id` FROM `orders` INNER JOIN `users` ON `orders`.`user_id` = `users`.`id`;",
+    values: [],
+  },
+  sqlite: {
+    text:
+      "SELECT `orders`.*, `users`.`id` FROM `orders` INNER JOIN `users` ON `orders`.`user_id` = `users`.`id`;",
+    values: [],
+  },
+  postgres: {
+    text:
+      'SELECT "orders".*, "users"."id" FROM "orders" INNER JOIN "users" ON "orders"."user_id" = "users"."id";',
+    values: [],
+  },
+});
+
+testQueryCompiler("`where` left outer join", {
+  tableName: "orders",
+  joins: [{
+    table: "users",
+    type: JoinType.Left,
+    columnA: "user_id",
+    columnB: "id",
+  }],
+  columns: ["*", "users.id"],
+}, {
+  mysql: {
+    text:
+      "SELECT `orders`.*, `users`.`id` FROM `orders` LEFT OUTER JOIN `users` ON `orders`.`user_id` = `users`.`id`;",
+    values: [],
+  },
+  sqlite: {
+    text:
+      "SELECT `orders`.*, `users`.`id` FROM `orders` LEFT OUTER JOIN `users` ON `orders`.`user_id` = `users`.`id`;",
+    values: [],
+  },
+  postgres: {
+    text:
+      'SELECT "orders".*, "users"."id" FROM "orders" LEFT OUTER JOIN "users" ON "orders"."user_id" = "users"."id";',
+    values: [],
+  },
+});
+
+testQueryCompiler("`where` right outer join", {
+  tableName: "orders",
+  joins: [{
+    table: "users",
+    type: JoinType.Right,
+    columnA: "user_id",
+    columnB: "id",
+  }],
+  columns: ["*", "users.id"],
+}, {
+  mysql: {
+    text:
+      "SELECT `orders`.*, `users`.`id` FROM `orders` RIGHT OUTER JOIN `users` ON `orders`.`user_id` = `users`.`id`;",
+    values: [],
+  },
+  sqlite: {
+    text:
+      "SELECT `orders`.*, `users`.`id` FROM `orders` RIGHT OUTER JOIN `users` ON `orders`.`user_id` = `users`.`id`;",
+    values: [],
+  },
+  postgres: {
+    text:
+      'SELECT "orders".*, "users"."id" FROM "orders" RIGHT OUTER JOIN "users" ON "orders"."user_id" = "users"."id";',
+    values: [],
+  },
+});
+
+testQueryCompiler("`where` full outer join", {
+  tableName: "orders",
+  joins: [{
+    table: "users",
+    type: JoinType.Full,
+    columnA: "user_id",
+    columnB: "id",
+  }],
+  columns: ["*", "users.id"],
+}, {
+  mysql: {
+    text:
+      "SELECT `orders`.*, `users`.`id` FROM `orders` FULL OUTER JOIN `users` ON `orders`.`user_id` = `users`.`id`;",
+    values: [],
+  },
+  sqlite: {
+    text:
+      "SELECT `orders`.*, `users`.`id` FROM `orders` FULL OUTER JOIN `users` ON `orders`.`user_id` = `users`.`id`;",
+    values: [],
+  },
+  postgres: {
+    text:
+      'SELECT "orders".*, "users"."id" FROM "orders" FULL OUTER JOIN "users" ON "orders"."user_id" = "users"."id";',
+    values: [],
   },
 });
 
@@ -384,6 +532,7 @@ Deno.test("QueryCompiler: cannot perform `delete` without any constraints", () =
         columns: [],
         orders: [],
         returning: [],
+        joins: [],
         tableName: "`users`",
       }, "" as any).compile();
     },
@@ -402,15 +551,15 @@ testQueryCompiler("`delete` and `where`", {
   }],
 }, {
   mysql: {
-    text: "DELETE FROM `users` WHERE `email` = ?;",
+    text: "DELETE FROM `users` WHERE `users`.`email` = ?;",
     values: ["a@b.com"],
   },
   sqlite: {
-    text: "DELETE FROM `users` WHERE `email` = ?;",
+    text: "DELETE FROM `users` WHERE `users`.`email` = ?;",
     values: ["a@b.com"],
   },
   postgres: {
-    text: 'DELETE FROM "users" WHERE "email" = $1;',
+    text: 'DELETE FROM "users" WHERE "users"."email" = $1;',
     values: ["a@b.com"],
   },
 });
@@ -481,17 +630,17 @@ testQueryCompiler("`insert` with returning", {
 }, {
   mysql: {
     text:
-      "INSERT INTO `users` (`email`, `age`, `is_active`, `birthday`) VALUES (?, ?, ?, ?) RETURNING id, name;",
+      "INSERT INTO `users` (`email`, `age`, `is_active`, `birthday`) VALUES (?, ?, ?, ?) RETURNING `id`, `name`;",
     values: ["a@b.com", 16, 1, "2020-07-06 00:00:00"],
   },
   sqlite: {
     text:
-      "INSERT INTO `users` (`email`, `age`, `is_active`, `birthday`) VALUES (?, ?, ?, ?) RETURNING id, name;",
+      "INSERT INTO `users` (`email`, `age`, `is_active`, `birthday`) VALUES (?, ?, ?, ?) RETURNING `id`, `name`;",
     values: ["a@b.com", 16, 1, "2020-07-06 00:00:00"],
   },
   postgres: {
     text:
-      'INSERT INTO "users" ("email", "age", "is_active", "birthday") VALUES ($1, $2, $3, $4) RETURNING id, name;',
+      'INSERT INTO "users" ("email", "age", "is_active", "birthday") VALUES ($1, $2, $3, $4) RETURNING "id", "name";',
     values: ["a@b.com", 16, true, "2020-07-06 00:00:00"],
   },
 });
@@ -652,17 +801,17 @@ testQueryCompiler("`replace` with returning", {
 }, {
   mysql: {
     text:
-      "REPLACE INTO `users` (`email`, `age`, `is_active`, `birthday`) VALUES (?, ?, ?, ?) RETURNING id, name;",
+      "REPLACE INTO `users` (`email`, `age`, `is_active`, `birthday`) VALUES (?, ?, ?, ?) RETURNING `id`, `name`;",
     values: ["a@b.com", 16, 1, "2020-07-06 00:00:00"],
   },
   sqlite: {
     text:
-      "REPLACE INTO `users` (`email`, `age`, `is_active`, `birthday`) VALUES (?, ?, ?, ?) RETURNING id, name;",
+      "REPLACE INTO `users` (`email`, `age`, `is_active`, `birthday`) VALUES (?, ?, ?, ?) RETURNING `id`, `name`;",
     values: ["a@b.com", 16, 1, "2020-07-06 00:00:00"],
   },
   postgres: {
     text:
-      'REPLACE INTO "users" ("email", "age", "is_active", "birthday") VALUES ($1, $2, $3, $4) RETURNING id, name;',
+      'REPLACE INTO "users" ("email", "age", "is_active", "birthday") VALUES ($1, $2, $3, $4) RETURNING "id", "name";',
     values: ["a@b.com", 16, true, "2020-07-06 00:00:00"],
   },
 });
@@ -778,17 +927,17 @@ testQueryCompiler("basic `update`", {
 }, {
   mysql: {
     text:
-      "UPDATE `users` SET `email` = ?, `age` = ?, `is_active` = ?, `birthday` = ? WHERE `email` = ?;",
+      "UPDATE `users` SET `email` = ?, `age` = ?, `is_active` = ?, `birthday` = ? WHERE `users`.`email` = ?;",
     values: ["b@c.com", 16, 1, "2020-07-06 00:00:00", "a@b.com"],
   },
   sqlite: {
     text:
-      "UPDATE `users` SET `email` = ?, `age` = ?, `is_active` = ?, `birthday` = ? WHERE `email` = ?;",
+      "UPDATE `users` SET `email` = ?, `age` = ?, `is_active` = ?, `birthday` = ? WHERE `users`.`email` = ?;",
     values: ["b@c.com", 16, 1, "2020-07-06 00:00:00", "a@b.com"],
   },
   postgres: {
     text:
-      'UPDATE "users" SET "email" = $1, "age" = $2, "is_active" = $3, "birthday" = $4 WHERE "email" = $5;',
+      'UPDATE "users" SET "email" = $1, "age" = $2, "is_active" = $3, "birthday" = $4 WHERE "users"."email" = $5;',
     values: ["b@c.com", 16, true, "2020-07-06 00:00:00", "a@b.com"],
   },
 });
