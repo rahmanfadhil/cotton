@@ -5,7 +5,8 @@ import {
   JoinType,
 } from "./querybuilder.ts";
 import { DatabaseDialect } from "./connect.ts";
-import { DateUtils } from "./utils/date.ts";
+import { formatDate } from "./utils/date.ts";
+import { quote } from "./utils/dialect.ts";
 
 /**
  * Transform QueryDescription to an executable SQL query string
@@ -52,7 +53,7 @@ export class QueryCompiler {
    */
   private toUpdateSQL(): string {
     let query: string[] = [
-      `UPDATE ${this.quote(this.description.tableName)} SET`,
+      `UPDATE ${quote(this.description.tableName, this.dialect)} SET`,
     ];
 
     // Prevent to continue if there is no value
@@ -64,7 +65,7 @@ export class QueryCompiler {
     const values = Object
       .entries(this.description.values)
       .map(([key, value]) =>
-        `${this.quote(key)} = ${this.toDatabaseValue(value)}`
+        `${quote(key, this.dialect)} = ${this.bindValue(value)}`
       );
 
     // Prevent to continue if there is no value
@@ -78,7 +79,8 @@ export class QueryCompiler {
     if (this.description.returning.length > 0) {
       query.push(
         "RETURNING",
-        this.description.returning.map((item) => this.quote(item)).join(", "),
+        this.description.returning.map((item) => quote(item, this.dialect))
+          .join(", "),
       );
     }
 
@@ -92,7 +94,7 @@ export class QueryCompiler {
    * Generate `INSERT` query string
    */
   private toInsertSQL(replace: boolean = false): string {
-    const tableName = this.quote(this.description.tableName);
+    const tableName = quote(this.description.tableName, this.dialect);
 
     // Initialize query string
     // Decide wether to use REPLACE or INSERT
@@ -142,13 +144,13 @@ export class QueryCompiler {
 
       // Map values to query string
       const values = this.description.values.map((item) => {
-        const itemValues = fields.map((field) =>
-          this.toDatabaseValue((item[field]))
-        );
+        const itemValues = fields.map((field) => this.bindValue((item[field])));
         return `(${itemValues.join(", ")})`;
       });
 
-      const columns = fields.map((field) => this.quote(field)).join(", ");
+      const columns = fields
+        .map((field) => quote(field, this.dialect))
+        .join(", ");
       query.push(`(${columns})`, "VALUES", values.join(", "));
     } else {
       const fields = Object.keys(this.description.values);
@@ -162,9 +164,11 @@ export class QueryCompiler {
       }
 
       const values = Object.values(this.description.values)
-        .map((i) => this.toDatabaseValue(i))
+        .map((i) => this.bindValue(i))
         .join(", ");
-      const columns = fields.map((field) => this.quote(field)).join(", ");
+      const columns = fields.map((field) => quote(field, this.dialect)).join(
+        ", ",
+      );
       query.push(`(${columns}) VALUES (${values})`);
     }
 
@@ -172,7 +176,8 @@ export class QueryCompiler {
     if (this.description.returning.length > 0) {
       query.push(
         "RETURNING",
-        this.description.returning.map((item) => this.quote(item)).join(", "),
+        this.description.returning.map((item) => quote(item, this.dialect))
+          .join(", "),
       );
     }
 
@@ -186,7 +191,7 @@ export class QueryCompiler {
     // Query strings
     let query: string[] = [`SELECT`];
 
-    const tableName = this.quote(this.description.tableName);
+    const tableName = quote(this.description.tableName, this.dialect);
 
     // Select table columns
     if (this.description.columns.length > 0) {
@@ -197,9 +202,10 @@ export class QueryCompiler {
           // If the column name contains a dot, we assume that the
           // user wants to select a column from another table.
           if (data.length === 1) {
-            return tableName + "." + this.quote(column);
+            return tableName + "." + quote(column, this.dialect);
           } else if (data.length === 2) {
-            return this.quote(data[0]) + "." + this.quote(data[1]);
+            return quote(data[0], this.dialect) + "." +
+              quote(data[1], this.dialect);
           } else {
             throw new Error(`'${column}' is an invalid column name!`);
           }
@@ -226,7 +232,7 @@ export class QueryCompiler {
   private toDeleteSQL(): string {
     // Query strings
     let query: string[] = [
-      `DELETE FROM ${this.quote(this.description.tableName)}`,
+      `DELETE FROM ${quote(this.description.tableName, this.dialect)}`,
     ];
 
     // Add all query constraints
@@ -252,13 +258,14 @@ export class QueryCompiler {
     // Query strings (that contain constraints only)
     let query: string[] = [];
 
+    const tableName = quote(this.description.tableName, this.dialect);
+
     // Joins
     if (this.description.joins && this.description.joins.length >= 1) {
       for (const join of this.description.joins) {
-        const tableName = this.quote(join.table);
-        const columnA = this.quote(this.description.tableName) + "." +
-          this.quote(join.columnA);
-        const columnB = tableName + "." + this.quote(join.columnB);
+        const tableName = quote(join.table, this.dialect);
+        const columnA = tableName + "." + quote(join.columnA, this.dialect);
+        const columnB = tableName + "." + quote(join.columnB, this.dialect);
 
         switch (join.type) {
           case JoinType.Right:
@@ -293,22 +300,24 @@ export class QueryCompiler {
         const { type, operator, value, column } =
           this.description.wheres[index];
 
-        let expression: string;
+        // Get the table name, column name, and the operator.
+        // Example: "`users`.`id` = "
+        let expression = `${tableName}.${
+          quote(column, this.dialect)
+        } ${operator} `;
 
+        // Add the value to the WHERE clause, if the operator is BETWEEN,
+        // use AND keyword to seperate both values.
         if (operator === "between") {
           if (!Array.isArray(value) || value.length !== 2) {
             throw new Error("BETWEEN must have two values!");
           }
 
-          expression = `${this.quote(this.description.tableName)}.${
-            this.quote(column)
-          } ${operator} ${this.toDatabaseValue(value[0])} and ${
-            this.toDatabaseValue(value[1])
-          }`;
+          const a = this.bindValue(value[0]);
+          const b = this.bindValue(value[1]);
+          expression += ` ${a} and ${b}`;
         } else {
-          expression = `${this.quote(this.description.tableName)}.${
-            this.quote(column)
-          } ${operator} ${this.toDatabaseValue(value)}`;
+          expression += ` ${this.bindValue(value)}`;
         }
 
         if (index === 0) {
@@ -365,13 +374,10 @@ export class QueryCompiler {
    * 
    * @param value The value to be sanitized
    */
-  private toDatabaseValue(value: any): string {
+  private bindValue(value: any): string {
     if (Array.isArray(value)) {
       const values = value
-        .map((item) => {
-          this.toDatabaseValue(item);
-          return this.getPlaceholder();
-        })
+        .map((item) => this.bindValue(item))
         .join(", ");
       return `(${values})`;
     }
@@ -380,14 +386,16 @@ export class QueryCompiler {
       return "NULL";
     }
 
-    if (value instanceof Date) {
-      this.values.push(DateUtils.formatDate(value));
-    } else if (typeof value === "boolean") {
+    if (typeof value === "boolean") {
       if (this.dialect === "mysql" || this.dialect === "sqlite") {
         return value ? "1" : "0";
       } else {
         return value ? "TRUE" : "FALSE";
       }
+    }
+
+    if (value instanceof Date) {
+      this.values.push(formatDate(value));
     } else {
       this.values.push(value);
     }
@@ -406,27 +414,6 @@ export class QueryCompiler {
         throw new Error(
           `Dialect '${this.dialect}' is not supported yet!`,
         );
-    }
-  }
-
-  /**
-   * Wrap a table or column name with backticks or
-   * double quotes depending on the database dialect.
-   * 
-   * @param data the string to be wrapped
-   */
-  private quote(data: string): string {
-    if (data === "*") {
-      return data;
-    }
-
-    switch (this.dialect) {
-      case "postgres":
-        return `"${data}"`;
-      case "mysql":
-      case "sqlite":
-      default:
-        return `\`${data}\``;
     }
   }
 }
