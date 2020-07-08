@@ -11,5 +11,6 @@ import "./src/adapters/adapter_test.ts";
 // Unit tests
 import "./src/utils/date_test.ts";
 import "./src/utils/number_test.ts";
+import "./src/utils/dialect_test.ts";
 import "./src/querybuilder_test.ts";
 import "./src/querycompiler_test.ts";

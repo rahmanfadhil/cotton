@@ -1,6 +1,7 @@
 import { Adapter } from "./adapters/adapter.ts";
 import { Reflect } from "./utils/reflect.ts";
 import { NumberUtils } from "./utils/number.ts";
+import { DialectUtils } from "./utils/dialect.ts";
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 
@@ -399,7 +400,11 @@ export abstract class Model {
     const truncateCommand = this.adapter.dialect === "sqlite"
       ? "DELETE FROM"
       : "TRUNCATE";
-    await this.adapter.query(`${truncateCommand} ${this.tableName};`);
+
+    // Surround table name with quote
+    const tableName = DialectUtils.quote(this.tableName, this.adapter.dialect);
+
+    await this.adapter.query(`${truncateCommand} ${tableName};`);
   }
 
   // --------------------------------------------------------------------------------
