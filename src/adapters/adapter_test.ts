@@ -2,7 +2,7 @@ import { Model, Field } from "../model.ts";
 import { testDB } from "../testutils.ts";
 import { assertEquals } from "../../testdeps.ts";
 import { QueryBuilder } from "../querybuilder.ts";
-import { DateUtils } from "../utils/date.ts";
+import { formatDate } from "../utils/date.ts";
 
 class User extends Model {
   static tableName = "users";
@@ -55,25 +55,24 @@ testDB(
     client.addModel(User);
     client.addModel(Product);
 
-    await User.insert({
-      email: "a@b.com",
-      age: 16,
-      created_at: date,
-    });
+    await client.query(
+      `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${
+        formatDate(date)
+      }')`,
+    );
+    await client.query(
+      `INSERT INTO users (email, age, created_at) VALUES ('b@c.com', 16, '${
+        formatDate(date)
+      }')`,
+    );
 
-    await User.insert({
-      email: "b@c.com",
-      age: 16,
-      created_at: date,
-    });
-
-    await Product.insert({ name: "notebook" });
-    await Product.insert({ name: "pen" });
+    await client.query(`INSERT INTO products (name) VALUES ('notebook')`);
+    await client.query(`INSERT INTO products (name) VALUES ('pen')`);
 
     await client.truncateModels();
 
-    const users = await User.find();
-    const products = await Product.find();
+    const users = await client.query("SELECT * FROM users;");
+    const products = await client.query("SELECT * FROM products;");
 
     assertEquals(users.length, 0);
     assertEquals(products.length, 0);
@@ -101,7 +100,7 @@ testDB("BaseAdapter: `query` bind values", async (client) => {
       break;
   }
 
-  await client.query(query, ["a@b.com", 16, DateUtils.formatDate(new Date())]);
+  await client.query(query, ["a@b.com", 16, formatDate(new Date())]);
 
   const result = await client.query<{
     id: number;
@@ -114,22 +113,4 @@ testDB("BaseAdapter: `query` bind values", async (client) => {
   assertEquals(result[0].id, 1);
   assertEquals(result[0].email, "a@b.com");
   assertEquals(result[0].age, 16);
-});
-
-testDB("BaseAdapter: `getLastInsertedId`", async (client) => {
-  assertEquals(
-    await client.getLastInsertedId({ tableName: "users", primaryKey: "id" }),
-    0,
-  );
-
-  await client.query(
-    `insert into users (email, age, created_at) values ('a@b.com', 16, '${
-      DateUtils.formatDate(new Date())
-    }')`,
-  );
-
-  assertEquals(
-    await client.getLastInsertedId({ tableName: "users", primaryKey: "id" }),
-    1,
-  );
 });

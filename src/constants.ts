@@ -1,5 +1,3 @@
-export const VALID_WHERE_OPERATIONS = [">", ">=", "<", "<=", "=", "like"];
-
 // Inspired by deno-nessie from @halvardssm
 // https://github.com/halvardssm/deno-nessie
 export const COLUMN_TYPES = {

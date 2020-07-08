@@ -1,7 +1,7 @@
 import { testDB } from "./testutils.ts";
 import { Model, Field } from "./model.ts";
 import { assertEquals, assertThrowsAsync } from "../testdeps.ts";
-import { DateUtils } from "./utils/date.ts";
+import { formatDate } from "./utils/date.ts";
 
 class User extends Model {
   static tableName = "users";
@@ -25,7 +25,7 @@ class Product extends Model {
 
 testDB("Model: find", async (client) => {
   const date = new Date("5 June, 2020");
-  const formattedDate = DateUtils.formatDate(date);
+  const formattedDate = formatDate(date);
 
   await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${formattedDate}')`,
@@ -71,7 +71,7 @@ testDB("Model: find with options", async (client) => {
 
 testDB("Model: findOne", async (client) => {
   const date = new Date("5 June, 2020");
-  const formattedDate = DateUtils.formatDate(date);
+  const formattedDate = formatDate(date);
 
   await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${formattedDate}')`,
@@ -129,11 +129,11 @@ testDB("Model: save", async (client) => {
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
 
-  // user.email = "b@c.com";
-  // await user.save();
+  user.email = "b@c.com";
+  await user.save();
 
-  // user = await User.findOne(1) as User;
-  // assertEquals(user.email, "c@d.com");
+  user = await User.findOne(1) as User;
+  assertEquals(user.email, "b@c.com");
 });
 
 testDB("Model: insert single", async (client) => {
@@ -191,7 +191,7 @@ testDB("Model: insert multiple", async (client) => {
 
 testDB("Model: truncate", async (client) => {
   const date = new Date("5 June, 2020");
-  const formattedDate = DateUtils.formatDate(date);
+  const formattedDate = formatDate(date);
 
   await client.query(
     `INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '${formattedDate}')`,
@@ -282,7 +282,7 @@ testDB("Model: isDirty", async (client) => {
 testDB("Model: delete", async (client) => {
   client.addModel(User);
 
-  const formattedDate = DateUtils.formatDate(new Date());
+  const formattedDate = formatDate(new Date());
   await client.query(
     `INSERT INTO users (id, email, age, created_at) VALUES
       (1, 'a@b.com', 16, '${formattedDate}'),
@@ -308,7 +308,7 @@ testDB("Model: delete", async (client) => {
 testDB("Model: deleteOne", async (client) => {
   client.addModel(User);
 
-  const formattedDate = DateUtils.formatDate(new Date());
+  const formattedDate = formatDate(new Date());
   await client.query(
     `INSERT INTO users (id, email, age, created_at) VALUES
       (1, 'a@b.com', 16, '${formattedDate}'),

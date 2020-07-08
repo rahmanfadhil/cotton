@@ -1,9 +1,5 @@
 import { PostgresClient } from "../../deps.ts";
-import {
-  Adapter,
-  ConnectionOptions,
-  GetLastInsertedIdOptions,
-} from "./adapter.ts";
+import { Adapter, ConnectionOptions } from "./adapter.ts";
 import { DatabaseDialect } from "../connect.ts";
 
 /**
@@ -12,29 +8,13 @@ import { DatabaseDialect } from "../connect.ts";
 export class PostgresAdapter extends Adapter {
   public dialect: DatabaseDialect = "postgres";
 
+  // This value will never change, so use RETURNING statement to get the last inserted id
+  public lastInsertedId = 0;
+
   /**
    * Postgres client
    */
   private client: PostgresClient;
-
-  public async getLastInsertedId(
-    options?: GetLastInsertedIdOptions,
-  ): Promise<number> {
-    if (!options || !options.tableName || !options.primaryKey) {
-      throw new Error(
-        "Cannot get last inserted row id without 'tableName' and 'primaryKey' in 'postgres'",
-      );
-    }
-
-    try {
-      const result = await this.client.query(
-        `SELECT currval(pg_get_serial_sequence('${options.tableName}', '${options.primaryKey}'));`,
-      );
-      return parseInt(result.rows[0][0]);
-    } catch {
-      return 0;
-    }
-  }
 
   constructor(options: ConnectionOptions) {
     super();
@@ -60,7 +40,7 @@ export class PostgresAdapter extends Adapter {
   }
 
   public async query<T>(query: string, values?: any[]): Promise<T[]> {
-    let result = Array.isArray(values)
+    let result = Array.isArray(values) && values.length >= 1
       ? await this.client.query({ text: query, args: values })
       : await this.client.query(query);
 

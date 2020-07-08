@@ -8,8 +8,8 @@ import { DatabaseDialect } from "../connect.ts";
 export class SqliteAdapter extends Adapter {
   public dialect: DatabaseDialect = "sqlite";
 
-  public getLastInsertedId(): Promise<number> {
-    return Promise.resolve(this.client?.lastInsertRowId || 0);
+  public get lastInsertedId(): number {
+    return this.client?.lastInsertRowId || 0;
   }
 
   /**
@@ -54,10 +54,10 @@ export class SqliteAdapter extends Adapter {
       // TODO: handle error with custom error
       let result: any;
 
-      if (!Array.isArray(values)) {
-        result = this.client!.query(query);
-      } else {
+      if (Array.isArray(values) && values.length >= 1) {
         result = this.client!.query(query, values);
+      } else {
+        result = this.client!.query(query);
       }
 
       // Store fetch records temporarily

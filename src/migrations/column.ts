@@ -66,7 +66,7 @@ export class Column {
 
     // Set the column name and its type (for a specific database dialect)
     const columnType = COLUMN_TYPES[this.type][dialect].toUpperCase();
-    const query = [`${this.name} ${columnType}${lengthStr}`];
+    const query = [`${this.getColumnName(dialect)} ${columnType}${lengthStr}`];
 
     // Add the PRIMARY KEY
     if (this.isPrimaryKey) {
@@ -127,6 +127,17 @@ export class Column {
       return `DEFAULT ${value}`;
     } else {
       return null;
+    }
+  }
+
+  public getColumnName(dialect: DatabaseDialect): string {
+    switch (dialect) {
+      case "postgres":
+        return `"${this.name}"`;
+      case "mysql":
+      case "sqlite":
+      default:
+        return `\`${this.name}\``;
     }
   }
 }

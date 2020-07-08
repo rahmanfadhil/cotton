@@ -1,5 +1,8 @@
 import { Adapter, ConnectionOptions } from "./adapters/adapter.ts";
 import { connect } from "./connect.ts";
+import { QueryBuilder, QueryDescription, QueryType } from "./querybuilder.ts";
+import { assertEquals } from "../testdeps.ts";
+import { QueryCompiler } from "./querycompiler.ts";
 
 /**
  * Postgres connection options
@@ -111,7 +114,20 @@ export async function testDB(
       `);
 
       // Run the actual test
-      await fn(db);
+      try {
+        await fn(db);
+      } catch (err) {
+        // Drop dummy table `users`
+        await db.query("DROP TABLE users;");
+
+        // Drop dummy table `products`
+        await db.query("DROP TABLE products;");
+
+        // Disconnect to database
+        await db.disconnect();
+
+        throw err;
+      }
 
       // Drop dummy table `users`
       await db.query("DROP TABLE users;");
@@ -152,7 +168,20 @@ export async function testDB(
       `);
 
       // Run the actual test
-      await fn(db);
+      try {
+        await fn(db);
+      } catch (err) {
+        // Drop dummy table `users`
+        await db.query("DROP TABLE users;");
+
+        // Drop dummy table `products`
+        await db.query("DROP TABLE products;");
+
+        // Disconnect to database
+        await db.disconnect();
+
+        throw err;
+      }
 
       // Drop dummy table `users`
       await db.query("DROP TABLE users;");
@@ -164,4 +193,74 @@ export async function testDB(
       await db.disconnect();
     },
   });
+}
+
+/**
+ * Generate a test case for testing the QueryBuilder.
+ * This will assert the query description of the builder
+ * which will be passed to the QueryCompiler.
+ * 
+ * @param title the title of the test
+ * @param fn callback function to build the query
+ * @param description the expected description
+ */
+export function testQueryBuilder(
+  title: string,
+  fn: (query: QueryBuilder) => void,
+  description: Partial<QueryDescription>,
+) {
+  Deno.test(`QueryBuilder: ${title}`, () => {
+    const query = new QueryBuilder("users", {} as any);
+    fn(query);
+    const expected = Object.assign({}, {
+      tableName: "users",
+      type: QueryType.Select,
+      columns: [],
+      wheres: [],
+      orders: [],
+      returning: [],
+      joins: [],
+    }, description);
+    const actual = (query as any).description;
+    assertEquals(actual, expected);
+  });
+}
+
+/**
+ * Generate a test case for testing QueryCompiler. This will
+ * create a new QueryCompiler and test it agaist the expected
+ * query string and values.
+ * 
+ * @param title the title of the test
+ * @param description the query description (comes from the QueryBuilder)
+ * @param result the expected query string and values for multiple database dialects
+ */
+export function testQueryCompiler(
+  title: string,
+  description: Partial<QueryDescription>,
+  result: {
+    mysql: { text: string; values: any[] };
+    postgres: { text: string; values: any[] };
+    sqlite: { text: string; values: any[] };
+  },
+) {
+  for (const dialect in result) {
+    Deno.test(`[${dialect}] QueryCompiler: ${title}`, () => {
+      const compiler = new QueryCompiler(
+        Object.assign({}, {
+          tableName: "users",
+          type: QueryType.Select,
+          columns: [],
+          wheres: [],
+          orders: [],
+          returning: [],
+          joins: [],
+        }, description),
+        dialect as any,
+      );
+      const { text, values } = compiler.compile();
+      assertEquals(text, (result as any)[dialect].text);
+      assertEquals(values, (result as any)[dialect].values);
+    });
+  }
 }
