@@ -1,13 +1,14 @@
 import { Adapter } from "../adapters/adapter.ts";
-import { Migration } from "./migration.ts";
 import { walk, writeFileStr, ensureDir } from "../../deps.ts";
 import { Schema } from "./schema.ts";
+import { Migration } from "./migration.ts";
+import { createMigrationTimestamp } from "../utils/date.ts";
 
 interface MigrationInfo {
   migration: Migration;
   name: string;
-  timestamp: number;
   isExecuted: boolean;
+  batch: number;
 }
 
 /**
@@ -27,19 +28,25 @@ export class MigrationRunner {
    * @param name the name of the migration
    */
   public async createMigrationFile(name: string): Promise<string> {
+    if (!name.match(/^[A-Za-z]+$/)) {
+      throw new Error(
+        `Invalid name for migration '${name}', name can only contain letters!`,
+      );
+    }
+
     // Create the migrations folder if not exists
     await ensureDir(this.migrationDir);
 
-    // Generate the class name
-    const className = name + "_" + Date.now();
+    // Create a unique timestamps
+    const timestamp = createMigrationTimestamp();
 
     // Generate the file name
-    const fileName = `${this.migrationDir}/${className}.ts`;
+    const fileName = `${this.migrationDir}/${timestamp + "_" + name}.ts`;
 
     // Write the file
     await writeFileStr(
       fileName,
-      `import { Migration, Schema } from "https://deno.land/x/cotton/mod.ts";\n\nexport class ${className} extends Migration {\n  async up(schema: Schema) {}\n\n  async down(schema: Schema) {}\n}`,
+      `import { Migration, Schema } from "https://deno.land/x/cotton/mod.ts";\n\nexport default class extends Migration {\n  async up(schema: Schema) {}\n\n  async down(schema: Schema) {}\n}`,
     );
 
     return fileName;
@@ -48,37 +55,32 @@ export class MigrationRunner {
   /**
    * Get all migration classes
    */
-  public async getAllMigrations(): Promise<MigrationInfo[]> {
+  private async getAllMigrationFiles(): Promise<MigrationInfo[]> {
     const migrations: MigrationInfo[] = [];
 
     // Loop through all files
     for await (const file of walk(this.migrationDir)) {
       if (file.isFile) {
-        const className = file.name.split(".")[0];
         let MigrationClass: { new (): Migration };
 
         try {
           const fileContent = await import(file.path);
 
-          if (
-            !fileContent[className] ||
-            !(fileContent[className].prototype instanceof Migration)
-          ) {
+          if (!(fileContent.default.prototype instanceof Migration)) {
             throw new Error();
           }
 
-          MigrationClass = fileContent[className];
+          MigrationClass = fileContent.default;
         } catch {
           throw new Error(`Failed to load '${file.name}' migration class!`);
         }
 
         const migration = new MigrationClass();
-        const [name, timestamp] = file.name.split("_");
 
         migrations.push({
           migration,
-          name,
-          timestamp: parseInt(timestamp),
+          name: file.name.split(".")[0],
+          batch: 0,
           isExecuted: false,
         });
       }
@@ -88,15 +90,42 @@ export class MigrationRunner {
   }
 
   /**
+   * Get all available migrations
+   */
+  public async getAllMigrations(): Promise<MigrationInfo[]> {
+    await this.createMigrationsTable();
+
+    const migrations = await this.adapter
+      .table("migrations")
+      .select("name", "batch")
+      .execute<{ name: string; batch: number }>();
+    const migrationFiles = await this.getAllMigrationFiles();
+
+    for (const migration of migrations) {
+      const migrationIndex = migrationFiles.findIndex((item) =>
+        item.name === migration.name
+      );
+      if (!migrationIndex) {
+        throw new Error(`Migration '${migration.name}' is missing!`);
+      }
+
+      migrationFiles[migrationIndex].isExecuted = true;
+      migrationFiles[migrationIndex].batch = migration.batch;
+    }
+
+    return migrationFiles;
+  }
+
+  /**
    * Create the `migrations` table if it doesn't exist yet
    */
   public async createMigrationsTable() {
     const schema = new Schema(this.adapter);
-    if (await schema.hasTable("migrations")) {
+    if (!await schema.hasTable("migrations")) {
       await schema.createTable("migrations", (table) => {
         table.id();
         table.varchar("name", 255).notNull();
-        table.bigInteger("timestamp").notNull();
+        table.integer("batch").notNull();
       });
     }
   }

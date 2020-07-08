@@ -10,6 +10,11 @@ const CLI_VERSION = "v0.1.0";
 
 const parsedArgs = parse(Deno.args);
 
+/**
+ * Print an error to the console
+ * 
+ * @param message the error message
+ */
 function error(message: string) {
   const errorMessage = `  ${message}  `;
   const redSpaces = Colors.bgRed(
@@ -19,6 +24,9 @@ function error(message: string) {
   console.log("\n" + redSpaces + "\n" + redMessage + "\n" + redSpaces);
 }
 
+/**
+ * Display all available commands and how to use them in the console.
+ */
 function help() {
   console.log(`Cotton CLI ${Colors.yellow(CLI_VERSION)}
 
@@ -30,6 +38,8 @@ ${Colors.green("Commands:")}
   migration:up
   migration:down`);
 }
+
+console.log(parsedArgs);
 
 if (parsedArgs._.length >= 1) {
   const command = parsedArgs._[0];
@@ -48,24 +58,23 @@ if (parsedArgs._.length >= 1) {
     );
 
     // Get all available migrations from the migrations folder
-    const migrations = await runner.getAllMigrations();
+    // const migrations = await runner.getAllMigrations();
+    // console.log(migrations);
 
     switch (command) {
       case "migration:create":
         if (parsedArgs.n) {
-          runner.createMigrationFile(parsedArgs.n);
+          await runner.createMigrationFile(parsedArgs.n);
         } else {
-          error(`Command "${command}" is not available!`);
+          error(`Migration must have a name!`);
         }
 
         break;
       case "migration:up":
-        await runner.createMigrationsTable();
+        const migrations = await runner.getAllMigrations();
         console.log(migrations);
         break;
       case "migration:down":
-        await runner.createMigrationsTable();
-        console.log(migrations);
         break;
       default:
         error(`Command "${command}" is not available!`);
