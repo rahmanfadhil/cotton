@@ -1,7 +1,7 @@
 import { Adapter } from "./adapters/adapter.ts";
 import { Reflect } from "./utils/reflect.ts";
-import { NumberUtils } from "./utils/number.ts";
-import { DialectUtils } from "./utils/dialect.ts";
+import { range } from "./utils/number.ts";
+import { quote } from "./utils/dialect.ts";
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 
@@ -329,7 +329,7 @@ export abstract class Model {
     }
 
     // Set the model primary keys
-    const ids = NumberUtils.range(
+    const ids = range(
       lastInsertedId + 1 - models.length,
       lastInsertedId,
     );
@@ -402,7 +402,7 @@ export abstract class Model {
       : "TRUNCATE";
 
     // Surround table name with quote
-    const tableName = DialectUtils.quote(this.tableName, this.adapter.dialect);
+    const tableName = quote(this.tableName, this.adapter.dialect);
 
     await this.adapter.query(`${truncateCommand} ${tableName};`);
   }
