@@ -1,7 +1,15 @@
-import { QueryDescription, QueryType, WhereType } from "./querybuilder.ts";
+import {
+  QueryDescription,
+  QueryType,
+  WhereType,
+  JoinType,
+} from "./querybuilder.ts";
 import { DatabaseDialect } from "./connect.ts";
 import { DateUtils } from "./utils/date.ts";
 
+/**
+ * Transform QueryDescription to an executable SQL query string
+ */
 export class QueryCompiler {
   private values: any[] = [];
 
@@ -43,7 +51,9 @@ export class QueryCompiler {
    * Generate `UPDATE` query string
    */
   private toUpdateSQL(): string {
-    let query: string[] = [`UPDATE ${this.description.tableName} SET`];
+    let query: string[] = [
+      `UPDATE ${this.quote(this.description.tableName)} SET`,
+    ];
 
     // Prevent to continue if there is no value
     if (!this.description.values) {
@@ -51,8 +61,11 @@ export class QueryCompiler {
     }
 
     // Map values to query string
-    const values = Object.entries(this.description.values)
-      .map(([key, value]) => `${key} = ${this.toDatabaseValue(value)}`);
+    const values = Object
+      .entries(this.description.values)
+      .map(([key, value]) =>
+        `${this.quote(key)} = ${this.toDatabaseValue(value)}`
+      );
 
     // Prevent to continue if there is no value
     if (!(values.length >= 1)) {
@@ -63,7 +76,10 @@ export class QueryCompiler {
 
     // Add RETURNING statement if exists
     if (this.description.returning.length > 0) {
-      query.push("RETURNING", this.description.returning.join(", "));
+      query.push(
+        "RETURNING",
+        this.description.returning.map((item) => this.quote(item)).join(", "),
+      );
     }
 
     // Add all query constraints
@@ -76,11 +92,13 @@ export class QueryCompiler {
    * Generate `INSERT` query string
    */
   private toInsertSQL(replace: boolean = false): string {
+    const tableName = this.quote(this.description.tableName);
+
     // Initialize query string
     // Decide wether to use REPLACE or INSERT
     let query: string[] = replace
-      ? [`REPLACE INTO ${this.description.tableName}`]
-      : [`INSERT INTO ${this.description.tableName}`];
+      ? [`REPLACE INTO ${tableName}`]
+      : [`INSERT INTO ${tableName}`];
 
     // Prevent to continue if there is no value
     if (!this.description.values) {
@@ -130,7 +148,8 @@ export class QueryCompiler {
         return `(${itemValues.join(", ")})`;
       });
 
-      query.push(`(${fields.join(", ")})`, "VALUES", values.join(", "));
+      const columns = fields.map((field) => this.quote(field)).join(", ");
+      query.push(`(${columns})`, "VALUES", values.join(", "));
     } else {
       const fields = Object.keys(this.description.values);
 
@@ -145,12 +164,16 @@ export class QueryCompiler {
       const values = Object.values(this.description.values)
         .map((i) => this.toDatabaseValue(i))
         .join(", ");
-      query.push(`(${fields.join(", ")}) VALUES (${values})`);
+      const columns = fields.map((field) => this.quote(field)).join(", ");
+      query.push(`(${columns}) VALUES (${values})`);
     }
 
     // Add RETURNING statement if exists
     if (this.description.returning.length > 0) {
-      query.push("RETURNING", this.description.returning.join(", "));
+      query.push(
+        "RETURNING",
+        this.description.returning.map((item) => this.quote(item)).join(", "),
+      );
     }
 
     return query.join(" ") + ";";
@@ -163,15 +186,33 @@ export class QueryCompiler {
     // Query strings
     let query: string[] = [`SELECT`];
 
+    const tableName = this.quote(this.description.tableName);
+
     // Select table columns
     if (this.description.columns.length > 0) {
-      query.push(`(${this.description.columns.join(", ")})`);
+      const columns = this.description.columns
+        .map((column) => {
+          const data = column.split(".");
+
+          // If the column name contains a dot, we assume that the
+          // user wants to select a column from another table.
+          if (data.length === 1) {
+            return tableName + "." + this.quote(column);
+          } else if (data.length === 2) {
+            return this.quote(data[0]) + "." + this.quote(data[1]);
+          } else {
+            throw new Error(`'${column}' is an invalid column name!`);
+          }
+        })
+        .join(", ");
+
+      query.push(`${columns}`);
     } else {
-      query.push("*");
+      query.push(`${tableName}.*`);
     }
 
     // Add table name
-    query.push(`FROM ${this.description.tableName}`);
+    query.push(`FROM ${tableName}`);
 
     // Add all query constraints
     query = query.concat(this.collectConstraints());
@@ -184,7 +225,9 @@ export class QueryCompiler {
    */
   private toDeleteSQL(): string {
     // Query strings
-    let query: string[] = [`DELETE FROM ${this.description.tableName}`];
+    let query: string[] = [
+      `DELETE FROM ${this.quote(this.description.tableName)}`,
+    ];
 
     // Add all query constraints
     const constraints = this.collectConstraints();
@@ -209,6 +252,41 @@ export class QueryCompiler {
     // Query strings (that contain constraints only)
     let query: string[] = [];
 
+    // Joins
+    if (this.description.joins && this.description.joins.length >= 1) {
+      for (const join of this.description.joins) {
+        const tableName = this.quote(join.table);
+        const columnA = this.quote(this.description.tableName) + "." +
+          this.quote(join.columnA);
+        const columnB = tableName + "." + this.quote(join.columnB);
+
+        switch (join.type) {
+          case JoinType.Right:
+            query.push(
+              `RIGHT OUTER JOIN ${tableName} ON ${columnA} = ${columnB}`,
+            );
+            break;
+
+          case JoinType.Left:
+            query.push(
+              `LEFT OUTER JOIN ${tableName} ON ${columnA} = ${columnB}`,
+            );
+            break;
+
+          case JoinType.Full:
+            query.push(
+              `FULL OUTER JOIN ${tableName} ON ${columnA} = ${columnB}`,
+            );
+            break;
+
+          case JoinType.Inner:
+          default:
+            query.push(`INNER JOIN ${tableName} ON ${columnA} = ${columnB}`);
+            break;
+        }
+      }
+    }
+
     // Add where clauses if exists
     if (this.description.wheres.length > 0) {
       for (let index = 0; index < this.description.wheres.length; index++) {
@@ -217,7 +295,21 @@ export class QueryCompiler {
 
         let expression: string;
 
-        expression = `${column} ${operator} ${this.toDatabaseValue(value)}`;
+        if (operator === "between") {
+          if (!Array.isArray(value) || value.length !== 2) {
+            throw new Error("BETWEEN must have two values!");
+          }
+
+          expression = `${this.quote(this.description.tableName)}.${
+            this.quote(column)
+          } ${operator} ${this.toDatabaseValue(value[0])} and ${
+            this.toDatabaseValue(value[1])
+          }`;
+        } else {
+          expression = `${this.quote(this.description.tableName)}.${
+            this.quote(column)
+          } ${operator} ${this.toDatabaseValue(value)}`;
+        }
 
         if (index === 0) {
           // The first where clause should have `WHERE` explicitly.
@@ -313,6 +405,27 @@ export class QueryCompiler {
         throw new Error(
           `Dialect '${this.dialect}' is not supported yet!`,
         );
+    }
+  }
+
+  /**
+   * Wrap a table or column name with backticks or
+   * double quotes depending on the database dialect.
+   * 
+   * @param data the string to be wrapped
+   */
+  private quote(data: string): string {
+    if (data === "*") {
+      return data;
+    }
+
+    switch (this.dialect) {
+      case "postgres":
+        return `"${data}"`;
+      case "mysql":
+      case "sqlite":
+      default:
+        return `\`${data}\``;
     }
   }
 }

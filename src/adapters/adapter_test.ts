@@ -114,21 +114,3 @@ testDB("BaseAdapter: `query` bind values", async (client) => {
   assertEquals(result[0].email, "a@b.com");
   assertEquals(result[0].age, 16);
 });
-
-testDB("BaseAdapter: `getLastInsertedId`", async (client) => {
-  assertEquals(
-    await client.getLastInsertedId({ tableName: "users", primaryKey: "id" }),
-    0,
-  );
-
-  await client.query(
-    `insert into users (email, age, created_at) values ('a@b.com', 16, '${
-      DateUtils.formatDate(new Date())
-    }')`,
-  );
-
-  assertEquals(
-    await client.getLastInsertedId({ tableName: "users", primaryKey: "id" }),
-    1,
-  );
-});

@@ -1,4 +1,9 @@
-import { WhereType, QueryType } from "./querybuilder.ts";
+import {
+  WhereType,
+  QueryType,
+  QueryBuilder,
+  JoinType,
+} from "./querybuilder.ts";
 import { testQueryBuilder } from "./testutils.ts";
 
 // Where
@@ -25,6 +30,19 @@ testQueryBuilder(
       column: "age",
       operator: ">",
       value: 16,
+    }],
+  },
+);
+
+testQueryBuilder(
+  "`where` with multiple values",
+  (query) => query.where("id", "in", [1, 2, 3]),
+  {
+    wheres: [{
+      type: WhereType.Default,
+      column: "id",
+      operator: "in",
+      value: [1, 2, 3],
     }],
   },
 );
@@ -63,8 +81,8 @@ testQueryBuilder(
 );
 
 testQueryBuilder(
-  "`orWhere`",
-  (query) => query.orWhere("email", "a@b.com"),
+  "`or`",
+  (query) => query.or("email", "a@b.com"),
   {
     wheres: [{
       type: WhereType.Or,
@@ -76,8 +94,8 @@ testQueryBuilder(
 );
 
 testQueryBuilder(
-  "`orWhere` with custom operator",
-  (query) => query.orWhere("age", ">", 16),
+  "`or` with custom operator",
+  (query) => query.or("age", ">", 16),
   {
     wheres: [{
       type: WhereType.Or,
@@ -89,8 +107,8 @@ testQueryBuilder(
 );
 
 testQueryBuilder(
-  "`notWhere`",
-  (query) => query.notWhere("email", "a@b.com"),
+  "`not`",
+  (query) => query.not("email", "a@b.com"),
   {
     wheres: [{
       type: WhereType.Not,
@@ -102,8 +120,8 @@ testQueryBuilder(
 );
 
 testQueryBuilder(
-  "`notWhere` with custom operator",
-  (query) => query.notWhere("age", ">", 16),
+  "`not` with custom operator",
+  (query) => query.not("age", ">", 16),
   {
     wheres: [{
       type: WhereType.Not,
@@ -115,12 +133,12 @@ testQueryBuilder(
 );
 
 testQueryBuilder(
-  "`orWhere` and `notWhere`",
+  "`or` and `not`",
   (query) =>
     query
       .where("email", "a@b.com")
-      .orWhere("name", "LIKE", "%john%")
-      .notWhere("age", ">", 16),
+      .or("name", "like", "%john%")
+      .not("age", ">", 16),
   {
     wheres: [{
       type: WhereType.Default,
@@ -130,7 +148,7 @@ testQueryBuilder(
     }, {
       type: WhereType.Or,
       column: "name",
-      operator: "LIKE",
+      operator: "like",
       value: "%john%",
     }, {
       type: WhereType.Not,
@@ -245,6 +263,60 @@ testQueryBuilder(
       value: 16,
     }],
     columns: ["email", "age", "is_active"],
+  },
+);
+
+// Joins
+
+testQueryBuilder(
+  "basic `innerJoin`",
+  (query) => query.innerJoin("companies", "users.company_id", "companies.id"),
+  {
+    joins: [{
+      type: JoinType.Inner,
+      table: "companies",
+      columnA: "users.company_id",
+      columnB: "companies.id",
+    }],
+  },
+);
+
+testQueryBuilder(
+  "basic `fullJoin`",
+  (query) => query.fullJoin("companies", "users.company_id", "companies.id"),
+  {
+    joins: [{
+      type: JoinType.Full,
+      table: "companies",
+      columnA: "users.company_id",
+      columnB: "companies.id",
+    }],
+  },
+);
+
+testQueryBuilder(
+  "basic `leftJoin`",
+  (query) => query.leftJoin("companies", "users.company_id", "companies.id"),
+  {
+    joins: [{
+      type: JoinType.Left,
+      table: "companies",
+      columnA: "users.company_id",
+      columnB: "companies.id",
+    }],
+  },
+);
+
+testQueryBuilder(
+  "basic `rightJoin`",
+  (query) => query.rightJoin("companies", "users.company_id", "companies.id"),
+  {
+    joins: [{
+      type: JoinType.Right,
+      table: "companies",
+      columnA: "users.company_id",
+      columnB: "companies.id",
+    }],
   },
 );
 
