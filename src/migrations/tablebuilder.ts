@@ -1,5 +1,6 @@
 import { Column } from "./column.ts";
 import { Adapter } from "../adapters/adapter.ts";
+import { quote } from "../utils/dialect.ts";
 
 export interface CreateTableOptions {
   createIfNotExists?: boolean;
@@ -208,7 +209,7 @@ export class TableBuilder {
     }
 
     // Set the table name
-    sql.push(this.getTableName());
+    sql.push(quote(this.tableName, this.adapter.dialect));
 
     // Generate all column definitions
     const columns: string[] = this.columns.map((column): string => {
@@ -228,16 +229,5 @@ export class TableBuilder {
    */
   public async execute(): Promise<void> {
     await this.adapter.query(this.toSQL());
-  }
-
-  private getTableName(): string {
-    switch (this.adapter.dialect) {
-      case "postgres":
-        return `"${this.tableName}"`;
-      case "mysql":
-      case "sqlite":
-      default:
-        return `\`${this.tableName}\``;
-    }
   }
 }
