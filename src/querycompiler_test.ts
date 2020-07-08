@@ -416,8 +416,8 @@ testQueryCompiler("`where` inner join", {
   joins: [{
     table: "users",
     type: JoinType.Inner,
-    columnA: "user_id",
-    columnB: "id",
+    columnA: "orders.user_id",
+    columnB: "users.id",
   }],
   columns: ["*", "users.id"],
 }, {
@@ -443,8 +443,8 @@ testQueryCompiler("`where` left outer join", {
   joins: [{
     table: "users",
     type: JoinType.Left,
-    columnA: "user_id",
-    columnB: "id",
+    columnA: "orders.user_id",
+    columnB: "users.id",
   }],
   columns: ["*", "users.id"],
 }, {
@@ -470,8 +470,8 @@ testQueryCompiler("`where` right outer join", {
   joins: [{
     table: "users",
     type: JoinType.Right,
-    columnA: "user_id",
-    columnB: "id",
+    columnA: "orders.user_id",
+    columnB: "users.id",
   }],
   columns: ["*", "users.id"],
 }, {
@@ -497,8 +497,8 @@ testQueryCompiler("`where` full outer join", {
   joins: [{
     table: "users",
     type: JoinType.Full,
-    columnA: "user_id",
-    columnB: "id",
+    columnA: "orders.user_id",
+    columnB: "users.id",
   }],
   columns: ["*", "users.id"],
 }, {
