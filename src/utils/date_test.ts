@@ -11,14 +11,7 @@ Deno.test("formatDate: should format date and time properly", () => {
   assertEquals(formatDate(date), "2020-05-27 13:04:01");
 });
 
-Deno.test("createMigrationTimestamp: should be different everytime it gets invoked", () => {
-  const timestamps: string[] = [];
-  for (let index = 0; index < 50; index++) {
-    const timestamp = createMigrationTimestamp();
-    if (timestamps.includes(timestamp)) {
-      throw new Error("Duplicate timestamps!");
-    }
-    assertEquals(timestamp.length, 14);
-    timestamps.push(timestamp);
-  }
+Deno.test("createMigrationTimestamp: should be different everytime it gets invoked", async () => {
+  const timestamp = createMigrationTimestamp();
+  assertEquals(timestamp.length, 14);
 });
