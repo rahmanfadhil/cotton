@@ -1,7 +1,7 @@
-import { Adapter } from "./adapters/adapter.ts";
-import { Reflect } from "./utils/reflect.ts";
-import { range } from "./utils/number.ts";
-import { quote } from "./utils/dialect.ts";
+import { Adapter } from "../adapters/adapter.ts";
+import { Reflect } from "../utils/reflect.ts";
+import { range } from "../utils/number.ts";
+import { quote } from "../utils/dialect.ts";
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 

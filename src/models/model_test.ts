@@ -1,7 +1,7 @@
-import { testDB } from "./testutils.ts";
+import { testDB } from "../testutils.ts";
 import { Model, Field } from "./model.ts";
-import { assertEquals, assertThrowsAsync } from "../testdeps.ts";
-import { formatDate } from "./utils/date.ts";
+import { assertEquals, assertThrowsAsync } from "../../testdeps.ts";
+import { formatDate } from "../utils/date.ts";
 
 class User extends Model {
   static tableName = "users";
