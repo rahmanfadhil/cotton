@@ -1,8 +1,61 @@
 import { testDB } from "../testutils.ts";
 import { Model } from "./model.ts";
 import { Field } from "./fields.ts";
-import { assertEquals, assertThrowsAsync } from "../../testdeps.ts";
+import {
+  assertEquals,
+  assertThrowsAsync,
+  assertThrows,
+} from "../../testdeps.ts";
 import { formatDate } from "../utils/date.ts";
+
+// --------------------------------------------------------------------------------
+// UNIT TESTS
+// --------------------------------------------------------------------------------
+
+Deno.test("Model: values() -> default value", () => {
+  class User extends Model {
+    @Field({ default: "john" })
+    name!: string;
+  }
+
+  const user = new User();
+  assertEquals(user.values(), { name: "john" });
+});
+
+Deno.test("Model: values() -> nullable", () => {
+  class User extends Model {
+    @Field({ nullable: true })
+    name!: string;
+  }
+
+  const user = new User();
+  assertEquals(user.values(), { name: null });
+});
+
+Deno.test("Model: values() -> nullable error", () => {
+  class User extends Model {
+    @Field()
+    name!: string;
+  }
+
+  const user = new User();
+  assertThrows(() => user.values(), Error, "Field 'name' cannot be empty!");
+});
+
+Deno.test("Model: values() -> property different than name", () => {
+  class User extends Model {
+    @Field({ name: "full_name" })
+    name!: string;
+  }
+
+  const user = new User();
+  user.name = "john";
+  assertEquals(user.values(), { full_name: "john" });
+});
+
+// --------------------------------------------------------------------------------
+// INTEGRATION TESTS
+// --------------------------------------------------------------------------------
 
 class User extends Model {
   static tableName = "users";
@@ -24,7 +77,7 @@ class Product extends Model {
   name!: string;
 }
 
-testDB("Model: find", async (client) => {
+testDB("Model: find()", async (client) => {
   const date = new Date("5 June, 2020");
   const formattedDate = formatDate(date);
 
@@ -43,7 +96,7 @@ testDB("Model: find", async (client) => {
   assertEquals(users[0].created_at, date);
 });
 
-testDB("Model: find with options", async (client) => {
+testDB("Model: find() -> with options", async (client) => {
   await client.query(`INSERT INTO products (name) VALUES ('Cheese')`);
   await client.query(`INSERT INTO products (name) VALUES ('Spoon')`);
   await client.query(`INSERT INTO products (name) VALUES ('Spoon')`);
@@ -70,7 +123,7 @@ testDB("Model: find with options", async (client) => {
   assertEquals(products[0].id, 3);
 });
 
-testDB("Model: findOne", async (client) => {
+testDB("Model: findOne()", async (client) => {
   const date = new Date("5 June, 2020");
   const formattedDate = formatDate(date);
 
@@ -103,7 +156,7 @@ testDB("Model: findOne", async (client) => {
   assertEquals(user?.age, 16);
 });
 
-testDB("Model: save", async (client) => {
+testDB("Model: save()", async (client) => {
   const date = new Date("5 June, 2020");
 
   client.addModel(User);
@@ -137,7 +190,7 @@ testDB("Model: save", async (client) => {
   assertEquals(user.email, "b@c.com");
 });
 
-testDB("Model: insert single", async (client) => {
+testDB("Model: insert() -> single", async (client) => {
   const date = new Date("5 June, 2020");
 
   client.addModel(User);
@@ -165,7 +218,7 @@ testDB("Model: insert single", async (client) => {
   assertEquals(users[0].created_at, date);
 });
 
-testDB("Model: insert multiple", async (client) => {
+testDB("Model: insert() -> multiple", async (client) => {
   const date = new Date("5 June, 2020");
 
   client.addModel(User);
@@ -190,7 +243,7 @@ testDB("Model: insert multiple", async (client) => {
   });
 });
 
-testDB("Model: truncate", async (client) => {
+testDB("Model: truncate()", async (client) => {
   const date = new Date("5 June, 2020");
   const formattedDate = formatDate(date);
 
@@ -209,7 +262,7 @@ testDB("Model: truncate", async (client) => {
   assertEquals(users.length, 0);
 });
 
-testDB("Model: remove", async (client) => {
+testDB("Model: remove()", async (client) => {
   client.addModel(User);
 
   const user = await User.insert({
@@ -222,7 +275,7 @@ testDB("Model: remove", async (client) => {
   assertEquals(await User.findOne(1), null);
 });
 
-testDB("Model: isSaved", async (client) => {
+testDB("Model: isSaved()", async (client) => {
   client.addModel(User);
 
   let user = await User.insert({
@@ -245,7 +298,7 @@ testDB("Model: isSaved", async (client) => {
   assertEquals(user.isSaved(), true);
 });
 
-testDB("Model: isDirty", async (client) => {
+testDB("Model: isDirty()", async (client) => {
   client.addModel(User);
 
   let user = await User.insert({
@@ -280,7 +333,7 @@ testDB("Model: isDirty", async (client) => {
   assertEquals(user.isDirty(), true);
 });
 
-testDB("Model: delete", async (client) => {
+testDB("Model: delete()", async (client) => {
   client.addModel(User);
 
   const formattedDate = formatDate(new Date());
@@ -306,7 +359,7 @@ testDB("Model: delete", async (client) => {
   );
 });
 
-testDB("Model: deleteOne", async (client) => {
+testDB("Model: deleteOne()", async (client) => {
   client.addModel(User);
 
   const formattedDate = formatDate(new Date());

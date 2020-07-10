@@ -152,7 +152,7 @@ export abstract class Model {
 
       if (isDirty) {
         // Bind all values to the `data` variable
-        const data = this._getValues(changedFields);
+        const data = this.values(changedFields);
 
         // Save record to the database
         await modelClass.adapter
@@ -163,7 +163,7 @@ export abstract class Model {
       }
     } else {
       // Bind all values to the `data` variable
-      const data = this._getValues();
+      const data = this.values();
 
       // Save record to the database
       const query = modelClass.adapter
@@ -253,7 +253,7 @@ export abstract class Model {
    */
   private static async _bulkSave<T extends Model>(models: T[]): Promise<T[]> {
     // Get all model values
-    const values = models.map((model) => model._getValues());
+    const values = models.map((model) => model.values());
 
     // Execute query
     const query = this.adapter
@@ -487,14 +487,34 @@ export abstract class Model {
    * 
    * @param columns the columns to be retrieved
    */
-  private _getValues(columns?: string[]): { [key: string]: any } {
-    const selectedColumns: string[] = columns ||
-      this._getColumns().map((column) => column.propertyKey);
+  public values(columns?: string[]): { [key: string]: any } {
+    const selectedColumns = columns
+      ? this._getColumns().filter((item) => columns.includes(item.propertyKey))
+      : this._getColumns();
 
     const data: { [key: string]: any } = {};
 
     for (const column of selectedColumns) {
-      data[column] = (this as any)[column];
+      const value = (this as any)[column.propertyKey];
+
+      if (typeof value === "undefined") {
+        // If the value is undefined, check the default value. Then, if the column
+        // is nullable, set it to null. Otherwise, throw an error.
+        if (typeof column.default !== "undefined") {
+          // If the default value is a function, execute it and get the returned value
+          data[column.name] = typeof column.default === "function"
+            ? column.default()
+            : column.default;
+        } else if (column.nullable === true) {
+          data[column.name] = null;
+        } else {
+          throw new Error(
+            `Field '${column.propertyKey}' cannot be empty!'`,
+          );
+        }
+      } else {
+        data[column.name] = (this as any)[column.propertyKey];
+      }
     }
 
     return data;

@@ -22,27 +22,27 @@ Deno.test("Field: basic field", () => {
     [{
       propertyKey: "name",
       select: true,
-      default: null,
       name: "name",
       type: FieldType.String,
+      nullable: false,
     }, {
       propertyKey: "age",
       select: true,
-      default: null,
       name: "age",
       type: FieldType.Number,
+      nullable: false,
     }, {
       propertyKey: "is_active",
       select: true,
-      default: null,
       name: "is_active",
       type: FieldType.Boolean,
+      nullable: false,
     }, {
       propertyKey: "created_at",
       select: true,
-      default: null,
       name: "created_at",
       type: FieldType.Date,
+      nullable: false,
     }],
   );
 });
@@ -71,9 +71,9 @@ Deno.test("Field: custom database column name", () => {
     [{
       propertyKey: "name",
       select: true,
-      default: null,
       name: "full_name",
       type: FieldType.String,
+      nullable: false,
     }],
   );
 });
@@ -103,24 +103,28 @@ Deno.test("Field: default value", () => {
       default: "john",
       name: "name",
       type: FieldType.String,
+      nullable: false,
     }, {
       propertyKey: "age",
       select: true,
       default: 16,
       name: "age",
       type: FieldType.String,
+      nullable: false,
     }, {
       propertyKey: "is_active",
       select: true,
       default: true,
       name: "is_active",
       type: FieldType.String,
+      nullable: false,
     }, {
       propertyKey: "created_at",
       select: true,
       default: newDate,
       name: "created_at",
       type: FieldType.Date,
+      nullable: false,
     }],
   );
 });
@@ -136,9 +140,9 @@ Deno.test("Field: custom type", () => {
     [{
       propertyKey: "age",
       select: true,
-      default: null,
       name: "age",
       type: FieldType.Number,
+      nullable: false,
     }],
   );
 });
@@ -154,9 +158,27 @@ Deno.test("Field: explicit deselect", () => {
     [{
       propertyKey: "name",
       select: false,
-      default: null,
       name: "name",
       type: FieldType.String,
+      nullable: false,
+    }],
+  );
+});
+
+Deno.test("Field: nullable", () => {
+  class User {
+    @Field({ nullable: true })
+    name!: string;
+  }
+
+  assertEquals(
+    Reflect.getMetadata("db:columns", User.prototype),
+    [{
+      propertyKey: "name",
+      select: true,
+      name: "name",
+      type: FieldType.String,
+      nullable: true,
     }],
   );
 });

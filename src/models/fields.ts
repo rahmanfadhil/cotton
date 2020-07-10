@@ -16,8 +16,9 @@ export enum FieldType {
 export interface ColumnOptions {
   type: FieldType;
   name: string;
-  default: any;
+  default?: any;
   select: boolean;
+  nullable: boolean;
 }
 
 export type ColumnDescription = ColumnOptions & { propertyKey: string };
@@ -65,9 +66,9 @@ export function Field(options?: Partial<ColumnOptions>) {
       {
         propertyKey: propertyKey,
         select: true,
-        default: null,
         name: propertyKey,
         type: fieldType,
+        nullable: false,
       },
       options,
     );
