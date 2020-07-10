@@ -1,68 +1,15 @@
-import { Adapter } from "./adapters/adapter.ts";
-import { Reflect } from "./utils/reflect.ts";
-import { range } from "./utils/number.ts";
-import { quote } from "./utils/dialect.ts";
+import { Adapter } from "../adapters/adapter.ts";
+import { Reflect } from "../utils/reflect.ts";
+import { range } from "../utils/number.ts";
+import { quote } from "../utils/dialect.ts";
+import { ColumnDescription, FieldType } from "./fields.ts";
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
-
-/**
- * Transform database value to JavaScript types
- */
-export type FieldType = "string" | "number" | "date" | "boolean";
-
-/**
- * Information about table the table column
- */
-export interface ColumnDescription {
-  type: FieldType;
-  name: string;
-}
 
 export interface FindOptions<T> {
   limit?: number;
   offset?: number;
   where?: Partial<T>;
-}
-
-/**
- * Model field
- * 
- * @param type the JavaScript type which will be transformed
- */
-export function Field(type?: FieldType) {
-  return (target: Object, propertyKey: string) => {
-    let columns: ColumnDescription[] = [];
-
-    if (Reflect.hasMetadata("db:columns", target)) {
-      columns = Reflect.getMetadata("db:columns", target);
-    }
-
-    if (type) {
-      columns.push({ type, name: propertyKey });
-    } else {
-      const fieldType = Reflect.getMetadata(
-        "design:type",
-        target,
-        propertyKey,
-      );
-
-      if (fieldType === String) {
-        columns.push({ type: "string", name: propertyKey });
-      } else if (fieldType === Number) {
-        columns.push({ type: "number", name: propertyKey });
-      } else if (fieldType === Date) {
-        columns.push({ type: "date", name: propertyKey });
-      } else if (fieldType === Boolean) {
-        columns.push({ type: "boolean", name: propertyKey });
-      } else {
-        throw new Error(
-          `Cannot assign column '${propertyKey}' without a type!`,
-        );
-      }
-    }
-
-    Reflect.defineMetadata("db:columns", columns, target);
-  };
 }
 
 /**
@@ -205,7 +152,7 @@ export abstract class Model {
 
       if (isDirty) {
         // Bind all values to the `data` variable
-        const data = this._getValues(changedFields);
+        const data = this.values(changedFields);
 
         // Save record to the database
         await modelClass.adapter
@@ -216,7 +163,7 @@ export abstract class Model {
       }
     } else {
       // Bind all values to the `data` variable
-      const data = this._getValues();
+      const data = this.values();
 
       // Save record to the database
       const query = modelClass.adapter
@@ -306,7 +253,7 @@ export abstract class Model {
    */
   private static async _bulkSave<T extends Model>(models: T[]): Promise<T[]> {
     // Get all model values
-    const values = models.map((model) => model._getValues());
+    const values = models.map((model) => model.values());
 
     // Execute query
     const query = this.adapter
@@ -468,8 +415,8 @@ export abstract class Model {
     const columns = this._getColumns();
 
     for (const column of columns) {
-      (this as any)[column.name] = this._normalizeValue(
-        (this as any)[column.name],
+      (this as any)[column.propertyKey] = this._normalizeValue(
+        (this as any)[column.propertyKey],
         column.type,
       );
     }
@@ -484,17 +431,17 @@ export abstract class Model {
   private _normalizeValue(value: any, type: FieldType): any {
     if (typeof value === "undefined" || value === null) {
       return null;
-    } else if (type === "date" && !(value instanceof Date)) {
+    } else if (type === FieldType.Date && !(value instanceof Date)) {
       return new Date(value);
-    } else if (type === "string" && typeof value !== "string") {
-      return value.toString();
-    } else if (type === "number" && typeof value !== "number") {
+    } else if (type === FieldType.String && typeof value !== "string") {
+      return `${value}`;
+    } else if (type === FieldType.Number && typeof value !== "number") {
       return parseInt(value);
-    } else if (type === "boolean" && typeof value !== "boolean") {
+    } else if (type === FieldType.Boolean && typeof value !== "boolean") {
       return Boolean(value);
+    } else {
+      return value;
     }
-
-    return value;
   }
 
   /**
@@ -520,12 +467,12 @@ export abstract class Model {
 
       // Loop for the fields, if one of the fields doesn't match, the object is dirty
       for (const column of this._getColumns()) {
-        const value = (this as any)[column.name];
-        const originalValue = (this._original as any)[column.name];
+        const value = (this as any)[column.propertyKey];
+        const originalValue = (this._original as any)[column.propertyKey];
 
         if (value !== originalValue) {
           isDirty = true;
-          changedFields.push(column.name);
+          changedFields.push(column.propertyKey);
         }
       }
 
@@ -540,15 +487,34 @@ export abstract class Model {
    * 
    * @param columns the columns to be retrieved
    */
-  private _getValues(columns?: string[]): { [key: string]: any } {
-    const selectedColumns: string[] = columns
-      ? columns
-      : this._getColumns().map((item) => item.name);
+  public values(columns?: string[]): { [key: string]: any } {
+    const selectedColumns = columns
+      ? this._getColumns().filter((item) => columns.includes(item.propertyKey))
+      : this._getColumns();
 
     const data: { [key: string]: any } = {};
 
     for (const column of selectedColumns) {
-      data[column] = (this as any)[column];
+      const value = (this as any)[column.propertyKey];
+
+      if (typeof value === "undefined") {
+        // If the value is undefined, check the default value. Then, if the column
+        // is nullable, set it to null. Otherwise, throw an error.
+        if (typeof column.default !== "undefined") {
+          // If the default value is a function, execute it and get the returned value
+          data[column.name] = typeof column.default === "function"
+            ? column.default()
+            : column.default;
+        } else if (column.nullable === true) {
+          data[column.name] = null;
+        } else {
+          throw new Error(
+            `Field '${column.propertyKey}' cannot be empty!'`,
+          );
+        }
+      } else {
+        data[column.name] = (this as any)[column.propertyKey];
+      }
     }
 
     return data;
