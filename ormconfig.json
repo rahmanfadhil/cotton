@@ -1,4 +1,4 @@
 {
   "type": "sqlite",
-  "database": ":memory:"
+  "database": "./db.sqlite"
 }

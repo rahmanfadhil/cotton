@@ -92,7 +92,10 @@ export class MigrationRunner {
   /**
    * Get all available migrations
    */
-  public async getAllMigrations(): Promise<MigrationInfo[]> {
+  public async getAllMigrations(): Promise<{
+    migrations: MigrationInfo[];
+    lastBatch: number;
+  }> {
     await this.createMigrationsTable();
 
     const migrations = await this.adapter
@@ -105,7 +108,7 @@ export class MigrationRunner {
       const migrationIndex = migrationFiles.findIndex((item) =>
         item.name === migration.name
       );
-      if (!migrationIndex) {
+      if (migrationIndex === -1) {
         throw new Error(`Migration '${migration.name}' is missing!`);
       }
 
@@ -113,7 +116,66 @@ export class MigrationRunner {
       migrationFiles[migrationIndex].batch = migration.batch;
     }
 
-    return migrationFiles;
+    const lastBatch = migrationFiles.reduce((prev, current) =>
+      (prev.batch > current.batch) ? prev : current
+    );
+
+    return { migrations: migrationFiles, lastBatch: lastBatch.batch };
+  }
+
+  /**
+   * Execute a new batch of migrations
+   */
+  public async applyMigrations(): Promise<string[]> {
+    const { migrations, lastBatch } = await this.getAllMigrations();
+    const executedMigrations: string[] = [];
+
+    for (const migration of migrations) {
+      if (!migration.isExecuted) {
+        try {
+          console.log("executing:", migration.name);
+          await migration.migration.up(new Schema(this.adapter));
+          await this.adapter
+            .table("migrations")
+            .insert({ name: migration.name, batch: lastBatch + 1 })
+            .execute();
+          console.log("executed:", migration.name);
+          executedMigrations.push(migration.name);
+        } catch {
+          throw new Error(`Failed to apply migration '${migration.name}'!`);
+        }
+      }
+    }
+
+    return executedMigrations;
+  }
+
+  /**
+   * Revert executed migrations from the last batch
+   */
+  public async revertMigrations(): Promise<string[]> {
+    const { migrations, lastBatch } = await this.getAllMigrations();
+    const executedMigrations: string[] = [];
+
+    for (const migration of migrations) {
+      if (migration.batch === lastBatch) {
+        try {
+          console.log("executing:", migration.name);
+          await migration.migration.down(new Schema(this.adapter));
+          await this.adapter
+            .table("migrations")
+            .where("name", migration.name)
+            .delete()
+            .execute();
+          console.log("executed:", migration.name);
+          executedMigrations.push(migration.name);
+        } catch {
+          throw new Error(`Failed to revert migration '${migration.name}'!`);
+        }
+      }
+    }
+
+    return executedMigrations;
   }
 
   /**
@@ -124,7 +186,7 @@ export class MigrationRunner {
     if (!await schema.hasTable("migrations")) {
       await schema.createTable("migrations", (table) => {
         table.id();
-        table.varchar("name", 255).notNull();
+        table.varchar("name", 255).unique().notNull();
         table.integer("batch").notNull();
       });
     }

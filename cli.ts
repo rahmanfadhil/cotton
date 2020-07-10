@@ -71,10 +71,10 @@ if (parsedArgs._.length >= 1) {
 
         break;
       case "migration:up":
-        const migrations = await runner.getAllMigrations();
-        console.log(migrations);
+        console.log(await runner.applyMigrations());
         break;
       case "migration:down":
+        console.log(await runner.revertMigrations());
         break;
       default:
         error(`Command "${command}" is not available!`);
