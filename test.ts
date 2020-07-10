@@ -1,11 +1,13 @@
 #! /usr/bin/env deno test --allow-read --allow-net --allow-env -c tsconfig.json test.ts
 
+import "./src/models/fields_test.ts";
+
 // Integration tests
 import "./src/connect_test.ts";
 import "./src/adapters/sqlite_test.ts";
 import "./src/adapters/postgres_test.ts";
 import "./src/adapters/mysql_test.ts";
-import "./src/model_test.ts";
+import "./src/models/model_test.ts";
 import "./src/adapters/adapter_test.ts";
 
 // Unit tests

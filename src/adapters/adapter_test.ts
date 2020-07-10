@@ -1,4 +1,5 @@
-import { Model, Field } from "../model.ts";
+import { Model } from "../models/model.ts";
+import { Field } from "../models/fields.ts";
 import { testDB } from "../testutils.ts";
 import { assertEquals } from "../../testdeps.ts";
 import { QueryBuilder } from "../querybuilder.ts";

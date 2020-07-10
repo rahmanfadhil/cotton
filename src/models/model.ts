@@ -2,67 +2,14 @@ import { Adapter } from "../adapters/adapter.ts";
 import { Reflect } from "../utils/reflect.ts";
 import { range } from "../utils/number.ts";
 import { quote } from "../utils/dialect.ts";
+import { ColumnDescription, FieldType } from "./fields.ts";
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
-
-/**
- * Transform database value to JavaScript types
- */
-export type FieldType = "string" | "number" | "date" | "boolean";
-
-/**
- * Information about table the table column
- */
-export interface ColumnDescription {
-  type: FieldType;
-  name: string;
-}
 
 export interface FindOptions<T> {
   limit?: number;
   offset?: number;
   where?: Partial<T>;
-}
-
-/**
- * Model field
- * 
- * @param type the JavaScript type which will be transformed
- */
-export function Field(type?: FieldType) {
-  return (target: Object, propertyKey: string) => {
-    let columns: ColumnDescription[] = [];
-
-    if (Reflect.hasMetadata("db:columns", target)) {
-      columns = Reflect.getMetadata("db:columns", target);
-    }
-
-    if (type) {
-      columns.push({ type, name: propertyKey });
-    } else {
-      const fieldType = Reflect.getMetadata(
-        "design:type",
-        target,
-        propertyKey,
-      );
-
-      if (fieldType === String) {
-        columns.push({ type: "string", name: propertyKey });
-      } else if (fieldType === Number) {
-        columns.push({ type: "number", name: propertyKey });
-      } else if (fieldType === Date) {
-        columns.push({ type: "date", name: propertyKey });
-      } else if (fieldType === Boolean) {
-        columns.push({ type: "boolean", name: propertyKey });
-      } else {
-        throw new Error(
-          `Cannot assign column '${propertyKey}' without a type!`,
-        );
-      }
-    }
-
-    Reflect.defineMetadata("db:columns", columns, target);
-  };
 }
 
 /**
@@ -468,8 +415,8 @@ export abstract class Model {
     const columns = this._getColumns();
 
     for (const column of columns) {
-      (this as any)[column.name] = this._normalizeValue(
-        (this as any)[column.name],
+      (this as any)[column.propertyKey] = this._normalizeValue(
+        (this as any)[column.propertyKey],
         column.type,
       );
     }
@@ -484,17 +431,17 @@ export abstract class Model {
   private _normalizeValue(value: any, type: FieldType): any {
     if (typeof value === "undefined" || value === null) {
       return null;
-    } else if (type === "date" && !(value instanceof Date)) {
+    } else if (type === FieldType.Date && !(value instanceof Date)) {
       return new Date(value);
-    } else if (type === "string" && typeof value !== "string") {
-      return value.toString();
-    } else if (type === "number" && typeof value !== "number") {
+    } else if (type === FieldType.String && typeof value !== "string") {
+      return `${value}`;
+    } else if (type === FieldType.Number && typeof value !== "number") {
       return parseInt(value);
-    } else if (type === "boolean" && typeof value !== "boolean") {
+    } else if (type === FieldType.Boolean && typeof value !== "boolean") {
       return Boolean(value);
+    } else {
+      return value;
     }
-
-    return value;
   }
 
   /**
@@ -520,12 +467,12 @@ export abstract class Model {
 
       // Loop for the fields, if one of the fields doesn't match, the object is dirty
       for (const column of this._getColumns()) {
-        const value = (this as any)[column.name];
-        const originalValue = (this._original as any)[column.name];
+        const value = (this as any)[column.propertyKey];
+        const originalValue = (this._original as any)[column.propertyKey];
 
         if (value !== originalValue) {
           isDirty = true;
-          changedFields.push(column.name);
+          changedFields.push(column.propertyKey);
         }
       }
 
@@ -541,9 +488,8 @@ export abstract class Model {
    * @param columns the columns to be retrieved
    */
   private _getValues(columns?: string[]): { [key: string]: any } {
-    const selectedColumns: string[] = columns
-      ? columns
-      : this._getColumns().map((item) => item.name);
+    const selectedColumns: string[] = columns ||
+      this._getColumns().map((column) => column.propertyKey);
 
     const data: { [key: string]: any } = {};
 

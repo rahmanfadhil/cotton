@@ -1,5 +1,6 @@
 import { testDB } from "../testutils.ts";
-import { Model, Field } from "./model.ts";
+import { Model } from "./model.ts";
+import { Field } from "./fields.ts";
 import { assertEquals, assertThrowsAsync } from "../../testdeps.ts";
 import { formatDate } from "../utils/date.ts";
 
