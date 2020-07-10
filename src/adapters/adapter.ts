@@ -1,5 +1,5 @@
 import { QueryBuilder } from "../querybuilder.ts";
-import { Model } from "../model.ts";
+import { Model } from "../models/model.ts";
 import { DatabaseDialect } from "../connect.ts";
 
 /**
