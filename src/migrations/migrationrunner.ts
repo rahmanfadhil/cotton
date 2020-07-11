@@ -1,5 +1,5 @@
 import { Adapter } from "../adapters/adapter.ts";
-import { walk, writeFileStr, ensureDir } from "../../deps.ts";
+import { walk, writeFileStr, ensureDir, Colors } from "../../deps.ts";
 import { Schema } from "./schema.ts";
 import { Migration } from "./migration.ts";
 import { createMigrationTimestamp } from "../utils/date.ts";
@@ -49,6 +49,8 @@ export class MigrationRunner {
       `import { Migration, Schema } from "https://deno.land/x/cotton/mod.ts";\n\nexport default class extends Migration {\n  async up(schema: Schema) {}\n\n  async down(schema: Schema) {}\n}`,
     );
 
+    console.log(`${Colors.green("Created:")} ${fileName}`);
+
     return fileName;
   }
 
@@ -86,7 +88,7 @@ export class MigrationRunner {
       }
     }
 
-    return migrations;
+    return migrations.sort((a, b) => (a.name > b.name) ? 1 : -1);
   }
 
   /**
@@ -120,62 +122,65 @@ export class MigrationRunner {
       (prev.batch > current.batch) ? prev : current
     );
 
-    return { migrations: migrationFiles, lastBatch: lastBatch.batch };
+    return {
+      migrations: migrationFiles,
+      lastBatch: lastBatch.batch,
+    };
   }
 
   /**
    * Execute a new batch of migrations
    */
-  public async applyMigrations(): Promise<string[]> {
+  public async applyMigrations() {
     const { migrations, lastBatch } = await this.getAllMigrations();
-    const executedMigrations: string[] = [];
 
     for (const migration of migrations) {
       if (!migration.isExecuted) {
         try {
-          console.log("executing:", migration.name);
+          console.log(`${Colors.yellow("Migrating:")} ${migration.name}`);
           await migration.migration.up(new Schema(this.adapter));
           await this.adapter
             .table("migrations")
             .insert({ name: migration.name, batch: lastBatch + 1 })
             .execute();
-          console.log("executed:", migration.name);
-          executedMigrations.push(migration.name);
+          console.log(`${Colors.green("Migrated:")}  ${migration.name}`);
         } catch {
           throw new Error(`Failed to apply migration '${migration.name}'!`);
         }
       }
     }
-
-    return executedMigrations;
   }
 
   /**
    * Revert executed migrations from the last batch
+   * 
+   * @param steps the number of migrations you want to revert
    */
-  public async revertMigrations(): Promise<string[]> {
-    const { migrations, lastBatch } = await this.getAllMigrations();
-    const executedMigrations: string[] = [];
+  public async revertMigrations(steps?: number) {
+    let { migrations, lastBatch } = await this.getAllMigrations();
 
-    for (const migration of migrations) {
-      if (migration.batch === lastBatch) {
-        try {
-          console.log("executing:", migration.name);
-          await migration.migration.down(new Schema(this.adapter));
-          await this.adapter
-            .table("migrations")
-            .where("name", migration.name)
-            .delete()
-            .execute();
-          console.log("executed:", migration.name);
-          executedMigrations.push(migration.name);
-        } catch {
-          throw new Error(`Failed to revert migration '${migration.name}'!`);
-        }
-      }
+    if (typeof steps === "number" && migrations.length) {
+      migrations = migrations.slice(Math.max(migrations.length - steps, 0));
+    } else {
+      migrations = migrations.filter((migration) =>
+        migration.batch === lastBatch
+      );
     }
 
-    return executedMigrations;
+    for (const migration of migrations) {
+      try {
+        console.log(`${Colors.yellow("Reverting:")} ${migration.name}`);
+        await migration.migration.down(new Schema(this.adapter));
+        await this.adapter
+          .table("migrations")
+          .where("name", migration.name)
+          .delete()
+          .execute();
+        console.log(`${Colors.green("Reverted:")}  ${migration.name}`);
+      } catch {
+        throw new Error(`Failed to revert migration '${migration.name}'!`);
+      }
+    }
   }
 
   /**
@@ -189,6 +194,7 @@ export class MigrationRunner {
         table.varchar("name", 255).unique().notNull();
         table.integer("batch").notNull();
       });
+      console.log(`${Colors.green("Migration table created successfully!")}`);
     }
   }
 }

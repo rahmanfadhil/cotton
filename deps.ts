@@ -12,3 +12,4 @@ export {
   writeFileStr,
   ensureDir,
 } from "https://deno.land/std@v0.58.0/fs/mod.ts";
+export * as Colors from "https://deno.land/std@v0.58.0/fmt/colors.ts";
