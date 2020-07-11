@@ -56,8 +56,9 @@ function error(message: string) {
   const redSpaces = Colors.bgRed(
     errorMessage.split("").map(() => " ").join(""),
   );
-  const redMessage = Colors.bgRed(Colors.white(errorMessage));
+  const redMessage = Colors.bgRed(errorMessage);
   console.log("\n" + redSpaces + "\n" + redMessage + "\n" + redSpaces);
+  Deno.exit(1);
 }
 
 /**

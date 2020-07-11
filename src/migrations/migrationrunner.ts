@@ -161,10 +161,12 @@ export class MigrationRunner {
 
     if (typeof steps === "number" && migrations.length) {
       migrations = migrations.slice(Math.max(migrations.length - steps, 0));
-    } else {
+    } else if (lastBatch > 0) {
       migrations = migrations.filter((migration) =>
         migration.batch === lastBatch
       );
+    } else {
+      throw new Error("No migration to revert!");
     }
 
     for (const migration of migrations) {
