@@ -128,7 +128,7 @@ if (parsedArgs._.length >= 1) {
         parsedArgs.c as string || "./ormconfig.json";
 
       // Connect to the database
-      const adapter = await connect();
+      const adapter = await connect(configPath);
 
       // Create new migration runner
       const runner = new MigrationRunner(
