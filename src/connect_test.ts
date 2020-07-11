@@ -1,4 +1,5 @@
-import { assertEquals } from "../testdeps.ts";
+import { assertEquals, assertThrowsAsync } from "../testdeps.ts";
+import { joinPath } from "../deps.ts";
 
 import { connect } from "./connect.ts";
 import { SqliteAdapter } from "./adapters/sqlite.ts";
@@ -22,4 +23,25 @@ Deno.test("connect: mysql", async () => {
   const db = await connect({ type: "mysql", ...mysqlOptions });
   assertEquals(db instanceof MysqlAdapter, true);
   await db.disconnect();
+});
+
+Deno.test("connect: ormconfig.json", async () => {
+  await Deno.writeTextFile(
+    joinPath(Deno.cwd(), "./ormconfig.json"),
+    JSON.stringify({ type: "sqlite", database: ":memory:" }),
+  );
+
+  const db = await connect();
+  assertEquals(db instanceof SqliteAdapter, true);
+  await db.disconnect();
+
+  await Deno.remove(joinPath(Deno.cwd(), "./ormconfig.json"));
+});
+
+Deno.test("connect: ormconfig.json not found", async () => {
+  await assertThrowsAsync(
+    async () => await connect(),
+    Error,
+    "Cannot connect to database without connection options!",
+  );
 });

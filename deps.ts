@@ -13,6 +13,7 @@ export {
   walk,
   writeFileStr,
   ensureDir,
+  exists as fileExists,
 } from "https://deno.land/std@v0.58.0/fs/mod.ts";
 export * as Colors from "https://deno.land/std@v0.58.0/fmt/colors.ts";
 export { parse as parseFlags } from "https://deno.land/std@v0.58.0/flags/mod.ts";

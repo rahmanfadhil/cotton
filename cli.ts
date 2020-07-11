@@ -1,4 +1,4 @@
-import { parseFlags, Colors, readJson, joinPath } from "./deps.ts";
+import { parseFlags, Colors, joinPath } from "./deps.ts";
 
 import { MigrationRunner } from "./src/migrations/migrationrunner.ts";
 import { connect } from "./src/connect.ts";
@@ -7,10 +7,18 @@ const CLI_VERSION = "v0.1.0";
 
 const parsedArgs = parseFlags(Deno.args);
 
+/**
+ * Instructions for all available commands
+ */
 const helps: { [key: string]: string } = {
   // Revert migration
   "migration:down": `${Colors.yellow("Description:")}
-  Revert the last "batch" of migrations.
+  Rollback the migrations.
+
+  By default, this will rollback the latest "batch"
+  of migrations. However, you can still customize
+  how many migrations you want to rollback by using
+  the ${Colors.green("--steps")} option.
 
 ${Colors.yellow("Usage:")}
   migration:down [options]
@@ -20,7 +28,10 @@ ${Colors.yellow("Options:")}
 
   // Create new migration
   "migration:create": `${Colors.yellow("Description:")}
-  Creates a new migration file
+  Creates a new migration file.
+
+  You need to provide a name for your migration using
+  the ${Colors.green("--name")} options.
 
 ${Colors.yellow("Usage:")}
   migration:create [options]
@@ -106,8 +117,6 @@ async function getMigrationsInfo(runner: MigrationRunner) {
   }
 }
 
-console.log(parsedArgs);
-
 if (parsedArgs._.length >= 1) {
   const command = parsedArgs._[0];
 
@@ -115,11 +124,11 @@ if (parsedArgs._.length >= 1) {
     console.log(helps[command]);
   } else {
     try {
-      // Validate connection options
-      const connectionOptions = await readJson("./ormconfig.json");
+      const configPath = parsedArgs.config as string ||
+        parsedArgs.c as string || "./ormconfig.json";
 
       // Connect to the database
-      const adapter = await connect(connectionOptions as any);
+      const adapter = await connect();
 
       // Create new migration runner
       const runner = new MigrationRunner(

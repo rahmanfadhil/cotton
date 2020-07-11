@@ -1,0 +1,6 @@
+*
+!./deps.ts
+!./testdeps.ts
+!./test.ts
+!./src/**/*
+!./tsconfig.json

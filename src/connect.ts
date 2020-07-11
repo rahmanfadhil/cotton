@@ -1,4 +1,5 @@
 import { ConnectionOptions, Adapter } from "./adapters/adapter.ts";
+import { joinPath, readJson } from "../deps.ts";
 
 import { MysqlAdapter } from "./adapters/mysql.ts";
 import { PostgresAdapter } from "./adapters/postgres.ts";
@@ -12,23 +13,45 @@ interface ConnectionConfig extends ConnectionOptions {
 
 /**
  * Connect to database and automatically chose the driver
- * 
+ *
  * @param options Connection options
  */
 export async function connect(
-  options: ConnectionConfig,
+  options?: ConnectionConfig,
 ): Promise<Adapter> {
   let adapter: Adapter;
 
-  switch (options.type) {
+  let connectionOptions: ConnectionConfig;
+
+  // If connections options is not provided, look up for "ormconfig.json" file.
+  if (!options) {
+    try {
+      // TODO: validate the file content
+      connectionOptions = await readJson(
+        joinPath(Deno.cwd(), "./ormconfig.json"),
+      ) as any;
+    } catch (err) {
+      if (err instanceof Deno.errors.NotFound) {
+        throw new Error(
+          "Cannot connect to database without connection options!",
+        );
+      } else {
+        throw err;
+      }
+    }
+  } else {
+    connectionOptions = options;
+  }
+
+  switch (connectionOptions.type) {
     case "mysql":
-      adapter = new MysqlAdapter(options);
+      adapter = new MysqlAdapter(connectionOptions);
       break;
     case "postgres":
-      adapter = new PostgresAdapter(options);
+      adapter = new PostgresAdapter(connectionOptions);
       break;
     case "sqlite":
-      adapter = new SqliteAdapter(options);
+      adapter = new SqliteAdapter(connectionOptions);
       break;
     default:
       throw new Error("Database type invalid!");
