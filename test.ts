@@ -1,7 +1,5 @@
 #! /usr/bin/env deno test --allow-read --allow-net --allow-env -c tsconfig.json test.ts
 
-import "./src/models/fields_test.ts";
-
 // Integration tests
 import "./src/connect_test.ts";
 import "./src/adapters/sqlite_test.ts";
@@ -19,3 +17,4 @@ import "./src/querybuilder_test.ts";
 import "./src/querycompiler_test.ts";
 import "./src/migrations/tablebuilder_test.ts";
 import "./src/migrations/column_test.ts";
+import "./src/models/fields_test.ts";
