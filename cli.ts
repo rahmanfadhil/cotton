@@ -1,14 +1,11 @@
-import { parse } from "https://deno.land/std@v0.58.0/flags/mod.ts";
-import * as Colors from "https://deno.land/std@v0.58.0/fmt/colors.ts";
-import { join } from "https://deno.land/std@v0.58.0/path/mod.ts";
-import { readJson } from "https://deno.land/std@v0.58.0/fs/mod.ts";
+import { parseFlags, Colors, readJson, joinPath } from "./deps.ts";
 
 import { MigrationRunner } from "./src/migrations/migrationrunner.ts";
 import { connect } from "./src/connect.ts";
 
 const CLI_VERSION = "v0.1.0";
 
-const parsedArgs = parse(Deno.args);
+const parsedArgs = parseFlags(Deno.args);
 
 const helps: { [key: string]: string } = {
   // Revert migration
@@ -126,7 +123,7 @@ if (parsedArgs._.length >= 1) {
 
       // Create new migration runner
       const runner = new MigrationRunner(
-        join(Deno.cwd(), "./migrations"),
+        joinPath(Deno.cwd(), "./migrations"),
         adapter,
       );
 
