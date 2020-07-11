@@ -1,4 +1,0 @@
-{
-  "type": "sqlite",
-  "database": "./db.sqlite3"
-}
