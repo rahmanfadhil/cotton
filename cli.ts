@@ -1,7 +1,6 @@
 import { parseFlags, Colors, joinPath } from "./deps.ts";
 
-import { MigrationRunner } from "./src/migrations/migrationrunner.ts";
-import { connect } from "./src/connect.ts";
+import { connect, MigrationRunner } from "./mod.ts";
 
 const CLI_VERSION = "v0.1.0";
 

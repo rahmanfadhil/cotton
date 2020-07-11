@@ -63,4 +63,4 @@ jobs:
           MYSQL_PORT: 3306
           MYSQL_USERNAME: test
           MYSQL_PASSWORD: test
-        run: deno test -c tsconfig.json --unstable --allow-read --allow-net --allow-write --allow-env test.ts
+        run: deno test -c tsconfig.json --allow-read --allow-net --allow-write --allow-env test.ts

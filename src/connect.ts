@@ -1,5 +1,5 @@
 import { ConnectionOptions, Adapter } from "./adapters/adapter.ts";
-import { joinPath, readJson } from "../deps.ts";
+import { joinPath } from "../deps.ts";
 
 import { MysqlAdapter } from "./adapters/mysql.ts";
 import { PostgresAdapter } from "./adapters/postgres.ts";
@@ -45,10 +45,12 @@ export async function connect(
   // If connections options is not provided, look up for "ormconfig.json" file.
   if (!options || typeof options === "string") {
     try {
-      // TODO: validate the file content
-      connectionOptions = await readJson(
-        joinPath(Deno.cwd(), options ? options : "./ormconfig.json"),
-      ) as any;
+      const path = joinPath(Deno.cwd(), options ? options : "./ormconfig.json");
+      const decoder = new TextDecoder("utf-8");
+      const result = decoder.decode(await Deno.readFile(path));
+
+      // TODO: validate connection options
+      connectionOptions = JSON.parse(result) as any;
     } catch (err) {
       if (err instanceof Deno.errors.NotFound) {
         throw new Error(

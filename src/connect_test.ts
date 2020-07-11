@@ -1,5 +1,5 @@
 import { assertEquals, assertThrowsAsync } from "../testdeps.ts";
-import { joinPath } from "../deps.ts";
+import { joinPath } from "../testdeps.ts";
 
 import { connect } from "./connect.ts";
 import { SqliteAdapter } from "./adapters/sqlite.ts";

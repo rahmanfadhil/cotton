@@ -1,5 +1,5 @@
 import { Adapter } from "../adapters/adapter.ts";
-import { walk, writeFileStr, ensureDir, Colors } from "../../deps.ts";
+import { Colors, joinPath } from "../../deps.ts";
 import { Schema } from "./schema.ts";
 import { Migration } from "./migration.ts";
 import { createMigrationTimestamp } from "../utils/date.ts";
@@ -35,7 +35,7 @@ export class MigrationRunner {
     }
 
     // Create the migrations folder if not exists
-    await ensureDir(this.migrationDir);
+    await this.ensureMigrationDir();
 
     // Create a unique timestamps
     const timestamp = createMigrationTimestamp();
@@ -44,7 +44,7 @@ export class MigrationRunner {
     const fileName = `${this.migrationDir}/${timestamp + "_" + name}.ts`;
 
     // Write the file
-    await writeFileStr(
+    await Deno.writeTextFile(
       fileName,
       `import { Migration, Schema } from "https://deno.land/x/cotton/mod.ts";\n\nexport default class extends Migration {\n  async up(schema: Schema) {}\n\n  async down(schema: Schema) {}\n}`,
     );
@@ -61,12 +61,14 @@ export class MigrationRunner {
     const migrations: MigrationInfo[] = [];
 
     // Loop through all files
-    for await (const file of walk(this.migrationDir)) {
+    for await (const file of Deno.readDir(this.migrationDir)) {
       if (file.isFile) {
         let MigrationClass: { new (): Migration };
 
         try {
-          const fileContent = await import(file.path);
+          const fileContent = await import(
+            joinPath(this.migrationDir, file.name)
+          );
 
           if (!(fileContent.default.prototype instanceof Migration)) {
             throw new Error();
@@ -197,6 +199,25 @@ export class MigrationRunner {
         table.integer("batch").notNull();
       });
       console.log(`${Colors.green("Migration table created successfully!")}`);
+    }
+  }
+  /**
+   * Ensures that the migration directory exists.
+   * If the directory structure does not exist, it is created. Like mkdir -p.
+   * Requires the `--allow-read` and `--allow-write` flag.
+   */
+  public async ensureMigrationDir(): Promise<void> {
+    try {
+      const fileInfo = await Deno.lstat(this.migrationDir);
+      if (!fileInfo.isDirectory) throw null;
+    } catch (err) {
+      if (err instanceof Deno.errors.NotFound || err === null) {
+        // if dir not exists. then create it.
+        await Deno.mkdir(this.migrationDir, { recursive: true });
+        return;
+      }
+
+      throw err;
     }
   }
 }
