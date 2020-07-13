@@ -194,7 +194,7 @@ await db.table("users").select("id").select("email").execute();
 ### Pagination
 
 ```ts
-await db.table("users").limit(5).offset(10).execute(); // Skip 5 row and take 10
+await db.table("users").limit(5).offset(10).execute(); // Skip 10 rows and take 5
 // query  : SELECT * FROM `users` LIMIT ? OFFSET ?;
 // params : [5, 10]
 ```
