@@ -24,7 +24,7 @@ Deno.test("Model: values() -> default value", () => {
 
 Deno.test("Model: values() -> nullable", () => {
   class User extends Model {
-    @Field({ nullable: true })
+    @Field({ isNullable: true })
     name!: string;
   }
 
@@ -51,6 +51,7 @@ Deno.test("Model: values() -> property different than name", () => {
   const user = new User();
   user.name = "john";
   assertEquals(user.values(), { full_name: "john" });
+  assertEquals(user.values(["name"]), { full_name: "john" });
 });
 
 // --------------------------------------------------------------------------------

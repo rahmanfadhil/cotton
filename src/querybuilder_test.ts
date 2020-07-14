@@ -1,9 +1,4 @@
-import {
-  WhereType,
-  QueryType,
-  QueryBuilder,
-  JoinType,
-} from "./querybuilder.ts";
+import { WhereType, QueryType, JoinType } from "./querybuilder.ts";
 import { testQueryBuilder } from "./testutils.ts";
 
 // Where
@@ -163,42 +158,27 @@ testQueryBuilder(
 
 testQueryBuilder(
   "`limit` should set the record limit",
-  (query) => query.where("age", ">", 16).limit(10),
+  (query) => query.limit(10),
   {
-    wheres: [{
-      type: WhereType.Default,
-      column: "age",
-      operator: ">",
-      value: 16,
-    }],
+    wheres: [],
     limit: 10,
   },
 );
 
 testQueryBuilder(
   "`offset` should set the number of records to skip",
-  (query) => query.where("age", ">", 16).offset(5),
+  (query) => query.offset(5),
   {
-    wheres: [{
-      type: WhereType.Default,
-      column: "age",
-      operator: ">",
-      value: 16,
-    }],
+    wheres: [],
     offset: 5,
   },
 );
 
 testQueryBuilder(
   "`limit` and `offset`",
-  (query) => query.where("age", ">", 16).limit(7).offset(14),
+  (query) => query.limit(7).offset(14),
   {
-    wheres: [{
-      type: WhereType.Default,
-      column: "age",
-      operator: ">",
-      value: 16,
-    }],
+    wheres: [],
     limit: 7,
     offset: 14,
   },
@@ -206,14 +186,9 @@ testQueryBuilder(
 
 testQueryBuilder(
   "`first` should be the shortcut for limit(1)",
-  (query) => query.where("age", ">", 16).first(),
+  (query) => query.first(),
   {
-    wheres: [{
-      type: WhereType.Default,
-      column: "age",
-      operator: ">",
-      value: 16,
-    }],
+    wheres: [],
     limit: 1,
   },
 );
@@ -222,47 +197,37 @@ testQueryBuilder(
 
 testQueryBuilder(
   "`select` should add the list of all selected columns",
-  (query) => query.where("age", ">", 16).select("email"),
+  (query) => query.select("email"),
   {
-    wheres: [{
-      type: WhereType.Default,
-      column: "age",
-      operator: ">",
-      value: 16,
-    }],
+    wheres: [],
     columns: ["email"],
   },
 );
 
 testQueryBuilder(
   "`select` multiple columns",
-  (query) =>
-    query.where("age", ">", 16)
-      .select("email")
-      .select("age")
-      .select("is_active"),
+  (query) => query.select("email").select("age").select("is_active"),
   {
-    wheres: [{
-      type: WhereType.Default,
-      column: "age",
-      operator: ">",
-      value: 16,
-    }],
+    wheres: [],
     columns: ["email", "age", "is_active"],
   },
 );
 
 testQueryBuilder(
   "`select` multiple columns with a single method",
-  (query) => query.where("age", ">", 16).select("email", "age", "is_active"),
+  (query) => query.select("email", "age", "is_active"),
   {
-    wheres: [{
-      type: WhereType.Default,
-      column: "age",
-      operator: ">",
-      value: 16,
-    }],
+    wheres: [],
     columns: ["email", "age", "is_active"],
+  },
+);
+
+testQueryBuilder(
+  "`select` multiple columns with aliases",
+  (query) => query.select(["email", "my_email"], ["age", "my_age"]),
+  {
+    wheres: [],
+    columns: [["email", "my_email"], ["age", "my_age"]],
   },
 );
 
@@ -324,43 +289,27 @@ testQueryBuilder(
 
 testQueryBuilder(
   "`orderBy` should order the result",
-  (query) => query.where("age", ">", 16).orderBy("age"),
+  (query) => query.orderBy("age"),
   {
-    wheres: [{
-      type: WhereType.Default,
-      column: "age",
-      operator: ">",
-      value: 16,
-    }],
+    wheres: [],
     orders: [{ column: "age", order: "ASC" }],
   },
 );
 
 testQueryBuilder(
   "`orderBy` should order the result with custom direction",
-  (query) => query.where("age", ">", 16).orderBy("age", "DESC"),
+  (query) => query.orderBy("age", "DESC"),
   {
-    wheres: [{
-      type: WhereType.Default,
-      column: "age",
-      operator: ">",
-      value: 16,
-    }],
+    wheres: [],
     orders: [{ column: "age", order: "DESC" }],
   },
 );
 
 testQueryBuilder(
   "multiple `orderBy`",
-  (query) =>
-    query.where("age", ">", 16).orderBy("age", "DESC").orderBy("created_at"),
+  (query) => query.orderBy("age", "DESC").orderBy("created_at"),
   {
-    wheres: [{
-      type: WhereType.Default,
-      column: "age",
-      operator: ">",
-      value: 16,
-    }],
+    wheres: [],
     orders: [{
       column: "age",
       order: "DESC",

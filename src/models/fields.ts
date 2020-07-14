@@ -1,4 +1,5 @@
 import { Reflect } from "../utils/reflect.ts";
+import { ExtendedModel } from "./model.ts";
 
 /**
  * Transform database value to JavaScript types
@@ -14,14 +15,26 @@ export enum FieldType {
  * Information about table the table column
  */
 export interface ColumnOptions {
+  /** JavaScript type which will be converted from the database */
   type: FieldType;
+
+  /** The column name on the database */
   name: string;
+
+  /** The default value */
   default?: any;
+
+  /** Automatically select this column when fetching*/
   select: boolean;
-  nullable: boolean;
+
+  /** Is this column allowed to be empty? */
+  isNullable: boolean;
 }
 
-export type ColumnDescription = ColumnOptions & { propertyKey: string };
+export type ColumnDescription = ColumnOptions & {
+  propertyKey: string;
+  isPrimaryKey: boolean;
+};
 
 function getFieldType(type: any): FieldType | null {
   if (type === String) {
@@ -40,7 +53,7 @@ function getFieldType(type: any): FieldType | null {
 /**
  * Model field
  * 
- * @param type the JavaScript type which will be transformed
+ * @param options field options
  */
 export function Field(options?: Partial<ColumnOptions>) {
   return (target: Object, propertyKey: string) => {
@@ -68,7 +81,8 @@ export function Field(options?: Partial<ColumnOptions>) {
         select: true,
         name: propertyKey,
         type: fieldType,
-        nullable: false,
+        isPrimaryKey: false,
+        isNullable: false,
       },
       options,
     );
@@ -76,5 +90,42 @@ export function Field(options?: Partial<ColumnOptions>) {
     columns.push(description);
 
     Reflect.defineMetadata("db:columns", columns, target);
+  };
+}
+
+export enum RelationType {
+  HasMany = 1,
+  BelongsTo = 2,
+}
+
+export interface RelationDescription {
+  propertyKey: string;
+  type: RelationType;
+  model: ExtendedModel<any>;
+  targetColumn: string;
+}
+
+/**
+ * Define a relation field
+ */
+export function Relation<T>(
+  type: RelationType,
+  getModel: () => ExtendedModel<T>,
+  column: string,
+) {
+  return (target: Object, propertyKey: string) => {
+    let relations: RelationDescription[] = [];
+    if (Reflect.hasMetadata("db:relations", target)) {
+      relations = Reflect.getMetadata("db:relations", target);
+    }
+
+    relations.push({
+      propertyKey: propertyKey,
+      type: type,
+      model: getModel(),
+      targetColumn: column,
+    });
+
+    Reflect.defineMetadata("db:relations", relations, target);
   };
 }

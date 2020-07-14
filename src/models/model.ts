@@ -2,7 +2,8 @@ import { Adapter } from "../adapters/adapter.ts";
 import { Reflect } from "../utils/reflect.ts";
 import { range } from "../utils/number.ts";
 import { quote } from "../utils/dialect.ts";
-import { ColumnDescription, FieldType } from "./fields.ts";
+import { FieldType, RelationDescription, RelationType } from "./fields.ts";
+import { getColumns } from "../utils/models.ts";
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 
@@ -10,6 +11,7 @@ export interface FindOptions<T> {
   limit?: number;
   offset?: number;
   where?: Partial<T>;
+  includes?: string[];
 }
 
 /**
@@ -23,7 +25,7 @@ export abstract class Model {
   public id!: number;
 
   private _isSaved: boolean = false;
-  private _original?: Model;
+  private _original?: { [key: string]: any };
 
   /**
    * Check if this instance's fields are changed
@@ -87,6 +89,14 @@ export abstract class Model {
       }
     }
 
+    // Select all columns
+    const columnNames = getColumns(this)
+      .map((item): [string, string] => [
+        this.tableName + "." + item.name,
+        this.tableName + "__" + item.name,
+      ]);
+    query.select(...columnNames);
+
     // Execute query
     const result = await query.first().execute();
 
@@ -128,6 +138,33 @@ export abstract class Model {
     if (options && options.offset) {
       query.offset(options.offset);
     }
+
+    if (options && options.includes) {
+      const relations: RelationDescription[] =
+        Reflect.getMetadata("db:relations", this.prototype) ||
+        [];
+      for (const relation of relations) {
+        const tableName = relation.model.tableName;
+        const columnA = tableName + "." + relation.targetColumn;
+        const columnB = this.tableName + ".id";
+        query.leftJoin(tableName, columnA, columnB);
+
+        const columnNames = getColumns(relation.model)
+          .map((item): [string, string] => [
+            tableName + "." + item.name,
+            tableName + "__" + item.name,
+          ]);
+        query.select(...columnNames);
+      }
+    }
+
+    // Select all columns
+    const columnNames = getColumns(this)
+      .map((item): [string, string] => [
+        this.tableName + "." + item.name,
+        this.tableName + "__" + item.name,
+      ]);
+    query.select(...columnNames);
 
     // Execute query
     const result = await query.execute();
@@ -190,7 +227,7 @@ export abstract class Model {
       this._isSaved = true;
     }
 
-    this._original = this._clone();
+    this._original = this.values();
 
     return this;
   }
@@ -283,7 +320,7 @@ export abstract class Model {
     models.forEach((model, index) => {
       model.id = ids[index];
       model._isSaved = true;
-      model._original = model._clone();
+      model._original = model.values();
     });
 
     return models;
@@ -369,13 +406,25 @@ export abstract class Model {
     fromDatabase: boolean = false,
   ): T {
     const model = Object.create(this.prototype);
-    const result = Object.assign(model, data, { _isSaved: fromDatabase });
+    let result: any;
+
+    if (fromDatabase) {
+      const values: { [key: string]: any } = {};
+
+      for (const item of getColumns(this)) {
+        values[item.propertyKey] = data[this.tableName + "__" + item.name];
+      }
+
+      result = Object.assign(model, values, { _isSaved: true });
+    } else {
+      result = Object.assign(model, data, { _isSaved: false });
+    }
 
     // Normalize input data
     result._normalize();
 
     // Save the original values
-    result._original = result._clone();
+    result._original = result.values();
 
     return result;
   }
@@ -398,21 +447,10 @@ export abstract class Model {
   // --------------------------------------------------------------------------------
 
   /**
-   * Get all columns information
-   */
-  private _getColumns(): ColumnDescription[] {
-    if (!Reflect.hasMetadata("db:columns", this)) {
-      throw new Error("A model should have at least one column!");
-    }
-
-    return Reflect.getMetadata("db:columns", this);
-  }
-
-  /**
    * Normalize model value
    */
   private _normalize() {
-    const columns = this._getColumns();
+    const columns = getColumns(this.constructor);
 
     for (const column of columns) {
       (this as any)[column.propertyKey] = this._normalizeValue(
@@ -434,23 +472,14 @@ export abstract class Model {
     } else if (type === FieldType.Date && !(value instanceof Date)) {
       return new Date(value);
     } else if (type === FieldType.String && typeof value !== "string") {
-      return `${value}`;
+      return String(value);
     } else if (type === FieldType.Number && typeof value !== "number") {
-      return parseInt(value);
+      return Number(value);
     } else if (type === FieldType.Boolean && typeof value !== "boolean") {
       return Boolean(value);
     } else {
       return value;
     }
-  }
-
-  /**
-   * Clone the instance, used for comparing with the original instance
-   */
-  private _clone() {
-    const clone = Object.assign({}, this);
-    Object.setPrototypeOf(clone, Model.prototype);
-    return clone;
   }
 
   /**
@@ -466,11 +495,10 @@ export abstract class Model {
       const changedFields: string[] = [];
 
       // Loop for the fields, if one of the fields doesn't match, the object is dirty
-      for (const column of this._getColumns()) {
+      for (const column of getColumns(this.constructor)) {
         const value = (this as any)[column.propertyKey];
-        const originalValue = (this._original as any)[column.propertyKey];
 
-        if (value !== originalValue) {
+        if (value !== this._original[column.name]) {
           isDirty = true;
           changedFields.push(column.propertyKey);
         }
@@ -489,31 +517,38 @@ export abstract class Model {
    */
   public values(columns?: string[]): { [key: string]: any } {
     const selectedColumns = columns
-      ? this._getColumns().filter((item) => columns.includes(item.propertyKey))
-      : this._getColumns();
+      ? getColumns(this.constructor)
+        .filter((item) => columns.includes(item.propertyKey))
+      : getColumns(this.constructor);
 
     const data: { [key: string]: any } = {};
 
     for (const column of selectedColumns) {
       const value = (this as any)[column.propertyKey];
 
-      if (typeof value === "undefined") {
-        // If the value is undefined, check the default value. Then, if the column
-        // is nullable, set it to null. Otherwise, throw an error.
-        if (typeof column.default !== "undefined") {
-          // If the default value is a function, execute it and get the returned value
-          data[column.name] = typeof column.default === "function"
-            ? column.default()
-            : column.default;
-        } else if (column.nullable === true) {
-          data[column.name] = null;
-        } else {
-          throw new Error(
-            `Field '${column.propertyKey}' cannot be empty!'`,
-          );
+      if (column.isPrimaryKey) {
+        if (this._isSaved) {
+          data[column.name] = value;
         }
       } else {
-        data[column.name] = (this as any)[column.propertyKey];
+        if (typeof value === "undefined") {
+          // If the value is undefined, check the default value. Then, if the column
+          // is nullable, set it to null. Otherwise, throw an error.
+          if (typeof column.default !== "undefined") {
+            // If the default value is a function, execute it and get the returned value
+            data[column.name] = typeof column.default === "function"
+              ? column.default()
+              : column.default;
+          } else if (column.isNullable === true) {
+            data[column.name] = null;
+          } else {
+            throw new Error(
+              `Field '${column.propertyKey}' cannot be empty!'`,
+            );
+          }
+        } else {
+          data[column.name] = (this as any)[column.propertyKey];
+        }
       }
     }
 

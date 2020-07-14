@@ -90,7 +90,7 @@ export interface QueryDescription {
   type: QueryType;
 
   /** Table columns that are going to be fetched */
-  columns: string[];
+  columns: (string | [string, string])[];
 
   /** Query values for INSERT and UPDATE */
   values?: QueryValues | QueryValues[];
@@ -254,7 +254,7 @@ export class QueryBuilder {
    * 
    * @param columns Table columns to select
    */
-  public select(...columns: string[]): QueryBuilder {
+  public select(...columns: (string | [string, string])[]): QueryBuilder {
     // Merge the `columns` array with `this.description.columns` without any duplicate.
     columns.forEach((column) => {
       if (!this.description.columns.includes(column)) {
