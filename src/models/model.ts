@@ -1,9 +1,18 @@
 import { Adapter } from "../adapters/adapter.ts";
-import { Reflect } from "../utils/reflect.ts";
 import { range } from "../utils/number.ts";
+import { RelationType } from "./fields.ts";
+import {
+  getModelColumns,
+  getModelRelations,
+  extractRelationalRecord,
+  createModel,
+  createModels,
+  normalizeModel,
+  saveOriginalValue,
+  getOriginalValue,
+  mapRelationalResult,
+} from "../utils/models.ts";
 import { quote } from "../utils/dialect.ts";
-import { FieldType, RelationDescription, RelationType } from "./fields.ts";
-import { getColumns } from "../utils/models.ts";
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 
@@ -24,9 +33,6 @@ export abstract class Model {
 
   public id!: number;
 
-  private _isSaved: boolean = false;
-  private _original?: { [key: string]: any };
-
   /**
    * Check if this instance's fields are changed
    */
@@ -38,59 +44,63 @@ export abstract class Model {
    * Check if a this instance is saved to the database
    */
   public isSaved(): boolean {
-    return this._isSaved;
+    return typeof this.id === "number";
   }
 
   /**
-   * Get the first record in a table or null null if none can be found
-   */
-  public static async findOne<T extends Model>(
-    this: ExtendedModel<T>,
-  ): Promise<T | null>;
-
-  /**
-   * Get a single record by primary key or null if none can be found
-   * 
-   * @param id primary key
-   */
-  public static async findOne<T extends Model>(
-    this: ExtendedModel<T>,
-    id: number,
-  ): Promise<T | null>;
-
-  /**
-   * Search for a single instance. Returns the first instance found, or null if none can be found
-   * 
-   * @param where query columns
-   */
-  public static async findOne<T extends Model>(
-    this: ExtendedModel<T>,
-    where: Partial<T>,
-  ): Promise<T | null>;
-
-  /**
    * Search for a single instance. Returns the first instance found, or null if none can be found
    */
   public static async findOne<T extends Model>(
     this: ExtendedModel<T>,
-    options?: number | Partial<T>,
+    options?: FindOptions<T>,
   ): Promise<T | null> {
     // Initialize query builder
     const query = this.adapter.table(this.tableName);
 
-    // If the options is a number, we assume that the user want to find based on the primary key.
-    // Otherwise, query the columns.
-    if (typeof options === "number") {
-      query.where(this.primaryKey, "=", options);
-    } else if (typeof options === "object") {
-      for (const [column, value] of Object.entries(options)) {
+    // Add where clauses (if exists)
+    if (options && options.where) {
+      for (const [column, value] of Object.entries(options.where)) {
         // TODO: allow user to use different operator
         query.where(column, value);
       }
     }
 
+    // Add maximum number of records (if exists)
+    if (options && options.limit) {
+      query.limit(options.limit);
+    }
+
+    // Add offset (if exists)
+    if (options && options.offset) {
+      query.offset(options.offset);
+    }
+
+    if (options && options.includes) {
+      const relations = getModelRelations(this, options.includes);
+      for (const relation of relations) {
+        const tableName = relation.getModel().tableName;
+
+        if (relation.type === RelationType.HasMany) {
+          const columnA = tableName + "." + relation.targetColumn;
+          const columnB = this.tableName + ".id";
+          query.leftJoin(tableName, columnA, columnB);
+        } else if (relation.type === RelationType.BelongsTo) {
+          const columnA = tableName + ".id";
+          const columnB = this.tableName + "." + relation.targetColumn;
+          query.leftJoin(tableName, columnA, columnB);
+        }
+
+        const columnNames = getModelColumns(relation.getModel())
+          .map((item): [string, string] => [
+            tableName + "." + item.name,
+            tableName + "__" + item.name,
+          ]);
+        query.select(...columnNames);
+      }
+    }
+
     // Select all columns
-    const columnNames = getColumns(this)
+    const columnNames = getModelColumns(this)
       .map((item): [string, string] => [
         this.tableName + "." + item.name,
         this.tableName + "__" + item.name,
@@ -105,7 +115,15 @@ export abstract class Model {
     if (result.length < 1) {
       return null;
     } else {
-      return this.createModel(result[0], true);
+      let record: { [key: string]: any };
+
+      if (options && Array.isArray(options.includes)) {
+        record = mapRelationalResult(this, options.includes, result)[0];
+      } else {
+        record = extractRelationalRecord(result[0], this.tableName);
+      }
+
+      return createModel(this, record, true);
     }
   }
 
@@ -140,16 +158,21 @@ export abstract class Model {
     }
 
     if (options && options.includes) {
-      const relations: RelationDescription[] =
-        Reflect.getMetadata("db:relations", this.prototype) ||
-        [];
+      const relations = getModelRelations(this, options.includes);
       for (const relation of relations) {
-        const tableName = relation.model.tableName;
-        const columnA = tableName + "." + relation.targetColumn;
-        const columnB = this.tableName + ".id";
-        query.leftJoin(tableName, columnA, columnB);
+        const tableName = relation.getModel().tableName;
 
-        const columnNames = getColumns(relation.model)
+        if (relation.type === RelationType.HasMany) {
+          const columnA = tableName + "." + relation.targetColumn;
+          const columnB = this.tableName + ".id";
+          query.leftJoin(tableName, columnA, columnB);
+        } else if (relation.type === RelationType.BelongsTo) {
+          const columnA = tableName + ".id";
+          const columnB = this.tableName + "." + relation.targetColumn;
+          query.leftJoin(tableName, columnA, columnB);
+        }
+
+        const columnNames = getModelColumns(relation.getModel())
           .map((item): [string, string] => [
             tableName + "." + item.name,
             tableName + "__" + item.name,
@@ -159,7 +182,7 @@ export abstract class Model {
     }
 
     // Select all columns
-    const columnNames = getColumns(this)
+    const columnNames = getModelColumns(this)
       .map((item): [string, string] => [
         this.tableName + "." + item.name,
         this.tableName + "__" + item.name,
@@ -167,9 +190,19 @@ export abstract class Model {
     query.select(...columnNames);
 
     // Execute query
-    const result = await query.execute();
+    const result = await query.execute<any>();
 
-    return this.createModels(result, true);
+    let records: any[];
+
+    if (options && Array.isArray(options.includes)) {
+      records = mapRelationalResult(this, options.includes, result);
+    } else {
+      records = result.map((item) => {
+        return extractRelationalRecord(item, this.tableName);
+      });
+    }
+
+    return createModels(this, records, true);
   }
 
   /**
@@ -180,11 +213,11 @@ export abstract class Model {
     const modelClass = <typeof Model> this.constructor;
 
     // Normalize fields data
-    this._normalize();
+    normalizeModel(this);
 
     // If the primary key is defined, we assume that the user want to update the record.
     // Otherwise, create a new record to the database.
-    if (this._isSaved) {
+    if (this.isSaved()) {
       const { isDirty, changedFields } = this._compareWithOriginal();
 
       if (isDirty) {
@@ -224,10 +257,9 @@ export abstract class Model {
 
       // Set the primary key
       this.id = lastInsertedId;
-      this._isSaved = true;
     }
 
-    this._original = this.values();
+    saveOriginalValue(this);
 
     return this;
   }
@@ -276,10 +308,10 @@ export abstract class Model {
     data: Partial<T> | Partial<T>[],
   ): Promise<T | T[]> {
     if (Array.isArray(data)) {
-      const models = this.createModels<T>(data);
+      const models = createModels<T>(this, data);
       return this._bulkSave<T>(models);
     } else {
-      const model = this.createModel<T>(data);
+      const model = createModel<T>(this, data);
       await model.save();
       return model;
     }
@@ -319,8 +351,7 @@ export abstract class Model {
     );
     models.forEach((model, index) => {
       model.id = ids[index];
-      model._isSaved = true;
-      model._original = model.values();
+      saveOriginalValue(model);
     });
 
     return models;
@@ -395,92 +426,9 @@ export abstract class Model {
   // TRANSFORM OBJECT TO MODEL CLASS
   // --------------------------------------------------------------------------------
 
-  /**
-   * Transform single plain JavaScript object to Model class
-   * 
-   * @param data List of plain JavaScript objects
-   * @param fromDatabase Check wether the data is saved to the database or not
-   */
-  private static createModel<T>(
-    data: { [key: string]: any },
-    fromDatabase: boolean = false,
-  ): T {
-    const model = Object.create(this.prototype);
-    let result: any;
-
-    if (fromDatabase) {
-      const values: { [key: string]: any } = {};
-
-      for (const item of getColumns(this)) {
-        values[item.propertyKey] = data[this.tableName + "__" + item.name];
-      }
-
-      result = Object.assign(model, values, { _isSaved: true });
-    } else {
-      result = Object.assign(model, data, { _isSaved: false });
-    }
-
-    // Normalize input data
-    result._normalize();
-
-    // Save the original values
-    result._original = result.values();
-
-    return result;
-  }
-
-  /**
-   * Transform multiple plain JavaScript objects to Model classes
-   * 
-   * @param data List of plain JavaScript objects
-   * @param fromDatabase Check wether the data is saved to the database or not
-   */
-  private static createModels<T>(
-    data: { [key: string]: any }[],
-    fromDatabase: boolean = false,
-  ): T[] {
-    return data.map((item) => this.createModel(item, fromDatabase));
-  }
-
   // --------------------------------------------------------------------------------
   // PRIVATE HELPER METHODS
   // --------------------------------------------------------------------------------
-
-  /**
-   * Normalize model value
-   */
-  private _normalize() {
-    const columns = getColumns(this.constructor);
-
-    for (const column of columns) {
-      (this as any)[column.propertyKey] = this._normalizeValue(
-        (this as any)[column.propertyKey],
-        column.type,
-      );
-    }
-  }
-
-  /**
-   * Normalize data with the expected type
-   * 
-   * @param value the value to be normalized
-   * @param type the expected data type
-   */
-  private _normalizeValue(value: any, type: FieldType): any {
-    if (typeof value === "undefined" || value === null) {
-      return null;
-    } else if (type === FieldType.Date && !(value instanceof Date)) {
-      return new Date(value);
-    } else if (type === FieldType.String && typeof value !== "string") {
-      return String(value);
-    } else if (type === FieldType.Number && typeof value !== "number") {
-      return Number(value);
-    } else if (type === FieldType.Boolean && typeof value !== "boolean") {
-      return Boolean(value);
-    } else {
-      return value;
-    }
-  }
 
   /**
    * Compare the current values with the last saved data
@@ -489,16 +437,19 @@ export abstract class Model {
     isDirty: boolean;
     changedFields: string[];
   } {
-    // If this._original is not defined, it means the object is not saved to the database yet which is dirty
-    if (this._original) {
+    const originalValue = getOriginalValue(this);
+
+    // If there's is no original value, the object is not saved to the database yet
+    // which means it's dirty.
+    if (originalValue) {
       let isDirty = false;
       const changedFields: string[] = [];
 
       // Loop for the fields, if one of the fields doesn't match, the object is dirty
-      for (const column of getColumns(this.constructor)) {
+      for (const column of getModelColumns(this.constructor)) {
         const value = (this as any)[column.propertyKey];
 
-        if (value !== this._original[column.name]) {
+        if (value !== originalValue[column.name]) {
           isDirty = true;
           changedFields.push(column.propertyKey);
         }
@@ -517,9 +468,9 @@ export abstract class Model {
    */
   public values(columns?: string[]): { [key: string]: any } {
     const selectedColumns = columns
-      ? getColumns(this.constructor)
+      ? getModelColumns(this.constructor)
         .filter((item) => columns.includes(item.propertyKey))
-      : getColumns(this.constructor);
+      : getModelColumns(this.constructor);
 
     const data: { [key: string]: any } = {};
 
@@ -527,7 +478,7 @@ export abstract class Model {
       const value = (this as any)[column.propertyKey];
 
       if (column.isPrimaryKey) {
-        if (this._isSaved) {
+        if (this.isSaved()) {
           data[column.name] = value;
         }
       } else {

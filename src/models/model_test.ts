@@ -141,7 +141,7 @@ testDB("Model: findOne()", async (client) => {
   client.addModel(User);
 
   // Find by id
-  let user = await User.findOne(2);
+  let user = await User.findOne({ where: { id: 2 } });
   assertEquals(user instanceof User, true);
   assertEquals(user?.id, 2);
   assertEquals(user?.email, "b@c.com");
@@ -149,7 +149,7 @@ testDB("Model: findOne()", async (client) => {
   assertEquals(user?.age, 16);
 
   // Find by columns
-  user = await User.findOne({ email: "c@d.com" });
+  user = await User.findOne({ where: { email: "c@d.com" } });
   assertEquals(user instanceof User, true);
   assertEquals(user?.id, 3);
   assertEquals(user?.email, "c@d.com");
@@ -187,7 +187,7 @@ testDB("Model: save()", async (client) => {
   user.email = "b@c.com";
   await user.save();
 
-  user = await User.findOne(1) as User;
+  user = await User.findOne({ where: { id: 1 } }) as User;
   assertEquals(user.email, "b@c.com");
 });
 
@@ -273,7 +273,7 @@ testDB("Model: remove()", async (client) => {
   });
   await user.remove();
 
-  assertEquals(await User.findOne(1), null);
+  assertEquals(await User.findOne({ where: { id: 1 } }), null);
 });
 
 testDB("Model: isSaved()", async (client) => {
@@ -310,7 +310,7 @@ testDB("Model: isDirty()", async (client) => {
 
   assertEquals(user.isDirty(), false);
 
-  user = await User.findOne(1) as User;
+  user = await User.findOne({ where: { id: 1 } }) as User;
 
   assertEquals(user.isDirty(), false);
 

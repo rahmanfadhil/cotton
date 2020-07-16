@@ -101,7 +101,7 @@ export enum RelationType {
 export interface RelationDescription {
   propertyKey: string;
   type: RelationType;
-  model: ExtendedModel<any>;
+  getModel: () => ExtendedModel<any>;
   targetColumn: string;
 }
 
@@ -122,7 +122,7 @@ export function Relation<T>(
     relations.push({
       propertyKey: propertyKey,
       type: type,
-      model: getModel(),
+      getModel,
       targetColumn: column,
     });
 
