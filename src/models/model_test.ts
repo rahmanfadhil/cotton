@@ -171,11 +171,6 @@ testDB("Model: save()", async (client) => {
   user.created_at = date;
   await user.save();
 
-  assertEquals(user.id, 1);
-  assertEquals(user.email, "a@b.com");
-  assertEquals(user.age, 16);
-  assertEquals(user.created_at, date);
-
   users = await User.find();
   assertEquals(users.length, 1);
   assertEquals(users[0] instanceof User, true);
@@ -184,10 +179,10 @@ testDB("Model: save()", async (client) => {
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
 
+  user = await User.findOne({ where: { id: 1 } }) as User;
   user.email = "b@c.com";
   await user.save();
 
-  user = await User.findOne({ where: { id: 1 } }) as User;
   assertEquals(user.email, "b@c.com");
 });
 
@@ -311,6 +306,8 @@ testDB("Model: isDirty()", async (client) => {
   assertEquals(user.isDirty(), false);
 
   user = await User.findOne({ where: { id: 1 } }) as User;
+
+  console.log((user as any)._compareWithOriginal());
 
   assertEquals(user.isDirty(), false);
 

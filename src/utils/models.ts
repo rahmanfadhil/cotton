@@ -11,6 +11,7 @@ import { ExtendedModel, Model } from "../models/model.ts";
  * All models' original values
  */
 const originals = new WeakMap();
+const isSaved = new WeakMap();
 
 /**
  * Get all columns from a model
@@ -83,23 +84,29 @@ export function createModel<T>(
     const relationModel = relation.getModel();
     const relationData = data[relation.propertyKey];
 
-    if (
-      relation.type === RelationType.BelongsTo &&
-      typeof relationData === "object"
-    ) {
-      data[relation.propertyKey] = createModel(
-        relationModel,
-        relationData,
-        fromDatabase,
-      );
-    } else if (
-      relation.type === RelationType.HasMany && Array.isArray(relationData)
-    ) {
-      data[relation.propertyKey] = createModels(
-        relationModel,
-        relationData,
-        fromDatabase,
-      );
+    if (relation.type === RelationType.BelongsTo) {
+      if (typeof relationData === "object") {
+        data[relation.propertyKey] = createModel(
+          relationModel,
+          relationData,
+          fromDatabase,
+        );
+      } else {
+        data[relation.propertyKey] = null;
+      }
+    } else if (relation.type === RelationType.HasMany) {
+      if (
+        Array.isArray(relationData) &&
+        relationData.length > 0
+      ) {
+        data[relation.propertyKey] = createModels(
+          relationModel,
+          relationData,
+          fromDatabase,
+        );
+      } else {
+        data[relation.propertyKey] = [];
+      }
     }
   }
 
@@ -108,6 +115,9 @@ export function createModel<T>(
 
   // Normalize input data
   normalizeModel(result);
+
+  // Set the isSaved value
+  setSaved(result, fromDatabase);
 
   // Save the original values
   saveOriginalValue(result);
@@ -189,6 +199,25 @@ export function getOriginalValue<T extends Model>(model: T): {
 }
 
 /**
+ * Update the `isSaved` status of a model.
+ *
+ * @param model the model you want to change the status
+ * @param value the status of the model (saved or not saved)
+ */
+export function setSaved<T extends Model>(model: T, value: boolean): void {
+  isSaved.set(model, value);
+}
+
+/**
+ * Check wether this model is saved or not.
+ *
+ * @param model the model you want to check the status
+ */
+export function getSaved<T extends Model>(model: T): boolean {
+  return isSaved.get(model) ? true : false;
+}
+
+/**
  * Map raw SQL JOIN result.
  *
  * @param modelClass the main model
@@ -222,15 +251,25 @@ export function mapRelationalResult<T>(
       const data = extractRelationalRecord(next, getTableName(modelClass));
 
       for (const relation of relations) {
+        const tableName = getTableName(relation.getModel());
+
         if (relation.type === RelationType.HasMany) {
-          data[relation.propertyKey] = [
-            extractRelationalRecord(next, getTableName(relation.getModel())),
-          ];
+          if (next[tableName + "__id"] === null) {
+            data[relation.propertyKey] = [];
+          } else {
+            data[relation.propertyKey] = [
+              extractRelationalRecord(next, tableName),
+            ];
+          }
         } else if (relation.type === RelationType.BelongsTo) {
-          data[relation.propertyKey] = extractRelationalRecord(
-            next,
-            getTableName(relation.getModel()),
-          );
+          if (next[tableName + "__id"] === null) {
+            data[relation.propertyKey] = null;
+          } else {
+            data[relation.propertyKey] = extractRelationalRecord(
+              next,
+              tableName,
+            );
+          }
         }
       }
 

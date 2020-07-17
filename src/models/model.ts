@@ -12,6 +12,8 @@ import {
   getOriginalValue,
   mapRelationalResult,
   getTableName,
+  setSaved,
+  getSaved,
 } from "../utils/models.ts";
 import { quote } from "../utils/dialect.ts";
 
@@ -45,7 +47,7 @@ export abstract class Model {
    * Check if a this instance is saved to the database
    */
   public isSaved(): boolean {
-    return typeof this.id === "number";
+    return getSaved(this);
   }
 
   /**
@@ -297,6 +299,7 @@ export abstract class Model {
       this.id = lastInsertedId;
     }
 
+    setSaved(this, true);
     saveOriginalValue(this);
 
     return this;
@@ -314,6 +317,8 @@ export abstract class Model {
       .where(modelClass.primaryKey, this.id)
       .delete()
       .execute();
+
+    setSaved(this, false);
   }
 
   /**
