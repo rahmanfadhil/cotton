@@ -9,7 +9,6 @@ import "./src/models/model_test.ts";
 import "./src/utils/models_test.ts";
 import "./src/adapters/adapter_test.ts";
 import "./src/migrations/schema_test.ts";
-import "./src/models/fields_test.ts";
 
 // Unit tests
 import "./src/utils/date_test.ts";
@@ -19,4 +18,5 @@ import "./src/querybuilder_test.ts";
 import "./src/querycompiler_test.ts";
 import "./src/migrations/tablebuilder_test.ts";
 import "./src/migrations/column_test.ts";
+import "./src/migrations/foreign_test.ts";
 import "./src/models/fields_test.ts";

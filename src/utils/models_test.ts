@@ -353,9 +353,16 @@ Deno.test("mapRelationalResult", () => {
   );
 });
 
-Deno.test("getTableName", () => {
+Deno.test("getTableName: should get the default table name from the class name", () => {
   assertEquals(getTableName(User), "users");
   assertEquals(getTableName(Product), "products");
+});
+
+Deno.test("getTableName: should get a custom table name", () => {
+  class Post extends Model {
+    static tableName = "my_posts";
+  }
+  assertEquals(getTableName(Post), "my_posts");
 });
 
 Deno.test("getSaved and setSaved", () => {

@@ -1,6 +1,7 @@
 import { Column } from "./column.ts";
 import { Adapter } from "../adapters/adapter.ts";
 import { quote } from "../utils/dialect.ts";
+import { ForeignActions, Foreign } from "./foreign.ts";
 
 export interface CreateTableOptions {
   createIfNotExists?: boolean;
@@ -12,6 +13,7 @@ export interface CreateTableOptions {
 export class TableBuilder {
   private options: Required<CreateTableOptions>;
   private columns: (Column | string)[] = [];
+  private extras: string[] = [];
 
   constructor(
     /** Table name on the database */
@@ -194,6 +196,36 @@ export class TableBuilder {
     this.columns.push(sql);
   }
 
+  /**
+   * Add a foreign key
+   *
+   * @param name the column name
+   */
+  public foreignId(name: string, tableName: string, options: {
+    constraint?: string;
+    onDelete?: ForeignActions;
+    onUpdate?: ForeignActions;
+  }) {
+    let column: Column;
+
+    // SQLite doesn't support big integer for primary key
+    if (this.adapter.dialect === "sqlite") {
+      column = this.integer(name);
+    } else {
+      column = this.bigInteger(name);
+    }
+
+    // Add the foreign key definition at the bottom of the query
+    this.extras.push(new Foreign({
+      ...options,
+      referencedTableName: tableName,
+      referencedColumns: ["id"],
+      columns: [name],
+    }).toSQL(this.adapter.dialect));
+
+    return column;
+  }
+
   // --------------------------------------------------------------------------------
   // SQL QUERY
   // --------------------------------------------------------------------------------
@@ -217,6 +249,11 @@ export class TableBuilder {
         ? column.toSQL(this.adapter.dialect)
         : column;
     });
+
+    // Add all extra queries (foreign keys, etc.) after the column definitions
+    for (const extraQuery of this.extras) {
+      columns.push(extraQuery);
+    }
 
     // Add column definitions to the statement
     sql.push(`(${[...columns].join(", ")})`);
