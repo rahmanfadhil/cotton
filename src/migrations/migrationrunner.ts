@@ -1,8 +1,12 @@
 import { Adapter } from "../adapters/adapter.ts";
 import { Colors, joinPath } from "../../deps.ts";
 import { Schema } from "./schema.ts";
-import { Migration } from "./migration.ts";
 import { createMigrationTimestamp } from "../utils/date.ts";
+
+export interface Migration {
+  up(schema: Schema): Promise<void>;
+  down(schema: Schema): Promise<void>;
+}
 
 interface MigrationInfo {
   migration: Migration;
@@ -46,7 +50,7 @@ export class MigrationRunner {
     // Write the file
     await Deno.writeTextFile(
       fileName,
-      `import { Migration, Schema } from "https://deno.land/x/cotton/mod.ts";\n\nexport default class extends Migration {\n  async up(schema: Schema) {}\n\n  async down(schema: Schema) {}\n}`,
+      `import { Schema } from "https://deno.land/x/cotton/mod.ts";\n\nexport async function up(schema: Schema) {\n  // Do something...\n}\n\nexport async function down(schema: Schema) {\n  // Do something...\n}\n`,
     );
 
     console.log(`${Colors.green("Created:")} ${fileName}`);
@@ -63,23 +67,24 @@ export class MigrationRunner {
     // Loop through all files
     for await (const file of Deno.readDir(this.migrationDir)) {
       if (file.isFile) {
-        let MigrationClass: { new (): Migration };
+        let migration: Migration;
 
         try {
           const fileContent = await import(
             joinPath(this.migrationDir, file.name)
           );
 
-          if (!(fileContent.default.prototype instanceof Migration)) {
+          if (
+            typeof fileContent.up !== "function" ||
+            typeof fileContent.down !== "function"
+          ) {
             throw new Error();
           }
 
-          MigrationClass = fileContent.default;
+          migration = { up: fileContent.up, down: fileContent.down };
         } catch {
           throw new Error(`Failed to load '${file.name}' migration class!`);
         }
-
-        const migration = new MigrationClass();
 
         migrations.push({
           migration,
