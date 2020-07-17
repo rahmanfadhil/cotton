@@ -38,8 +38,6 @@ export const sqliteOptions: ConnectionOptions = {
  * 
  * @param name Test name
  * @param fn Test function
- * 
- * TODO: automatically create tests for all database (mysql, postgres, and sqlite)
  */
 export async function testDB(
   name: string,
