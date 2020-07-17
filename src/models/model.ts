@@ -2,8 +2,8 @@ import { Adapter } from "../adapters/adapter.ts";
 import { range } from "../utils/number.ts";
 import { RelationType } from "./fields.ts";
 import {
-  getModelColumns,
-  getModelRelations,
+  getColumns,
+  getRelations,
   extractRelationalRecord,
   createModel,
   createModels,
@@ -14,6 +14,9 @@ import {
   isSaved,
   compareWithOriginal,
   getValues,
+  getPrimaryKeyInfo,
+  getPrimaryKey,
+  setPrimaryKey,
 } from "../utils/models.ts";
 import { quote } from "../utils/dialect.ts";
 
@@ -31,10 +34,7 @@ export interface FindOptions<T> {
  */
 export abstract class Model {
   static tableName: string;
-  static primaryKey: string = "id";
   static adapter: Adapter;
-
-  public id!: number;
 
   /**
    * Search for a single instance. Returns the first instance found, or null if none can be found
@@ -48,9 +48,14 @@ export abstract class Model {
 
     // Add where clauses (if exists)
     if (options && options.where) {
+      const columns = getColumns(this);
+
       for (const [column, value] of Object.entries(options.where)) {
         // TODO: allow user to use different operator
-        query.where(column, value);
+        query.where(
+          columns.find((item) => item.propertyKey === column)?.name || column,
+          value,
+        );
       }
     }
 
@@ -65,21 +70,22 @@ export abstract class Model {
     }
 
     if (options && options.includes) {
-      const relations = getModelRelations(this, options.includes);
+      const relations = getRelations(this, options.includes);
       for (const relation of relations) {
         const tableName = getTableName(relation.getModel());
+        const primaryKey = getPrimaryKeyInfo(relation.getModel()).name;
 
         if (relation.type === RelationType.HasMany) {
           const columnA = tableName + "." + relation.targetColumn;
-          const columnB = getTableName(this) + ".id";
+          const columnB = getTableName(this) + "." + primaryKey;
           query.leftJoin(tableName, columnA, columnB);
         } else if (relation.type === RelationType.BelongsTo) {
-          const columnA = tableName + ".id";
+          const columnA = tableName + "." + primaryKey;
           const columnB = getTableName(this) + "." + relation.targetColumn;
           query.leftJoin(tableName, columnA, columnB);
         }
 
-        const columnNames = getModelColumns(relation.getModel())
+        const columnNames = getColumns(relation.getModel())
           .map((item): [string, string] => [
             tableName + "." + item.name,
             tableName + "__" + item.name,
@@ -89,7 +95,7 @@ export abstract class Model {
     }
 
     // Select all columns
-    const columnNames = getModelColumns(this)
+    const columnNames = getColumns(this)
       .map((item): [string, string] => [
         getTableName(this) + "." + item.name,
         getTableName(this) + "__" + item.name,
@@ -103,18 +109,19 @@ export abstract class Model {
     // the whole data.
     if (
       options && options.includes &&
-      getModelRelations(this, options.includes).find((item) =>
+      getRelations(this, options.includes).find((item) =>
         item.type === RelationType.HasMany
       )
     ) {
+      // Get the primary key column name
+      const primaryKey = getTableName(this) + "__" +
+        getPrimaryKeyInfo(this).name;
+
       // Get the distinct query
       const alias = quote("distinctAlias", this.adapter.dialect);
-      const primaryColumn = quote(
-        getTableName(this) + "__id",
-        this.adapter.dialect,
-      );
+      const primaryColumnName = quote(primaryKey, this.adapter.dialect);
       const { text, values } = query.toSQL();
-      const queryString = `SELECT ${alias}.${primaryColumn} FROM (${
+      const queryString = `SELECT ${alias}.${primaryColumnName} FROM (${
         text.slice(0, text.length - 1)
       }) ${alias} LIMIT 1;`;
 
@@ -127,7 +134,7 @@ export abstract class Model {
       // If the record found, fetch the relations
       if (recordIds.length === 1) {
         result = await query
-          .where("id", recordIds[0][getTableName(this) + "__id"])
+          .where("id", recordIds[0][primaryKey])
           .execute();
       } else {
         return null;
@@ -146,7 +153,7 @@ export abstract class Model {
       if (options && Array.isArray(options.includes)) {
         record = mapRelationalResult(this, options.includes, result)[0];
       } else {
-        record = extractRelationalRecord(result[0], getTableName(this));
+        record = extractRelationalRecord(result[0], this);
       }
 
       return createModel(this, record, true);
@@ -167,9 +174,14 @@ export abstract class Model {
 
     // Add where clauses (if exists)
     if (options && options.where) {
+      const columns = getColumns(this);
+
       for (const [column, value] of Object.entries(options.where)) {
         // TODO: allow user to use different operator
-        query.where(column, value);
+        query.where(
+          columns.find((item) => item.propertyKey === column)?.name || column,
+          value,
+        );
       }
     }
 
@@ -184,21 +196,22 @@ export abstract class Model {
     }
 
     if (options && options.includes) {
-      const relations = getModelRelations(this, options.includes);
+      const relations = getRelations(this, options.includes);
       for (const relation of relations) {
         const tableName = getTableName(relation.getModel());
+        const primaryKey = getPrimaryKeyInfo(this).name;
 
         if (relation.type === RelationType.HasMany) {
           const columnA = tableName + "." + relation.targetColumn;
-          const columnB = getTableName(this) + ".id";
+          const columnB = getTableName(this) + "." + primaryKey;
           query.leftJoin(tableName, columnA, columnB);
         } else if (relation.type === RelationType.BelongsTo) {
-          const columnA = tableName + ".id";
+          const columnA = tableName + "." + primaryKey;
           const columnB = getTableName(this) + "." + relation.targetColumn;
           query.leftJoin(tableName, columnA, columnB);
         }
 
-        const columnNames = getModelColumns(relation.getModel())
+        const columnNames = getColumns(relation.getModel())
           .map((item): [string, string] => [
             tableName + "." + item.name,
             tableName + "__" + item.name,
@@ -208,7 +221,7 @@ export abstract class Model {
     }
 
     // Select all columns
-    const columnNames = getModelColumns(this)
+    const columnNames = getColumns(this)
       .map((item): [string, string] => [
         getTableName(this) + "." + item.name,
         getTableName(this) + "__" + item.name,
@@ -224,7 +237,7 @@ export abstract class Model {
       records = mapRelationalResult(this, options.includes, result);
     } else {
       records = result.map((item) => {
-        return extractRelationalRecord(item, getTableName(this));
+        return extractRelationalRecord(item, this);
       });
     }
 
@@ -241,6 +254,9 @@ export abstract class Model {
     // Normalize fields data
     normalizeModel(this);
 
+    // Get the primary key column name
+    const primaryKey = getPrimaryKeyInfo(modelClass).name;
+
     // If the primary key is defined, we assume that the user want to update the record.
     // Otherwise, create a new record to the database.
     if (isSaved(this)) {
@@ -253,7 +269,7 @@ export abstract class Model {
         // Save record to the database
         await modelClass.adapter
           .table(getTableName(modelClass))
-          .where(modelClass.primaryKey, this.id)
+          .where(primaryKey, getPrimaryKey(this))
           .update(data)
           .execute();
       }
@@ -267,22 +283,22 @@ export abstract class Model {
         .insert(data);
 
       if (modelClass.adapter.dialect === "postgres") {
-        query.returning("id");
+        query.returning(primaryKey);
       }
 
-      const result = await query.execute<{ id: number }>();
+      const result = await query.execute<{ [key: string]: number }>();
 
       // Get last inserted id
       let lastInsertedId: number;
 
       if (modelClass.adapter.dialect === "postgres") {
-        lastInsertedId = result[result.length - 1].id;
+        lastInsertedId = result[result.length - 1][primaryKey];
       } else {
         lastInsertedId = modelClass.adapter.lastInsertedId;
       }
 
       // Set the primary key
-      this.id = lastInsertedId;
+      setPrimaryKey(this, lastInsertedId);
     }
 
     setSaved(this, true);
@@ -299,7 +315,7 @@ export abstract class Model {
 
     // Delete from the database
     await modelClass.adapter.table(getTableName(modelClass))
-      .where(modelClass.primaryKey, this.id)
+      .where(getPrimaryKeyInfo(modelClass).name, getPrimaryKey(this))
       .delete()
       .execute();
 
@@ -352,22 +368,25 @@ export abstract class Model {
     // Get all model values
     const values = models.map((model) => getValues(model));
 
+    // Get the primary key column name
+    const primaryKey = getPrimaryKeyInfo(this).name;
+
     // Execute query
     const query = this.adapter
       .table(getTableName(this))
       .insert(values);
 
     if (this.adapter.dialect === "postgres") {
-      query.returning("id");
+      query.returning(primaryKey);
     }
 
-    const result = await query.execute<{ id: number }>();
+    const result = await query.execute<{ [key: string]: number }>();
 
     // Get last inserted id
     let lastInsertedId: number;
 
     if (this.adapter.dialect === "postgres") {
-      lastInsertedId = result[result.length - 1].id;
+      lastInsertedId = result[result.length - 1][primaryKey];
     } else {
       lastInsertedId = this.adapter.lastInsertedId;
     }
@@ -378,7 +397,7 @@ export abstract class Model {
       lastInsertedId,
     );
     models.forEach((model, index) => {
-      model.id = ids[index];
+      setPrimaryKey(model, ids[index]);
       setSaved(model, true);
     });
 
@@ -394,7 +413,7 @@ export abstract class Model {
   ): Promise<void> {
     // TODO: Add options to query using where clause
     await this.adapter.table(getTableName(this))
-      .where(this.primaryKey, id)
+      .where(getPrimaryKeyInfo(this).name, id)
       .delete()
       .execute();
   }
@@ -413,9 +432,14 @@ export abstract class Model {
 
     // Add where clauses (if exists)
     if (options && options.where) {
+      const columns = getColumns(this);
+
       for (const [column, value] of Object.entries(options.where)) {
         // TODO: allow user to use different operator
-        query.where(column, value);
+        query.where(
+          columns.find((item) => item.propertyKey === column)?.name || column,
+          value,
+        );
       }
     } else {
       throw new Error(

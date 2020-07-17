@@ -37,4 +37,3 @@ services:
       MYSQL_PORT: 3306
       MYSQL_USERNAME: test
       MYSQL_PASSWORD: test
-      WAIT_HOSTS: postgres:5432, mysql:3306

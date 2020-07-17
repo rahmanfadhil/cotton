@@ -1,32 +1,26 @@
 import { testDB } from "../testutils.ts";
 import { Model } from "./model.ts";
-import { Field } from "./fields.ts";
-import {
-  assertEquals,
-  assertThrowsAsync,
-  assertThrows,
-} from "../../testdeps.ts";
+import { Field, PrimaryField } from "./fields.ts";
+import { assertEquals, assertThrowsAsync } from "../../testdeps.ts";
 import { formatDate } from "../utils/date.ts";
 
-// --------------------------------------------------------------------------------
-// INTEGRATION TESTS
-// --------------------------------------------------------------------------------
-
 class User extends Model {
-  static tableName = "users";
+  @PrimaryField()
+  id!: number;
 
   @Field()
   email!: string;
 
-  @Field()
-  age!: number;
+  @Field({ name: "age" })
+  my_age!: number;
 
   @Field()
   created_at!: Date;
 }
 
 class Product extends Model {
-  static tableName = "products";
+  @PrimaryField()
+  id!: number;
 
   @Field()
   name!: string;
@@ -47,7 +41,7 @@ testDB("Model: find()", async (client) => {
   assertEquals(users.length, 1);
   assertEquals(users[0].id, 1);
   assertEquals(users[0].email, "a@b.com");
-  assertEquals(users[0].age, 16);
+  assertEquals(users[0].my_age, 16);
   assertEquals(users[0].created_at, date);
 });
 
@@ -100,7 +94,7 @@ testDB("Model: findOne()", async (client) => {
   assertEquals(user?.id, 2);
   assertEquals(user?.email, "b@c.com");
   assertEquals(user?.created_at, date);
-  assertEquals(user?.age, 16);
+  assertEquals(user?.my_age, 16);
 
   // Find by columns
   user = await User.findOne({ where: { email: "c@d.com" } });
@@ -108,7 +102,7 @@ testDB("Model: findOne()", async (client) => {
   assertEquals(user?.id, 3);
   assertEquals(user?.email, "c@d.com");
   assertEquals(user?.created_at, date);
-  assertEquals(user?.age, 16);
+  assertEquals(user?.my_age, 16);
 });
 
 testDB("Model: save()", async (client) => {
@@ -121,7 +115,7 @@ testDB("Model: save()", async (client) => {
 
   let user = new User();
   user.email = "a@b.com";
-  user.age = 16;
+  user.my_age = 16;
   user.created_at = date;
   await user.save();
 
@@ -130,7 +124,7 @@ testDB("Model: save()", async (client) => {
   assertEquals(users[0] instanceof User, true);
   assertEquals(users[0].id, 1);
   assertEquals(users[0].email, "a@b.com");
-  assertEquals(users[0].age, 16);
+  assertEquals(users[0].my_age, 16);
   assertEquals(users[0].created_at, date);
 
   user = await User.findOne({ where: { id: 1 } }) as User;
@@ -150,13 +144,13 @@ testDB("Model: insert() -> single", async (client) => {
 
   const user = await User.insert({
     email: "a@b.com",
-    age: 16,
+    my_age: 16,
     created_at: date,
   });
   assertEquals(user instanceof User, true);
   assertEquals(user.id, 1);
   assertEquals(user.email, "a@b.com");
-  assertEquals(user.age, 16);
+  assertEquals(user.my_age, 16);
   assertEquals(user.created_at, date);
 
   users = await User.find();
@@ -164,7 +158,7 @@ testDB("Model: insert() -> single", async (client) => {
   assertEquals(users[0] instanceof User, true);
   assertEquals(users[0].id, 1);
   assertEquals(users[0].email, "a@b.com");
-  assertEquals(users[0].age, 16);
+  assertEquals(users[0].my_age, 16);
   assertEquals(users[0].created_at, date);
 });
 
@@ -176,9 +170,9 @@ testDB("Model: insert() -> multiple", async (client) => {
   assertEquals((await User.find()).length, 0);
 
   let users = await User.insert([
-    { email: "a@b.com", age: 16, created_at: date },
+    { email: "a@b.com", my_age: 16, created_at: date },
     { email: "a@b.com", created_at: date },
-    { email: "a@b.com", age: 16 },
+    { email: "a@b.com", my_age: 16 },
   ]);
   users.forEach((user, index) => {
     assertEquals(user.id, index + 1);
@@ -218,7 +212,7 @@ testDB("Model: remove()", async (client) => {
   const user = await User.insert({
     email: "a@b.com",
     created_at: new Date("5 June, 2020"),
-    age: 16,
+    my_age: 16,
   });
   await user.remove();
 
@@ -236,7 +230,7 @@ testDB("Model: delete()", async (client) => {
       (3, 'c@d.com', 18, '${formattedDate}');`,
   );
 
-  await User.delete({ where: { age: 16 } });
+  await User.delete({ where: { my_age: 16 } });
 
   const users = await client.query<{ age: number }>("SELECT * FROM users;");
   assertEquals(users.length, 1);

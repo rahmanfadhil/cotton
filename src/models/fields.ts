@@ -129,3 +129,33 @@ export function Relation<T>(
     Reflect.defineMetadata("db:relations", relations, target);
   };
 }
+
+/** Options for model's primary field */
+export interface PrimaryFieldOptions {
+  name: string;
+}
+
+/**
+ * Model primary key field
+ *
+ * @param options primary field options
+ */
+export function PrimaryField(options?: PrimaryFieldOptions) {
+  return (target: Object, propertyKey: string) => {
+    let columns: ColumnDescription[] = [];
+    if (Reflect.hasMetadata("db:columns", target)) {
+      columns = Reflect.getMetadata("db:columns", target);
+    }
+
+    columns.push({
+      propertyKey,
+      select: true,
+      name: options?.name || "id",
+      type: FieldType.Number,
+      isPrimaryKey: true,
+      isNullable: false,
+    });
+
+    Reflect.defineMetadata("db:columns", columns, target);
+  };
+}
