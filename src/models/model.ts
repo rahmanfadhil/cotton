@@ -11,6 +11,7 @@ import {
   saveOriginalValue,
   getOriginalValue,
   mapRelationalResult,
+  getTableName,
 } from "../utils/models.ts";
 import { quote } from "../utils/dialect.ts";
 
@@ -55,7 +56,7 @@ export abstract class Model {
     options?: FindOptions<T>,
   ): Promise<T | null> {
     // Initialize query builder
-    const query = this.adapter.table(this.tableName);
+    const query = this.adapter.table(getTableName(this));
 
     // Add where clauses (if exists)
     if (options && options.where) {
@@ -78,15 +79,15 @@ export abstract class Model {
     if (options && options.includes) {
       const relations = getModelRelations(this, options.includes);
       for (const relation of relations) {
-        const tableName = relation.getModel().tableName;
+        const tableName = getTableName(relation.getModel());
 
         if (relation.type === RelationType.HasMany) {
           const columnA = tableName + "." + relation.targetColumn;
-          const columnB = this.tableName + ".id";
+          const columnB = getTableName(this) + ".id";
           query.leftJoin(tableName, columnA, columnB);
         } else if (relation.type === RelationType.BelongsTo) {
           const columnA = tableName + ".id";
-          const columnB = this.tableName + "." + relation.targetColumn;
+          const columnB = getTableName(this) + "." + relation.targetColumn;
           query.leftJoin(tableName, columnA, columnB);
         }
 
@@ -102,8 +103,8 @@ export abstract class Model {
     // Select all columns
     const columnNames = getModelColumns(this)
       .map((item): [string, string] => [
-        this.tableName + "." + item.name,
-        this.tableName + "__" + item.name,
+        getTableName(this) + "." + item.name,
+        getTableName(this) + "__" + item.name,
       ]);
     query.select(...columnNames);
 
@@ -120,7 +121,7 @@ export abstract class Model {
       if (options && Array.isArray(options.includes)) {
         record = mapRelationalResult(this, options.includes, result)[0];
       } else {
-        record = extractRelationalRecord(result[0], this.tableName);
+        record = extractRelationalRecord(result[0], getTableName(this));
       }
 
       return createModel(this, record, true);
@@ -137,7 +138,7 @@ export abstract class Model {
     options?: FindOptions<T>,
   ): Promise<T[]> {
     // Initialize query builder
-    const query = this.adapter.table(this.tableName);
+    const query = this.adapter.table(getTableName(this));
 
     // Add where clauses (if exists)
     if (options && options.where) {
@@ -160,15 +161,15 @@ export abstract class Model {
     if (options && options.includes) {
       const relations = getModelRelations(this, options.includes);
       for (const relation of relations) {
-        const tableName = relation.getModel().tableName;
+        const tableName = getTableName(relation.getModel());
 
         if (relation.type === RelationType.HasMany) {
           const columnA = tableName + "." + relation.targetColumn;
-          const columnB = this.tableName + ".id";
+          const columnB = getTableName(this) + ".id";
           query.leftJoin(tableName, columnA, columnB);
         } else if (relation.type === RelationType.BelongsTo) {
           const columnA = tableName + ".id";
-          const columnB = this.tableName + "." + relation.targetColumn;
+          const columnB = getTableName(this) + "." + relation.targetColumn;
           query.leftJoin(tableName, columnA, columnB);
         }
 
@@ -184,8 +185,8 @@ export abstract class Model {
     // Select all columns
     const columnNames = getModelColumns(this)
       .map((item): [string, string] => [
-        this.tableName + "." + item.name,
-        this.tableName + "__" + item.name,
+        getTableName(this) + "." + item.name,
+        getTableName(this) + "__" + item.name,
       ]);
     query.select(...columnNames);
 
@@ -198,7 +199,7 @@ export abstract class Model {
       records = mapRelationalResult(this, options.includes, result);
     } else {
       records = result.map((item) => {
-        return extractRelationalRecord(item, this.tableName);
+        return extractRelationalRecord(item, getTableName(this));
       });
     }
 
@@ -226,7 +227,7 @@ export abstract class Model {
 
         // Save record to the database
         await modelClass.adapter
-          .table(modelClass.tableName)
+          .table(getTableName(modelClass))
           .where(modelClass.primaryKey, this.id)
           .update(data)
           .execute();
@@ -237,7 +238,7 @@ export abstract class Model {
 
       // Save record to the database
       const query = modelClass.adapter
-        .table(modelClass.tableName)
+        .table(getTableName(modelClass))
         .insert(data);
 
       if (modelClass.adapter.dialect === "postgres") {
@@ -272,7 +273,7 @@ export abstract class Model {
     const modelClass = <typeof Model> this.constructor;
 
     // Delete from the database
-    await modelClass.adapter.table(modelClass.tableName)
+    await modelClass.adapter.table(getTableName(modelClass))
       .where(modelClass.primaryKey, this.id)
       .delete()
       .execute();
@@ -326,7 +327,7 @@ export abstract class Model {
 
     // Execute query
     const query = this.adapter
-      .table(this.tableName)
+      .table(getTableName(this))
       .insert(values);
 
     if (this.adapter.dialect === "postgres") {
@@ -365,7 +366,7 @@ export abstract class Model {
     id: number,
   ): Promise<void> {
     // TODO: Add options to query using where clause
-    await this.adapter.table(this.tableName)
+    await this.adapter.table(getTableName(this))
       .where(this.primaryKey, id)
       .delete()
       .execute();
@@ -381,7 +382,7 @@ export abstract class Model {
     options: FindOptions<T>,
   ): Promise<void> {
     // Initialize query builder
-    const query = this.adapter.table(this.tableName);
+    const query = this.adapter.table(getTableName(this));
 
     // Add where clauses (if exists)
     if (options && options.where) {
@@ -417,7 +418,7 @@ export abstract class Model {
       : "TRUNCATE";
 
     // Surround table name with quote
-    const tableName = quote(this.tableName, this.adapter.dialect);
+    const tableName = quote(getTableName(this), this.adapter.dialect);
 
     await this.adapter.query(`${truncateCommand} ${tableName};`);
   }

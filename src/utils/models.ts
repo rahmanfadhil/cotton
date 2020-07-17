@@ -205,13 +205,13 @@ export function mapRelationalResult<T>(
   return result.reduce((prev, next) => {
     if (
       prev.length !== 0 &&
-      prev[prev.length - 1].id === next[modelClass.tableName + "__id"]
+      prev[prev.length - 1].id === next[getTableName(modelClass) + "__id"]
     ) {
       for (const relation of relations) {
         if (relation.type === RelationType.HasMany) {
           const data = extractRelationalRecord(
             next,
-            relation.getModel().tableName,
+            getTableName(relation.getModel()),
           );
           prev[prev.length - 1][relation.propertyKey] =
             (prev[prev.length - 1][relation.propertyKey] || [])
@@ -219,17 +219,17 @@ export function mapRelationalResult<T>(
         }
       }
     } else {
-      const data = extractRelationalRecord(next, modelClass.tableName);
+      const data = extractRelationalRecord(next, getTableName(modelClass));
 
       for (const relation of relations) {
         if (relation.type === RelationType.HasMany) {
           data[relation.propertyKey] = [
-            extractRelationalRecord(next, relation.getModel().tableName),
+            extractRelationalRecord(next, getTableName(relation.getModel())),
           ];
         } else if (relation.type === RelationType.BelongsTo) {
           data[relation.propertyKey] = extractRelationalRecord(
             next,
-            relation.getModel().tableName,
+            getTableName(relation.getModel()),
           );
         }
       }
@@ -239,4 +239,13 @@ export function mapRelationalResult<T>(
 
     return prev;
   }, []);
+}
+
+/**
+ * Get the default table name from a model class
+ */
+export function getTableName(modelClass: typeof Model): string {
+  return modelClass.tableName
+    ? modelClass.tableName
+    : modelClass.name.toLowerCase() + "s";
 }
