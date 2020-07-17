@@ -1,4 +1,5 @@
 export {
+  assert,
   assertEquals,
   assertThrows,
   assertThrowsAsync,

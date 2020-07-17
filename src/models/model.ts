@@ -1,8 +1,21 @@
 import { Adapter } from "../adapters/adapter.ts";
-import { Reflect } from "../utils/reflect.ts";
 import { range } from "../utils/number.ts";
+import { RelationType } from "./fields.ts";
+import {
+  getModelColumns,
+  getModelRelations,
+  extractRelationalRecord,
+  createModel,
+  createModels,
+  normalizeModel,
+  saveOriginalValue,
+  getOriginalValue,
+  mapRelationalResult,
+  getTableName,
+  setSaved,
+  getSaved,
+} from "../utils/models.ts";
 import { quote } from "../utils/dialect.ts";
-import { ColumnDescription, FieldType } from "./fields.ts";
 
 export type ExtendedModel<T> = { new (): T } & typeof Model;
 
@@ -10,6 +23,7 @@ export interface FindOptions<T> {
   limit?: number;
   offset?: number;
   where?: Partial<T>;
+  includes?: string[];
 }
 
 /**
@@ -22,9 +36,6 @@ export abstract class Model {
 
   public id!: number;
 
-  private _isSaved: boolean = false;
-  private _original?: Model;
-
   /**
    * Check if this instance's fields are changed
    */
@@ -36,80 +47,18 @@ export abstract class Model {
    * Check if a this instance is saved to the database
    */
   public isSaved(): boolean {
-    return this._isSaved;
+    return getSaved(this);
   }
-
-  /**
-   * Get the first record in a table or null null if none can be found
-   */
-  public static async findOne<T extends Model>(
-    this: ExtendedModel<T>,
-  ): Promise<T | null>;
-
-  /**
-   * Get a single record by primary key or null if none can be found
-   * 
-   * @param id primary key
-   */
-  public static async findOne<T extends Model>(
-    this: ExtendedModel<T>,
-    id: number,
-  ): Promise<T | null>;
-
-  /**
-   * Search for a single instance. Returns the first instance found, or null if none can be found
-   * 
-   * @param where query columns
-   */
-  public static async findOne<T extends Model>(
-    this: ExtendedModel<T>,
-    where: Partial<T>,
-  ): Promise<T | null>;
 
   /**
    * Search for a single instance. Returns the first instance found, or null if none can be found
    */
   public static async findOne<T extends Model>(
-    this: ExtendedModel<T>,
-    options?: number | Partial<T>,
-  ): Promise<T | null> {
-    // Initialize query builder
-    const query = this.adapter.table(this.tableName);
-
-    // If the options is a number, we assume that the user want to find based on the primary key.
-    // Otherwise, query the columns.
-    if (typeof options === "number") {
-      query.where(this.primaryKey, "=", options);
-    } else if (typeof options === "object") {
-      for (const [column, value] of Object.entries(options)) {
-        // TODO: allow user to use different operator
-        query.where(column, value);
-      }
-    }
-
-    // Execute query
-    const result = await query.first().execute();
-
-    // If the record is not found, return null.
-    // Otherwise, return the model instance with the data
-    if (result.length < 1) {
-      return null;
-    } else {
-      return this.createModel(result[0], true);
-    }
-  }
-
-  /**
-   * Search for multiple instance
-   * 
-   * @param options query options
-   */
-  public static async find<T extends Model>(
     this: ExtendedModel<T>,
     options?: FindOptions<T>,
-  ): Promise<T[]> {
+  ): Promise<T | null> {
     // Initialize query builder
-    const query = this.adapter.table(this.tableName);
+    const query = this.adapter.table(getTableName(this));
 
     // Add where clauses (if exists)
     if (options && options.where) {
@@ -129,10 +78,171 @@ export abstract class Model {
       query.offset(options.offset);
     }
 
-    // Execute query
-    const result = await query.execute();
+    if (options && options.includes) {
+      const relations = getModelRelations(this, options.includes);
+      for (const relation of relations) {
+        const tableName = getTableName(relation.getModel());
 
-    return this.createModels(result, true);
+        if (relation.type === RelationType.HasMany) {
+          const columnA = tableName + "." + relation.targetColumn;
+          const columnB = getTableName(this) + ".id";
+          query.leftJoin(tableName, columnA, columnB);
+        } else if (relation.type === RelationType.BelongsTo) {
+          const columnA = tableName + ".id";
+          const columnB = getTableName(this) + "." + relation.targetColumn;
+          query.leftJoin(tableName, columnA, columnB);
+        }
+
+        const columnNames = getModelColumns(relation.getModel())
+          .map((item): [string, string] => [
+            tableName + "." + item.name,
+            tableName + "__" + item.name,
+          ]);
+        query.select(...columnNames);
+      }
+    }
+
+    // Select all columns
+    const columnNames = getModelColumns(this)
+      .map((item): [string, string] => [
+        getTableName(this) + "." + item.name,
+        getTableName(this) + "__" + item.name,
+      ]);
+    query.select(...columnNames);
+
+    let result: any[];
+
+    // If the `includes` option contains a "Has Many" relationship,
+    // we need to get the record primary key first, then, we can fetch
+    // the whole data.
+    if (
+      options && options.includes &&
+      getModelRelations(this, options.includes).find((item) =>
+        item.type === RelationType.HasMany
+      )
+    ) {
+      // Get the distinct query
+      const alias = quote("distinctAlias", this.adapter.dialect);
+      const primaryColumn = quote(
+        getTableName(this) + "__id",
+        this.adapter.dialect,
+      );
+      const { text, values } = query.toSQL();
+      const queryString = `SELECT ${alias}.${primaryColumn} FROM (${
+        text.slice(0, text.length - 1)
+      }) ${alias} LIMIT 1;`;
+
+      // Execute the distinct query
+      const recordIds = await this.adapter.query<any>(
+        queryString,
+        values,
+      );
+
+      // If the record found, fetch the relations
+      if (recordIds.length === 1) {
+        result = await query
+          .where("id", recordIds[0][getTableName(this) + "__id"])
+          .execute();
+      } else {
+        return null;
+      }
+    } else {
+      result = await query.first().execute();
+    }
+
+    // If the record is not found, return null.
+    // Otherwise, return the model instance with the data
+    if (result.length < 1) {
+      return null;
+    } else {
+      let record: { [key: string]: any };
+
+      if (options && Array.isArray(options.includes)) {
+        record = mapRelationalResult(this, options.includes, result)[0];
+      } else {
+        record = extractRelationalRecord(result[0], getTableName(this));
+      }
+
+      return createModel(this, record, true);
+    }
+  }
+
+  /**
+   * Search for multiple instance
+   * 
+   * @param options query options
+   */
+  public static async find<T extends Model>(
+    this: ExtendedModel<T>,
+    options?: FindOptions<T>,
+  ): Promise<T[]> {
+    // Initialize query builder
+    const query = this.adapter.table(getTableName(this));
+
+    // Add where clauses (if exists)
+    if (options && options.where) {
+      for (const [column, value] of Object.entries(options.where)) {
+        // TODO: allow user to use different operator
+        query.where(column, value);
+      }
+    }
+
+    // Add maximum number of records (if exists)
+    if (options && options.limit) {
+      query.limit(options.limit);
+    }
+
+    // Add offset (if exists)
+    if (options && options.offset) {
+      query.offset(options.offset);
+    }
+
+    if (options && options.includes) {
+      const relations = getModelRelations(this, options.includes);
+      for (const relation of relations) {
+        const tableName = getTableName(relation.getModel());
+
+        if (relation.type === RelationType.HasMany) {
+          const columnA = tableName + "." + relation.targetColumn;
+          const columnB = getTableName(this) + ".id";
+          query.leftJoin(tableName, columnA, columnB);
+        } else if (relation.type === RelationType.BelongsTo) {
+          const columnA = tableName + ".id";
+          const columnB = getTableName(this) + "." + relation.targetColumn;
+          query.leftJoin(tableName, columnA, columnB);
+        }
+
+        const columnNames = getModelColumns(relation.getModel())
+          .map((item): [string, string] => [
+            tableName + "." + item.name,
+            tableName + "__" + item.name,
+          ]);
+        query.select(...columnNames);
+      }
+    }
+
+    // Select all columns
+    const columnNames = getModelColumns(this)
+      .map((item): [string, string] => [
+        getTableName(this) + "." + item.name,
+        getTableName(this) + "__" + item.name,
+      ]);
+    query.select(...columnNames);
+
+    // Execute query
+    const result = await query.execute<any>();
+
+    let records: any[];
+
+    if (options && Array.isArray(options.includes)) {
+      records = mapRelationalResult(this, options.includes, result);
+    } else {
+      records = result.map((item) => {
+        return extractRelationalRecord(item, getTableName(this));
+      });
+    }
+
+    return createModels(this, records, true);
   }
 
   /**
@@ -143,11 +253,11 @@ export abstract class Model {
     const modelClass = <typeof Model> this.constructor;
 
     // Normalize fields data
-    this._normalize();
+    normalizeModel(this);
 
     // If the primary key is defined, we assume that the user want to update the record.
     // Otherwise, create a new record to the database.
-    if (this._isSaved) {
+    if (this.isSaved()) {
       const { isDirty, changedFields } = this._compareWithOriginal();
 
       if (isDirty) {
@@ -156,7 +266,7 @@ export abstract class Model {
 
         // Save record to the database
         await modelClass.adapter
-          .table(modelClass.tableName)
+          .table(getTableName(modelClass))
           .where(modelClass.primaryKey, this.id)
           .update(data)
           .execute();
@@ -167,7 +277,7 @@ export abstract class Model {
 
       // Save record to the database
       const query = modelClass.adapter
-        .table(modelClass.tableName)
+        .table(getTableName(modelClass))
         .insert(data);
 
       if (modelClass.adapter.dialect === "postgres") {
@@ -187,10 +297,10 @@ export abstract class Model {
 
       // Set the primary key
       this.id = lastInsertedId;
-      this._isSaved = true;
     }
 
-    this._original = this._clone();
+    setSaved(this, true);
+    saveOriginalValue(this);
 
     return this;
   }
@@ -203,10 +313,12 @@ export abstract class Model {
     const modelClass = <typeof Model> this.constructor;
 
     // Delete from the database
-    await modelClass.adapter.table(modelClass.tableName)
+    await modelClass.adapter.table(getTableName(modelClass))
       .where(modelClass.primaryKey, this.id)
       .delete()
       .execute();
+
+    setSaved(this, false);
   }
 
   /**
@@ -239,10 +351,10 @@ export abstract class Model {
     data: Partial<T> | Partial<T>[],
   ): Promise<T | T[]> {
     if (Array.isArray(data)) {
-      const models = this.createModels<T>(data);
+      const models = createModels<T>(this, data);
       return this._bulkSave<T>(models);
     } else {
-      const model = this.createModel<T>(data);
+      const model = createModel<T>(this, data);
       await model.save();
       return model;
     }
@@ -257,7 +369,7 @@ export abstract class Model {
 
     // Execute query
     const query = this.adapter
-      .table(this.tableName)
+      .table(getTableName(this))
       .insert(values);
 
     if (this.adapter.dialect === "postgres") {
@@ -282,8 +394,7 @@ export abstract class Model {
     );
     models.forEach((model, index) => {
       model.id = ids[index];
-      model._isSaved = true;
-      model._original = model._clone();
+      saveOriginalValue(model);
     });
 
     return models;
@@ -297,7 +408,7 @@ export abstract class Model {
     id: number,
   ): Promise<void> {
     // TODO: Add options to query using where clause
-    await this.adapter.table(this.tableName)
+    await this.adapter.table(getTableName(this))
       .where(this.primaryKey, id)
       .delete()
       .execute();
@@ -313,7 +424,7 @@ export abstract class Model {
     options: FindOptions<T>,
   ): Promise<void> {
     // Initialize query builder
-    const query = this.adapter.table(this.tableName);
+    const query = this.adapter.table(getTableName(this));
 
     // Add where clauses (if exists)
     if (options && options.where) {
@@ -349,7 +460,7 @@ export abstract class Model {
       : "TRUNCATE";
 
     // Surround table name with quote
-    const tableName = quote(this.tableName, this.adapter.dialect);
+    const tableName = quote(getTableName(this), this.adapter.dialect);
 
     await this.adapter.query(`${truncateCommand} ${tableName};`);
   }
@@ -358,100 +469,9 @@ export abstract class Model {
   // TRANSFORM OBJECT TO MODEL CLASS
   // --------------------------------------------------------------------------------
 
-  /**
-   * Transform single plain JavaScript object to Model class
-   * 
-   * @param data List of plain JavaScript objects
-   * @param fromDatabase Check wether the data is saved to the database or not
-   */
-  private static createModel<T>(
-    data: { [key: string]: any },
-    fromDatabase: boolean = false,
-  ): T {
-    const model = Object.create(this.prototype);
-    const result = Object.assign(model, data, { _isSaved: fromDatabase });
-
-    // Normalize input data
-    result._normalize();
-
-    // Save the original values
-    result._original = result._clone();
-
-    return result;
-  }
-
-  /**
-   * Transform multiple plain JavaScript objects to Model classes
-   * 
-   * @param data List of plain JavaScript objects
-   * @param fromDatabase Check wether the data is saved to the database or not
-   */
-  private static createModels<T>(
-    data: { [key: string]: any }[],
-    fromDatabase: boolean = false,
-  ): T[] {
-    return data.map((item) => this.createModel(item, fromDatabase));
-  }
-
   // --------------------------------------------------------------------------------
   // PRIVATE HELPER METHODS
   // --------------------------------------------------------------------------------
-
-  /**
-   * Get all columns information
-   */
-  private _getColumns(): ColumnDescription[] {
-    if (!Reflect.hasMetadata("db:columns", this)) {
-      throw new Error("A model should have at least one column!");
-    }
-
-    return Reflect.getMetadata("db:columns", this);
-  }
-
-  /**
-   * Normalize model value
-   */
-  private _normalize() {
-    const columns = this._getColumns();
-
-    for (const column of columns) {
-      (this as any)[column.propertyKey] = this._normalizeValue(
-        (this as any)[column.propertyKey],
-        column.type,
-      );
-    }
-  }
-
-  /**
-   * Normalize data with the expected type
-   * 
-   * @param value the value to be normalized
-   * @param type the expected data type
-   */
-  private _normalizeValue(value: any, type: FieldType): any {
-    if (typeof value === "undefined" || value === null) {
-      return null;
-    } else if (type === FieldType.Date && !(value instanceof Date)) {
-      return new Date(value);
-    } else if (type === FieldType.String && typeof value !== "string") {
-      return `${value}`;
-    } else if (type === FieldType.Number && typeof value !== "number") {
-      return parseInt(value);
-    } else if (type === FieldType.Boolean && typeof value !== "boolean") {
-      return Boolean(value);
-    } else {
-      return value;
-    }
-  }
-
-  /**
-   * Clone the instance, used for comparing with the original instance
-   */
-  private _clone() {
-    const clone = Object.assign({}, this);
-    Object.setPrototypeOf(clone, Model.prototype);
-    return clone;
-  }
 
   /**
    * Compare the current values with the last saved data
@@ -460,17 +480,19 @@ export abstract class Model {
     isDirty: boolean;
     changedFields: string[];
   } {
-    // If this._original is not defined, it means the object is not saved to the database yet which is dirty
-    if (this._original) {
+    const originalValue = getOriginalValue(this);
+
+    // If there's is no original value, the object is not saved to the database yet
+    // which means it's dirty.
+    if (originalValue) {
       let isDirty = false;
       const changedFields: string[] = [];
 
       // Loop for the fields, if one of the fields doesn't match, the object is dirty
-      for (const column of this._getColumns()) {
+      for (const column of getModelColumns(this.constructor)) {
         const value = (this as any)[column.propertyKey];
-        const originalValue = (this._original as any)[column.propertyKey];
 
-        if (value !== originalValue) {
+        if (value !== originalValue[column.name]) {
           isDirty = true;
           changedFields.push(column.propertyKey);
         }
@@ -489,31 +511,38 @@ export abstract class Model {
    */
   public values(columns?: string[]): { [key: string]: any } {
     const selectedColumns = columns
-      ? this._getColumns().filter((item) => columns.includes(item.propertyKey))
-      : this._getColumns();
+      ? getModelColumns(this.constructor)
+        .filter((item) => columns.includes(item.propertyKey))
+      : getModelColumns(this.constructor);
 
     const data: { [key: string]: any } = {};
 
     for (const column of selectedColumns) {
       const value = (this as any)[column.propertyKey];
 
-      if (typeof value === "undefined") {
-        // If the value is undefined, check the default value. Then, if the column
-        // is nullable, set it to null. Otherwise, throw an error.
-        if (typeof column.default !== "undefined") {
-          // If the default value is a function, execute it and get the returned value
-          data[column.name] = typeof column.default === "function"
-            ? column.default()
-            : column.default;
-        } else if (column.nullable === true) {
-          data[column.name] = null;
-        } else {
-          throw new Error(
-            `Field '${column.propertyKey}' cannot be empty!'`,
-          );
+      if (column.isPrimaryKey) {
+        if (this.isSaved()) {
+          data[column.name] = value;
         }
       } else {
-        data[column.name] = (this as any)[column.propertyKey];
+        if (typeof value === "undefined") {
+          // If the value is undefined, check the default value. Then, if the column
+          // is nullable, set it to null. Otherwise, throw an error.
+          if (typeof column.default !== "undefined") {
+            // If the default value is a function, execute it and get the returned value
+            data[column.name] = typeof column.default === "function"
+              ? column.default()
+              : column.default;
+          } else if (column.isNullable === true) {
+            data[column.name] = null;
+          } else {
+            throw new Error(
+              `Field '${column.propertyKey}' cannot be empty!'`,
+            );
+          }
+        } else {
+          data[column.name] = (this as any)[column.propertyKey];
+        }
       }
     }
 

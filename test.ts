@@ -6,8 +6,10 @@ import "./src/adapters/sqlite_test.ts";
 import "./src/adapters/postgres_test.ts";
 import "./src/adapters/mysql_test.ts";
 import "./src/models/model_test.ts";
+import "./src/utils/models_test.ts";
 import "./src/adapters/adapter_test.ts";
 import "./src/migrations/schema_test.ts";
+import "./src/models/fields_test.ts";
 
 // Unit tests
 import "./src/utils/date_test.ts";

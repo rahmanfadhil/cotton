@@ -90,7 +90,7 @@ export interface QueryDescription {
   type: QueryType;
 
   /** Table columns that are going to be fetched */
-  columns: string[];
+  columns: (string | [string, string])[];
 
   /** Query values for INSERT and UPDATE */
   values?: QueryValues | QueryValues[];
@@ -254,7 +254,7 @@ export class QueryBuilder {
    * 
    * @param columns Table columns to select
    */
-  public select(...columns: string[]): QueryBuilder {
+  public select(...columns: (string | [string, string])[]): QueryBuilder {
     // Merge the `columns` array with `this.description.columns` without any duplicate.
     columns.forEach((column) => {
       if (!this.description.columns.includes(column)) {
@@ -414,12 +414,21 @@ export class QueryBuilder {
       throw new Error("Cannot run query, adapter is not provided!");
     }
 
+    const { text, values } = this.toSQL();
+
+    return await currentAdapter.query(text, values);
+  }
+
+  /**
+   * Get the actual SQL query string. All the data are replaced by a placeholder.
+   * So, you need to also bind the values in order to execute the query.
+   */
+  public toSQL() {
     const { text, values } = new QueryCompiler(
       this.description,
       this.adapter.dialect,
     ).compile();
-
-    return await currentAdapter.query(text, values);
+    return { text, values };
   }
 
   // --------------------------------------------------------------------------------

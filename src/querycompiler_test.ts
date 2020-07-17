@@ -119,29 +119,93 @@ testQueryCompiler("`where` with date value", {
 });
 
 testQueryCompiler("`where` select columns", {
-  wheres: [{
-    column: "email",
-    value: "a@b.com",
-    operator: "=",
-    type: WhereType.Default,
-  }],
   columns: ["id", "email"],
 }, {
   mysql: {
+    text: "SELECT `users`.`id`, `users`.`email` FROM `users`;",
+    values: [],
+  },
+  sqlite: {
+    text: "SELECT `users`.`id`, `users`.`email` FROM `users`;",
+    values: [],
+  },
+  postgres: {
+    text: 'SELECT "users"."id", "users"."email" FROM "users";',
+    values: [],
+  },
+});
+
+testQueryCompiler("`where` select columns with alias", {
+  columns: [["users.id", "users_id"], ["posts.title", "posts_title"]],
+}, {
+  mysql: {
     text:
-      "SELECT `users`.`id`, `users`.`email` FROM `users` WHERE `users`.`email` = ?;",
-    values: ["a@b.com"],
+      "SELECT `users`.`id` AS users_id, `posts`.`title` AS posts_title FROM `users`;",
+    values: [],
   },
   sqlite: {
     text:
-      "SELECT `users`.`id`, `users`.`email` FROM `users` WHERE `users`.`email` = ?;",
-    values: ["a@b.com"],
+      "SELECT `users`.`id` AS users_id, `posts`.`title` AS posts_title FROM `users`;",
+    values: [],
   },
   postgres: {
     text:
-      'SELECT "users"."id", "users"."email" FROM "users" WHERE "users"."email" = $1;',
-    values: ["a@b.com"],
+      'SELECT "users"."id" AS users_id, "posts"."title" AS posts_title FROM "users";',
+    values: [],
   },
+});
+
+Deno.test("QueryCompiler: select columns with alias must have two values", () => {
+  assertThrows(
+    () => {
+      new QueryCompiler({
+        type: QueryType.Select,
+        wheres: [],
+        columns: [["users.id", "users_id"], ["posts.title"] as any],
+        orders: [],
+        returning: [],
+        joins: [],
+        tableName: "`users`",
+      }, "" as any).compile();
+    },
+    Error,
+    "Alias must have two values!",
+  );
+
+  assertThrows(
+    () => {
+      new QueryCompiler({
+        type: QueryType.Select,
+        wheres: [],
+        columns: [
+          ["users.id", "users_id"],
+          ["posts.title", "posts_title", "invalid"] as any,
+        ],
+        orders: [],
+        returning: [],
+        joins: [],
+        tableName: "`users`",
+      }, "" as any).compile();
+    },
+    Error,
+    "Alias must have two values!",
+  );
+
+  assertThrows(
+    () => {
+      new QueryCompiler({
+        type: QueryType.Select,
+        wheres: [],
+        columns: [["users.id", "users_id"], [] as any],
+        orders: [],
+        returning: [],
+        joins: [],
+        tableName: "`users`",
+      }, "" as any).compile();
+    },
+    Error,
+    "Alias must have two values!",
+  );
 });
 
 testQueryCompiler("`where` in", {

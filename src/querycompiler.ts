@@ -406,7 +406,19 @@ export class QueryCompiler {
     }
   }
 
-  private getColumnName(column: string): string {
+  private getColumnName(column: string | string[]): string {
+    if (Array.isArray(column)) {
+      if (column.length !== 2) {
+        throw new Error("Alias must have two values!");
+      }
+
+      return this.normalizeColumnName(column[0]) + " AS " + column[1];
+    } else {
+      return this.normalizeColumnName(column);
+    }
+  }
+
+  private normalizeColumnName(column: string) {
     const data = column.split(".");
 
     // If the column name contains a dot, we assume that the

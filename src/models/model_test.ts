@@ -24,7 +24,7 @@ Deno.test("Model: values() -> default value", () => {
 
 Deno.test("Model: values() -> nullable", () => {
   class User extends Model {
-    @Field({ nullable: true })
+    @Field({ isNullable: true })
     name!: string;
   }
 
@@ -51,6 +51,7 @@ Deno.test("Model: values() -> property different than name", () => {
   const user = new User();
   user.name = "john";
   assertEquals(user.values(), { full_name: "john" });
+  assertEquals(user.values(["name"]), { full_name: "john" });
 });
 
 // --------------------------------------------------------------------------------
@@ -140,7 +141,7 @@ testDB("Model: findOne()", async (client) => {
   client.addModel(User);
 
   // Find by id
-  let user = await User.findOne(2);
+  let user = await User.findOne({ where: { id: 2 } });
   assertEquals(user instanceof User, true);
   assertEquals(user?.id, 2);
   assertEquals(user?.email, "b@c.com");
@@ -148,7 +149,7 @@ testDB("Model: findOne()", async (client) => {
   assertEquals(user?.age, 16);
 
   // Find by columns
-  user = await User.findOne({ email: "c@d.com" });
+  user = await User.findOne({ where: { email: "c@d.com" } });
   assertEquals(user instanceof User, true);
   assertEquals(user?.id, 3);
   assertEquals(user?.email, "c@d.com");
@@ -170,11 +171,6 @@ testDB("Model: save()", async (client) => {
   user.created_at = date;
   await user.save();
 
-  assertEquals(user.id, 1);
-  assertEquals(user.email, "a@b.com");
-  assertEquals(user.age, 16);
-  assertEquals(user.created_at, date);
-
   users = await User.find();
   assertEquals(users.length, 1);
   assertEquals(users[0] instanceof User, true);
@@ -183,10 +179,10 @@ testDB("Model: save()", async (client) => {
   assertEquals(users[0].age, 16);
   assertEquals(users[0].created_at, date);
 
+  user = await User.findOne({ where: { id: 1 } }) as User;
   user.email = "b@c.com";
   await user.save();
 
-  user = await User.findOne(1) as User;
   assertEquals(user.email, "b@c.com");
 });
 
@@ -272,7 +268,7 @@ testDB("Model: remove()", async (client) => {
   });
   await user.remove();
 
-  assertEquals(await User.findOne(1), null);
+  assertEquals(await User.findOne({ where: { id: 1 } }), null);
 });
 
 testDB("Model: isSaved()", async (client) => {
@@ -309,7 +305,9 @@ testDB("Model: isDirty()", async (client) => {
 
   assertEquals(user.isDirty(), false);
 
-  user = await User.findOne(1) as User;
+  user = await User.findOne({ where: { id: 1 } }) as User;
+
+  console.log((user as any)._compareWithOriginal());
 
   assertEquals(user.isDirty(), false);
 

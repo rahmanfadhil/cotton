@@ -24,25 +24,29 @@ Deno.test("Field: basic field", () => {
       select: true,
       name: "name",
       type: FieldType.String,
-      nullable: false,
+      isPrimaryKey: false,
+      isNullable: false,
     }, {
       propertyKey: "age",
       select: true,
       name: "age",
       type: FieldType.Number,
-      nullable: false,
+      isPrimaryKey: false,
+      isNullable: false,
     }, {
       propertyKey: "is_active",
       select: true,
       name: "is_active",
       type: FieldType.Boolean,
-      nullable: false,
+      isPrimaryKey: false,
+      isNullable: false,
     }, {
       propertyKey: "created_at",
       select: true,
       name: "created_at",
       type: FieldType.Date,
-      nullable: false,
+      isPrimaryKey: false,
+      isNullable: false,
     }],
   );
 });
@@ -73,7 +77,8 @@ Deno.test("Field: custom database column name", () => {
       select: true,
       name: "full_name",
       type: FieldType.String,
-      nullable: false,
+      isPrimaryKey: false,
+      isNullable: false,
     }],
   );
 });
@@ -103,28 +108,32 @@ Deno.test("Field: default value", () => {
       default: "john",
       name: "name",
       type: FieldType.String,
-      nullable: false,
+      isPrimaryKey: false,
+      isNullable: false,
     }, {
       propertyKey: "age",
       select: true,
       default: 16,
       name: "age",
       type: FieldType.String,
-      nullable: false,
+      isPrimaryKey: false,
+      isNullable: false,
     }, {
       propertyKey: "is_active",
       select: true,
       default: true,
       name: "is_active",
       type: FieldType.String,
-      nullable: false,
+      isPrimaryKey: false,
+      isNullable: false,
     }, {
       propertyKey: "created_at",
       select: true,
       default: newDate,
       name: "created_at",
       type: FieldType.Date,
-      nullable: false,
+      isPrimaryKey: false,
+      isNullable: false,
     }],
   );
 });
@@ -142,7 +151,8 @@ Deno.test("Field: custom type", () => {
       select: true,
       name: "age",
       type: FieldType.Number,
-      nullable: false,
+      isPrimaryKey: false,
+      isNullable: false,
     }],
   );
 });
@@ -160,14 +170,15 @@ Deno.test("Field: explicit deselect", () => {
       select: false,
       name: "name",
       type: FieldType.String,
-      nullable: false,
+      isPrimaryKey: false,
+      isNullable: false,
     }],
   );
 });
 
 Deno.test("Field: nullable", () => {
   class User {
-    @Field({ nullable: true })
+    @Field({ isNullable: true })
     name!: string;
   }
 
@@ -178,7 +189,8 @@ Deno.test("Field: nullable", () => {
       select: true,
       name: "name",
       type: FieldType.String,
-      nullable: true,
+      isPrimaryKey: false,
+      isNullable: true,
     }],
   );
 });
