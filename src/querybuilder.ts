@@ -419,6 +419,10 @@ export class QueryBuilder {
     return await currentAdapter.query(text, values);
   }
 
+  /**
+   * Get the actual SQL query string. All the data are replaced by a placeholder.
+   * So, you need to also bind the values in order to execute the query.
+   */
   public toSQL() {
     const { text, values } = new QueryCompiler(
       this.description,
