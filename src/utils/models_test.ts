@@ -5,16 +5,17 @@ import {
   createModel,
   createModels,
   normalizeModel,
-  saveOriginalValue,
-  getOriginalValue,
+  getOriginal,
   mapRelationalResult,
   getTableName,
-  getSaved,
+  isSaved,
   setSaved,
+  getValues,
+  compareWithOriginal,
 } from "../utils/models.ts";
 import { Field, Relation, RelationType, FieldType } from "../models/fields.ts";
 import { Model } from "../models/model.ts";
-import { assertEquals, assert } from "../../testdeps.ts";
+import { assertEquals, assert, assertThrows } from "../../testdeps.ts";
 import { formatDate } from "./date.ts";
 
 const toUser = () => User;
@@ -136,14 +137,14 @@ Deno.test("createModel: should create a model from database", () => {
   assertEquals(user.email, "a@b.com");
   assertEquals(user.age, 16);
   assertEquals(user.products, []);
-  assert(user.isSaved());
+  assert(isSaved(user));
 
   const product = createModel(Product, { id: 2, title: "Spoon" }, true);
   assert(product instanceof Product);
   assertEquals(product.id, 2);
   assertEquals(product.title, "Spoon");
   assertEquals(product.user, null);
-  assert(product.isSaved());
+  assert(isSaved(product));
 });
 
 Deno.test("createModel: should create a model not from database", () => {
@@ -152,13 +153,13 @@ Deno.test("createModel: should create a model not from database", () => {
   assertEquals(user.email, "a@b.com");
   assertEquals(user.age, 16);
   assertEquals(user.products, []);
-  assertEquals(user.isSaved(), false);
+  assertEquals(isSaved(user), false);
 
   const product = createModel(Product, { title: "Spoon" });
   assert(product instanceof Product);
   assertEquals(product.title, "Spoon");
   assertEquals(product.user, null);
-  assertEquals(product.isSaved(), false);
+  assertEquals(isSaved(product), false);
 });
 
 Deno.test("createModel: should create a model with relationship", () => {
@@ -184,7 +185,7 @@ Deno.test("createModel: should create a model with relationship", () => {
     user.products.map((item) => item instanceof Product),
     [true, true],
   );
-  assert(user.isSaved());
+  assert(isSaved(user));
 
   const product = createModel(Product, {
     id: 2,
@@ -202,7 +203,7 @@ Deno.test("createModel: should create a model with relationship", () => {
   assertEquals(product.user.id, 1);
   assertEquals(product.user.email, "a@b.com");
   assertEquals(product.user.age, 16);
-  assert(product.isSaved());
+  assert(isSaved(product));
 });
 
 Deno.test("createModels: should create models not from database", () => {
@@ -213,7 +214,7 @@ Deno.test("createModels: should create models not from database", () => {
   assert(Array.isArray(users));
   assertEquals(users.length, 2);
   assertEquals(users.map((item) => item instanceof User), [true, true]);
-  assertEquals(users.map((item) => item.isSaved()), [false, false]);
+  assertEquals(users.map((item) => isSaved(item)), [false, false]);
 });
 
 Deno.test("createModels: should create models from database", () => {
@@ -224,7 +225,7 @@ Deno.test("createModels: should create models from database", () => {
   assert(Array.isArray(users));
   assertEquals(users.length, 2);
   assertEquals(users.map((item) => item instanceof User), [true, true]);
-  assertEquals(users.map((item) => item.isSaved()), [true, true]);
+  assertEquals(users.map((item) => isSaved(item)), [true, true]);
 });
 
 Deno.test("normalizeModel", () => {
@@ -256,15 +257,6 @@ Deno.test("normalizeModel", () => {
   assertEquals(post.likes, 16);
   assertEquals(post.is_published, true);
   assertEquals(post.published_at, date);
-});
-
-Deno.test("saveOriginalValue and getOriginalValue", () => {
-  const user = new User();
-  user.email = "a@b.com";
-  user.age = 16;
-  assertEquals(getOriginalValue(user), undefined);
-  saveOriginalValue(user);
-  assertEquals(getOriginalValue(user), { email: "a@b.com", age: 16 });
 });
 
 Deno.test("mapRelationalResult", () => {
@@ -365,11 +357,73 @@ Deno.test("getTableName: should get a custom table name", () => {
   assertEquals(getTableName(Post), "my_posts");
 });
 
-Deno.test("getSaved and setSaved", () => {
+Deno.test("isSaved, setSaved, getOriginal, and compareWithOriginal", () => {
   const user = new User();
-  assertEquals(getSaved(user), false);
+  user.id = 1;
+  user.email = "a@b.com";
+  user.age = 16;
+  assertEquals(isSaved(user), false);
+  assertEquals(getOriginal(user), undefined);
+  assertEquals(compareWithOriginal(user).isDirty, true);
+  assertEquals(compareWithOriginal(user).changedFields, []);
+
   setSaved(user, true);
-  assertEquals(getSaved(user), true);
+  assertEquals(isSaved(user), true);
+  assertEquals(getOriginal(user), { id: 1, email: "a@b.com", age: 16 });
+  assertEquals(compareWithOriginal(user).isDirty, false);
+  assertEquals(compareWithOriginal(user).changedFields, []);
+
+  user.email = "b@c.com";
+  assertEquals(isSaved(user), true);
+  assertEquals(getOriginal(user), { id: 1, email: "a@b.com", age: 16 });
+  assertEquals(compareWithOriginal(user).isDirty, true);
+  assertEquals(compareWithOriginal(user).changedFields, ["email"]);
+
   setSaved(user, false);
-  assertEquals(getSaved(user), false);
+  assertEquals(isSaved(user), false);
+  assertEquals(getOriginal(user), undefined);
+  assertEquals(compareWithOriginal(user).isDirty, true);
+  assertEquals(compareWithOriginal(user).changedFields, []);
+});
+
+Deno.test("getValues() -> default value", () => {
+  class User extends Model {
+    @Field({ default: "john" })
+    name!: string;
+  }
+
+  const user = new User();
+  assertEquals(getValues(user), { name: "john" });
+});
+
+Deno.test("getValues() -> nullable", () => {
+  class User extends Model {
+    @Field({ isNullable: true })
+    name!: string;
+  }
+
+  const user = new User();
+  assertEquals(getValues(user), { name: null });
+});
+
+Deno.test("getValues() -> nullable error", () => {
+  class User extends Model {
+    @Field()
+    name!: string;
+  }
+
+  const user = new User();
+  assertThrows(() => getValues(user), Error, "Field 'name' cannot be empty!");
+});
+
+Deno.test("getValues() -> property different than name", () => {
+  class User extends Model {
+    @Field({ name: "full_name" })
+    name!: string;
+  }
+
+  const user = new User();
+  user.name = "john";
+  assertEquals(getValues(user), { full_name: "john" });
+  assertEquals(getValues(user, ["name"]), { full_name: "john" });
 });

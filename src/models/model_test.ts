@@ -9,52 +9,6 @@ import {
 import { formatDate } from "../utils/date.ts";
 
 // --------------------------------------------------------------------------------
-// UNIT TESTS
-// --------------------------------------------------------------------------------
-
-Deno.test("Model: values() -> default value", () => {
-  class User extends Model {
-    @Field({ default: "john" })
-    name!: string;
-  }
-
-  const user = new User();
-  assertEquals(user.values(), { name: "john" });
-});
-
-Deno.test("Model: values() -> nullable", () => {
-  class User extends Model {
-    @Field({ isNullable: true })
-    name!: string;
-  }
-
-  const user = new User();
-  assertEquals(user.values(), { name: null });
-});
-
-Deno.test("Model: values() -> nullable error", () => {
-  class User extends Model {
-    @Field()
-    name!: string;
-  }
-
-  const user = new User();
-  assertThrows(() => user.values(), Error, "Field 'name' cannot be empty!");
-});
-
-Deno.test("Model: values() -> property different than name", () => {
-  class User extends Model {
-    @Field({ name: "full_name" })
-    name!: string;
-  }
-
-  const user = new User();
-  user.name = "john";
-  assertEquals(user.values(), { full_name: "john" });
-  assertEquals(user.values(["name"]), { full_name: "john" });
-});
-
-// --------------------------------------------------------------------------------
 // INTEGRATION TESTS
 // --------------------------------------------------------------------------------
 
@@ -269,66 +223,6 @@ testDB("Model: remove()", async (client) => {
   await user.remove();
 
   assertEquals(await User.findOne({ where: { id: 1 } }), null);
-});
-
-testDB("Model: isSaved()", async (client) => {
-  client.addModel(User);
-
-  let user = await User.insert({
-    email: "a@b.com",
-    created_at: new Date("5 June, 2020"),
-    age: 16,
-  });
-
-  assertEquals(user.isSaved(), true);
-
-  user = new User();
-  user.email = "a@b.com";
-  user.created_at = new Date("5 June, 2020");
-  user.age = 16;
-
-  assertEquals(user.isSaved(), false);
-
-  await user.save();
-
-  assertEquals(user.isSaved(), true);
-});
-
-testDB("Model: isDirty()", async (client) => {
-  client.addModel(User);
-
-  let user = await User.insert({
-    email: "a@b.com",
-    created_at: new Date("5 June, 2020"),
-    age: 16,
-  });
-
-  assertEquals(user.isDirty(), false);
-
-  user = await User.findOne({ where: { id: 1 } }) as User;
-
-  console.log((user as any)._compareWithOriginal());
-
-  assertEquals(user.isDirty(), false);
-
-  user.email = "c@d.com";
-
-  assertEquals(user.isDirty(), true);
-
-  user = new User();
-  user.email = "a@b.com";
-  user.created_at = new Date("5 June, 2020");
-  user.age = 16;
-
-  assertEquals(user.isDirty(), true);
-
-  await user.save();
-
-  assertEquals(user.isDirty(), false);
-
-  user.email = "c@d.com";
-
-  assertEquals(user.isDirty(), true);
 });
 
 testDB("Model: delete()", async (client) => {

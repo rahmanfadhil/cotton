@@ -7,11 +7,11 @@ import {
 } from "../models/fields.ts";
 import { ExtendedModel, Model } from "../models/model.ts";
 
-/**
- * All models' original values
- */
-const originals = new WeakMap();
-const isSaved = new WeakMap();
+/** All models' original values */
+const originalValues = new WeakMap();
+
+/** List of all saved models */
+const savedModels = new WeakMap();
 
 /**
  * Get all columns from a model
@@ -119,9 +119,6 @@ export function createModel<T>(
   // Set the isSaved value
   setSaved(result, fromDatabase);
 
-  // Save the original values
-  saveOriginalValue(result);
-
   return result;
 }
 
@@ -181,31 +178,28 @@ export function normalizeModel<T extends Model>(model: T): T {
 }
 
 /**
- * Save the original value of a model.
- *
- * @param model Model
- */
-export function saveOriginalValue<T extends Model>(model: T): void {
-  originals.set(model, model.values());
-}
-
-/**
  * Get the original value of a model.
  */
-export function getOriginalValue<T extends Model>(model: T): {
+export function getOriginal<T extends Model>(model: T): {
   [key: string]: any;
 } | undefined {
-  return originals.get(model);
+  return originalValues.get(model);
 }
 
 /**
- * Update the `isSaved` status of a model.
+ * Update the `isSaved` status of a model and save the original value.
  *
  * @param model the model you want to change the status
  * @param value the status of the model (saved or not saved)
  */
 export function setSaved<T extends Model>(model: T, value: boolean): void {
-  isSaved.set(model, value);
+  savedModels.set(model, value);
+
+  if (value) {
+    originalValues.set(model, getValues(model));
+  } else {
+    originalValues.delete(model);
+  }
 }
 
 /**
@@ -213,8 +207,8 @@ export function setSaved<T extends Model>(model: T, value: boolean): void {
  *
  * @param model the model you want to check the status
  */
-export function getSaved<T extends Model>(model: T): boolean {
-  return isSaved.get(model) ? true : false;
+export function isSaved<T extends Model>(model: T): boolean {
+  return savedModels.get(model) ? true : false;
 }
 
 /**
@@ -287,4 +281,89 @@ export function getTableName(modelClass: typeof Model): string {
   return modelClass.tableName
     ? modelClass.tableName
     : modelClass.name.toLowerCase() + "s";
+}
+
+/**
+ * Compare the current values against the last saved data
+ *
+ * @param model the model you want to compare
+ */
+export function compareWithOriginal<T extends Model>(model: T): {
+  isDirty: boolean;
+  changedFields: string[];
+} {
+  const originalValue = getOriginal(model);
+
+  // If there's is no original value, the object is not saved to the database yet
+  // which means it's dirty.
+  if (originalValue) {
+    let isDirty = false;
+    const changedFields: string[] = [];
+
+    // Loop for the fields, if one of the fields doesn't match, the object is dirty
+    for (const column of getModelColumns(model.constructor)) {
+      const value = (model as any)[column.propertyKey];
+
+      if (value !== originalValue[column.name]) {
+        isDirty = true;
+        changedFields.push(column.propertyKey);
+      }
+    }
+
+    return { isDirty, changedFields };
+  } else {
+    return { isDirty: true, changedFields: [] };
+  }
+}
+
+/**
+ * Get model values as a plain JavaScript object
+ * 
+ * @param model the model you want to get the values from
+ * @param columns the columns to be retrieved
+ */
+export function getValues<T extends Model>(model: T, columns?: string[]): {
+  [key: string]: any;
+} {
+  // If the `columns` parameter is provided, return only the selected columns
+  const selectedColumns = columns
+    ? getModelColumns(model.constructor)
+      .filter((item) => columns.includes(item.propertyKey))
+    : getModelColumns(model.constructor);
+
+  // Hold the data temporarily
+  const data: { [key: string]: any } = {};
+
+  // Loop through the selected columns
+  for (const column of selectedColumns) {
+    const value = (model as any)[column.propertyKey];
+
+    // If one of the selected columns is the primary key, the record needs to be saved first.
+    if (column.isPrimaryKey) {
+      if (isSaved(model)) {
+        data[column.name] = value;
+      }
+    } else {
+      if (typeof value === "undefined") {
+        // If the value is undefined, check the default value. Then, if the column
+        // is nullable, set it to null. Otherwise, throw an error.
+        if (typeof column.default !== "undefined") {
+          // If the default value is a function, execute it and get the returned value
+          data[column.name] = typeof column.default === "function"
+            ? column.default()
+            : column.default;
+        } else if (column.isNullable === true) {
+          data[column.name] = null;
+        } else {
+          throw new Error(
+            `Field '${column.propertyKey}' cannot be empty!'`,
+          );
+        }
+      } else {
+        data[column.name] = (model as any)[column.propertyKey];
+      }
+    }
+  }
+
+  return data;
 }

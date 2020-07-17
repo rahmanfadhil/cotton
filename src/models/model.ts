@@ -8,12 +8,12 @@ import {
   createModel,
   createModels,
   normalizeModel,
-  saveOriginalValue,
-  getOriginalValue,
   mapRelationalResult,
   getTableName,
   setSaved,
-  getSaved,
+  isSaved,
+  compareWithOriginal,
+  getValues,
 } from "../utils/models.ts";
 import { quote } from "../utils/dialect.ts";
 
@@ -35,20 +35,6 @@ export abstract class Model {
   static adapter: Adapter;
 
   public id!: number;
-
-  /**
-   * Check if this instance's fields are changed
-   */
-  public isDirty(): boolean {
-    return this._compareWithOriginal().isDirty;
-  }
-
-  /**
-   * Check if a this instance is saved to the database
-   */
-  public isSaved(): boolean {
-    return getSaved(this);
-  }
 
   /**
    * Search for a single instance. Returns the first instance found, or null if none can be found
@@ -257,12 +243,12 @@ export abstract class Model {
 
     // If the primary key is defined, we assume that the user want to update the record.
     // Otherwise, create a new record to the database.
-    if (this.isSaved()) {
-      const { isDirty, changedFields } = this._compareWithOriginal();
+    if (isSaved(this)) {
+      const { isDirty, changedFields } = compareWithOriginal(this);
 
       if (isDirty) {
         // Bind all values to the `data` variable
-        const data = this.values(changedFields);
+        const data = getValues(this, changedFields);
 
         // Save record to the database
         await modelClass.adapter
@@ -273,7 +259,7 @@ export abstract class Model {
       }
     } else {
       // Bind all values to the `data` variable
-      const data = this.values();
+      const data = getValues(this);
 
       // Save record to the database
       const query = modelClass.adapter
@@ -300,7 +286,6 @@ export abstract class Model {
     }
 
     setSaved(this, true);
-    saveOriginalValue(this);
 
     return this;
   }
@@ -365,7 +350,7 @@ export abstract class Model {
    */
   private static async _bulkSave<T extends Model>(models: T[]): Promise<T[]> {
     // Get all model values
-    const values = models.map((model) => model.values());
+    const values = models.map((model) => getValues(model));
 
     // Execute query
     const query = this.adapter
@@ -394,7 +379,7 @@ export abstract class Model {
     );
     models.forEach((model, index) => {
       model.id = ids[index];
-      saveOriginalValue(model);
+      setSaved(model, true);
     });
 
     return models;
@@ -463,89 +448,5 @@ export abstract class Model {
     const tableName = quote(getTableName(this), this.adapter.dialect);
 
     await this.adapter.query(`${truncateCommand} ${tableName};`);
-  }
-
-  // --------------------------------------------------------------------------------
-  // TRANSFORM OBJECT TO MODEL CLASS
-  // --------------------------------------------------------------------------------
-
-  // --------------------------------------------------------------------------------
-  // PRIVATE HELPER METHODS
-  // --------------------------------------------------------------------------------
-
-  /**
-   * Compare the current values with the last saved data
-   */
-  private _compareWithOriginal(): {
-    isDirty: boolean;
-    changedFields: string[];
-  } {
-    const originalValue = getOriginalValue(this);
-
-    // If there's is no original value, the object is not saved to the database yet
-    // which means it's dirty.
-    if (originalValue) {
-      let isDirty = false;
-      const changedFields: string[] = [];
-
-      // Loop for the fields, if one of the fields doesn't match, the object is dirty
-      for (const column of getModelColumns(this.constructor)) {
-        const value = (this as any)[column.propertyKey];
-
-        if (value !== originalValue[column.name]) {
-          isDirty = true;
-          changedFields.push(column.propertyKey);
-        }
-      }
-
-      return { isDirty, changedFields };
-    } else {
-      return { isDirty: true, changedFields: [] };
-    }
-  }
-
-  /**
-   * Get model values as a plain JavaScript object
-   * 
-   * @param columns the columns to be retrieved
-   */
-  public values(columns?: string[]): { [key: string]: any } {
-    const selectedColumns = columns
-      ? getModelColumns(this.constructor)
-        .filter((item) => columns.includes(item.propertyKey))
-      : getModelColumns(this.constructor);
-
-    const data: { [key: string]: any } = {};
-
-    for (const column of selectedColumns) {
-      const value = (this as any)[column.propertyKey];
-
-      if (column.isPrimaryKey) {
-        if (this.isSaved()) {
-          data[column.name] = value;
-        }
-      } else {
-        if (typeof value === "undefined") {
-          // If the value is undefined, check the default value. Then, if the column
-          // is nullable, set it to null. Otherwise, throw an error.
-          if (typeof column.default !== "undefined") {
-            // If the default value is a function, execute it and get the returned value
-            data[column.name] = typeof column.default === "function"
-              ? column.default()
-              : column.default;
-          } else if (column.isNullable === true) {
-            data[column.name] = null;
-          } else {
-            throw new Error(
-              `Field '${column.propertyKey}' cannot be empty!'`,
-            );
-          }
-        } else {
-          data[column.name] = (this as any)[column.propertyKey];
-        }
-      }
-    }
-
-    return data;
   }
 }
