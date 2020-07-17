@@ -16,4 +16,4 @@ RUN chmod +x ./wait
 
 ENTRYPOINT []
 
-CMD ./wait && deno test -c tsconfig.json --allow-net --allow-read --allow-env test.ts
+CMD ./wait && deno test -c tsconfig.json --allow-net --allow-read --allow-write --allow-env test.ts
