@@ -108,8 +108,45 @@ export abstract class Model {
       ]);
     query.select(...columnNames);
 
-    // Execute query
-    const result = await query.first().execute();
+    let result: any[];
+
+    // If the `includes` option contains a "Has Many" relationship,
+    // we need to get the record primary key first, then, we can fetch
+    // the whole data.
+    if (
+      options && options.includes &&
+      getModelRelations(this, options.includes).find((item) =>
+        item.type === RelationType.HasMany
+      )
+    ) {
+      // Get the distinct query
+      const alias = quote("distinctAlias", this.adapter.dialect);
+      const primaryColumn = quote(
+        getTableName(this) + "__id",
+        this.adapter.dialect,
+      );
+      const { text, values } = query.toSQL();
+      const queryString = `SELECT ${alias}.${primaryColumn} FROM (${
+        text.slice(0, text.length - 1)
+      }) ${alias} LIMIT 1;`;
+
+      // Execute the distinct query
+      const recordIds = await this.adapter.query<any>(
+        queryString,
+        values,
+      );
+
+      // If the record found, fetch the relations
+      if (recordIds.length === 1) {
+        result = await query
+          .where("id", recordIds[0][getTableName(this) + "__id"])
+          .execute();
+      } else {
+        return null;
+      }
+    } else {
+      result = await query.first().execute();
+    }
 
     // If the record is not found, return null.
     // Otherwise, return the model instance with the data

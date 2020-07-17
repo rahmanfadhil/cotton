@@ -414,12 +414,17 @@ export class QueryBuilder {
       throw new Error("Cannot run query, adapter is not provided!");
     }
 
+    const { text, values } = this.toSQL();
+
+    return await currentAdapter.query(text, values);
+  }
+
+  public toSQL() {
     const { text, values } = new QueryCompiler(
       this.description,
       this.adapter.dialect,
     ).compile();
-
-    return await currentAdapter.query(text, values);
+    return { text, values };
   }
 
   // --------------------------------------------------------------------------------
