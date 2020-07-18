@@ -1,4 +1,4 @@
-import { Adapter } from "./adapters/adapter.ts";
+import { Adapter, DatabaseResult, DatabaseValues } from "./adapters/adapter.ts";
 import { QueryCompiler } from "./querycompiler.ts";
 
 /**
@@ -76,7 +76,7 @@ interface JoinBinding {
  * Query values for INSERT and UPDATE
  */
 export type QueryValues = {
-  [key: string]: number | string | boolean | Date;
+  [key: string]: DatabaseValues;
 };
 
 /**
@@ -407,7 +407,7 @@ export class QueryBuilder {
    * 
    * @param adapter Custom database adapter
    */
-  public async execute<T extends {}>(adapter?: Adapter): Promise<T[]> {
+  public async execute(adapter?: Adapter): Promise<DatabaseResult[]> {
     let currentAdapter = adapter || this.adapter;
 
     if (!currentAdapter) {
@@ -416,7 +416,7 @@ export class QueryBuilder {
 
     const { text, values } = this.toSQL();
 
-    return await currentAdapter.query(text, values);
+    return currentAdapter.query(text, values);
   }
 
   /**

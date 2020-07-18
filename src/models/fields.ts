@@ -1,5 +1,20 @@
 import { Reflect } from "../utils/reflect.ts";
-import { ExtendedModel } from "./model.ts";
+import { metadata } from "../constants.ts";
+
+/**
+ * Define a class as a database model.
+ * 
+ * @param tableName a custom table name for this model
+ */
+export function Entity(tableName?: string) {
+  return (target: Function) => {
+    Reflect.defineMetadata(
+      metadata.tableName,
+      tableName || target.name.toLowerCase() + "s",
+      target,
+    );
+  };
+}
 
 /**
  * Transform database value to JavaScript types
@@ -55,11 +70,11 @@ function getFieldType(type: any): FieldType | null {
  * 
  * @param options field options
  */
-export function Field(options?: Partial<ColumnOptions>) {
+export function Column(options?: Partial<ColumnOptions>) {
   return (target: Object, propertyKey: string) => {
     let columns: ColumnDescription[] = [];
-    if (Reflect.hasMetadata("db:columns", target)) {
-      columns = Reflect.getMetadata("db:columns", target);
+    if (Reflect.hasMetadata(metadata.columns, target)) {
+      columns = Reflect.getMetadata(metadata.columns, target);
     }
 
     const fieldTypeMetadata = Reflect.getMetadata(
@@ -89,7 +104,7 @@ export function Field(options?: Partial<ColumnOptions>) {
 
     columns.push(description);
 
-    Reflect.defineMetadata("db:columns", columns, target);
+    Reflect.defineMetadata(metadata.columns, columns, target);
   };
 }
 
@@ -101,22 +116,22 @@ export enum RelationType {
 export interface RelationDescription {
   propertyKey: string;
   type: RelationType;
-  getModel: () => ExtendedModel<any>;
+  getModel: () => { new (): any };
   targetColumn: string;
 }
 
 /**
  * Define a relation field
  */
-export function Relation<T>(
+export function Relation(
   type: RelationType,
-  getModel: () => ExtendedModel<T>,
+  getModel: () => { new (): any },
   column: string,
 ) {
   return (target: Object, propertyKey: string) => {
     let relations: RelationDescription[] = [];
-    if (Reflect.hasMetadata("db:relations", target)) {
-      relations = Reflect.getMetadata("db:relations", target);
+    if (Reflect.hasMetadata(metadata.relations, target)) {
+      relations = Reflect.getMetadata(metadata.relations, target);
     }
 
     relations.push({
@@ -126,7 +141,7 @@ export function Relation<T>(
       targetColumn: column,
     });
 
-    Reflect.defineMetadata("db:relations", relations, target);
+    Reflect.defineMetadata(metadata.relations, relations, target);
   };
 }
 
@@ -143,8 +158,8 @@ export interface PrimaryFieldOptions {
 export function PrimaryField(options?: PrimaryFieldOptions) {
   return (target: Object, propertyKey: string) => {
     let columns: ColumnDescription[] = [];
-    if (Reflect.hasMetadata("db:columns", target)) {
-      columns = Reflect.getMetadata("db:columns", target);
+    if (Reflect.hasMetadata(metadata.columns, target)) {
+      columns = Reflect.getMetadata(metadata.columns, target);
     }
 
     columns.push({
@@ -156,6 +171,6 @@ export function PrimaryField(options?: PrimaryFieldOptions) {
       isNullable: false,
     });
 
-    Reflect.defineMetadata("db:columns", columns, target);
+    Reflect.defineMetadata(metadata.columns, columns, target);
   };
 }

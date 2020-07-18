@@ -14,6 +14,12 @@ export interface ConnectionOptions {
   applicationName?: string;
 }
 
+export type DatabaseValues = string | number | Date | boolean | null;
+
+export interface DatabaseResult {
+  [key: string]: DatabaseValues;
+}
+
 /**
  * The parent class for all database adapters
  */
@@ -29,7 +35,10 @@ export abstract class Adapter {
    * @param query SQL query to run (ex: "SELECT * FROM users;")
    * @param values provides values to query placeholders
    */
-  public abstract query<T>(query: string, values?: any[]): Promise<T[]>;
+  public abstract query(
+    query: string,
+    values?: DatabaseValues[],
+  ): Promise<DatabaseResult[]>;
 
   /**
    * Connect database
@@ -71,8 +80,8 @@ export abstract class Adapter {
    * Truncates all registered model tables with 'Model.truncate'.
    */
   public async truncateModels(): Promise<void> {
-    for (const model of this.models) {
-      await model.truncate();
+    for (let i = 0; i < this.models.length; i++) {
+      this.models[i].truncate();
     }
   }
 }

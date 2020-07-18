@@ -17,38 +17,40 @@ import {
   getPrimaryKeyInfo,
 } from "../utils/models.ts";
 import {
-  Field,
+  Column,
   Relation,
   RelationType,
   FieldType,
   PrimaryField,
+  Entity,
 } from "../models/fields.ts";
-import { Model } from "../models/model.ts";
 import { assertEquals, assert, assertThrows } from "../../testdeps.ts";
 import { formatDate } from "./date.ts";
 
 const toUser = () => User;
 const toProduct = () => Product;
 
-class User extends Model {
+@Entity()
+class User {
   @PrimaryField()
   id!: number;
 
-  @Field()
+  @Column()
   email!: string;
 
-  @Field({ name: "my_age" })
+  @Column({ name: "my_age" })
   age!: number;
 
   @Relation(RelationType.HasMany, toProduct, "user_id")
   products!: Product[];
 }
 
-class Product extends Model {
+@Entity()
+class Product {
   @PrimaryField()
   id!: number;
 
-  @Field()
+  @Column()
   title!: string;
 
   @Relation(RelationType.BelongsTo, toUser, "user_id")
@@ -242,17 +244,18 @@ Deno.test("createModels: should create models from database", () => {
 });
 
 Deno.test("normalizeModel", () => {
-  class Post extends Model {
-    @Field()
+  @Entity()
+  class Post {
+    @Column()
     title!: string;
 
-    @Field()
+    @Column()
     likes!: number;
 
-    @Field()
+    @Column()
     is_published!: boolean;
 
-    @Field()
+    @Column()
     published_at!: Date;
   }
 
@@ -364,10 +367,18 @@ Deno.test("getTableName: should get the default table name from the class name",
 });
 
 Deno.test("getTableName: should get a custom table name", () => {
-  class Post extends Model {
-    static tableName = "my_posts";
-  }
+  @Entity("my_posts")
+  class Post {}
   assertEquals(getTableName(Post), "my_posts");
+});
+
+Deno.test("getTableName: should throw an error if the class is not wrapped by @Entity decorator", () => {
+  class Post {}
+  assertThrows(
+    () => getTableName(Post),
+    Error,
+    "Class 'Post' must be wrapped with @Entity decorator!",
+  );
 });
 
 Deno.test("isSaved, setSaved, getOriginal, and compareWithOriginal", () => {
@@ -400,8 +411,9 @@ Deno.test("isSaved, setSaved, getOriginal, and compareWithOriginal", () => {
 });
 
 Deno.test("getValues() -> default value", () => {
-  class User extends Model {
-    @Field({ default: "john" })
+  @Entity()
+  class User {
+    @Column({ default: "john" })
     name!: string;
   }
 
@@ -410,8 +422,9 @@ Deno.test("getValues() -> default value", () => {
 });
 
 Deno.test("getValues() -> nullable", () => {
-  class User extends Model {
-    @Field({ isNullable: true })
+  @Entity()
+  class User {
+    @Column({ isNullable: true })
     name!: string;
   }
 
@@ -420,8 +433,9 @@ Deno.test("getValues() -> nullable", () => {
 });
 
 Deno.test("getValues() -> nullable error", () => {
-  class User extends Model {
-    @Field()
+  @Entity()
+  class User {
+    @Column()
     name!: string;
   }
 
@@ -430,8 +444,9 @@ Deno.test("getValues() -> nullable error", () => {
 });
 
 Deno.test("getValues() -> property different than name", () => {
-  class User extends Model {
-    @Field({ name: "full_name" })
+  @Entity()
+  class User {
+    @Column({ name: "full_name" })
     name!: string;
   }
 

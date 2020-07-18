@@ -7,12 +7,13 @@ import {
 import { DatabaseDialect } from "./connect.ts";
 import { formatDate } from "./utils/date.ts";
 import { quote } from "./utils/dialect.ts";
+import { DatabaseValues } from "./adapters/adapter.ts";
 
 /**
  * Transform QueryDescription to an executable SQL query string
  */
 export class QueryCompiler {
-  private values: any[] = [];
+  private values: DatabaseValues[] = [];
 
   constructor(
     private description: QueryDescription,
@@ -363,7 +364,7 @@ export class QueryCompiler {
    * 
    * @param value The value to be sanitized
    */
-  private bindValue(value: any): string {
+  private bindValue(value: DatabaseValues): string {
     if (Array.isArray(value)) {
       const values = value
         .map((item) => this.bindValue(item))

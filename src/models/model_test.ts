@@ -1,28 +1,30 @@
 import { testDB } from "../testutils.ts";
 import { Model } from "./model.ts";
-import { Field, PrimaryField } from "./fields.ts";
+import { Entity, Column, PrimaryField } from "./fields.ts";
 import { assertEquals, assertThrowsAsync } from "../../testdeps.ts";
 import { formatDate } from "../utils/date.ts";
 
+@Entity()
 class User extends Model {
   @PrimaryField()
   id!: number;
 
-  @Field()
+  @Column()
   email!: string;
 
-  @Field({ name: "age" })
+  @Column({ name: "age" })
   my_age!: number;
 
-  @Field()
+  @Column()
   created_at!: Date;
 }
 
+@Entity()
 class Product extends Model {
   @PrimaryField()
   id!: number;
 
-  @Field()
+  @Column()
   name!: string;
 }
 
@@ -65,9 +67,11 @@ testDB("Model: find() -> with options", async (client) => {
   assertEquals(products[0].id, 3);
   assertEquals(products[1].id, 4);
 
-  products = await Product.find(
-    { where: { name: "Spoon" }, limit: 1, offset: 1 },
-  );
+  products = await Product.find({
+    where: { name: "Spoon" },
+    limit: 1,
+    offset: 1,
+  });
   assertEquals(products.length, 1);
   assertEquals(products[0].id, 3);
 });
@@ -202,7 +206,7 @@ testDB("Model: truncate()", async (client) => {
 
   await User.truncate();
 
-  const users = await User.find();
+  const users = await client.query(`SELECT * FROM users`);
   assertEquals(users.length, 0);
 });
 
@@ -232,7 +236,7 @@ testDB("Model: delete()", async (client) => {
 
   await User.delete({ where: { my_age: 16 } });
 
-  const users = await client.query<{ age: number }>("SELECT * FROM users;");
+  const users = await client.query("SELECT * FROM users;");
   assertEquals(users.length, 1);
   assertEquals(users[0].age, 18);
 
@@ -258,7 +262,7 @@ testDB("Model: deleteOne()", async (client) => {
 
   await User.deleteOne(1);
 
-  let result = await client.query<{ email: string; id: number }>(
+  let result = await client.query(
     "SELECT * FROM users",
   );
   assertEquals(result.length, 2);
@@ -269,7 +273,7 @@ testDB("Model: deleteOne()", async (client) => {
 
   await User.deleteOne(2);
 
-  result = await client.query<{ email: string; id: number }>(
+  result = await client.query(
     "SELECT * FROM users",
   );
   assertEquals(result.length, 1);

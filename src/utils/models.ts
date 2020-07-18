@@ -5,7 +5,8 @@ import {
   FieldType,
   RelationType,
 } from "../models/fields.ts";
-import { Model } from "../models/model.ts";
+import { DatabaseResult, DatabaseValues } from "../adapters/adapter.ts";
+import { metadata } from "../constants.ts";
 
 /** All models' original values */
 const originalValues = new WeakMap();
@@ -13,15 +14,27 @@ const originalValues = new WeakMap();
 /** List of all saved models */
 const savedModels = new WeakMap();
 
+export interface ModelValues {
+  [key: string]:
+    | string
+    | number
+    | Date
+    | boolean
+    | ModelValues
+    | ModelValues[]
+    | Object
+    | null;
+}
+
 /**
  * Get all columns from a model
  */
-export function getColumns(modelClass: any): ColumnDescription[] {
-  if (!Reflect.hasMetadata("db:columns", modelClass.prototype)) {
+export function getColumns(modelClass: Function): ColumnDescription[] {
+  if (!Reflect.hasMetadata(metadata.columns, modelClass.prototype)) {
     throw new Error("A model should have at least one column!");
   }
 
-  return Reflect.getMetadata("db:columns", modelClass.prototype);
+  return Reflect.getMetadata(metadata.columns, modelClass.prototype);
 }
 
 /**
@@ -31,20 +44,23 @@ export function getColumns(modelClass: any): ColumnDescription[] {
  * @param includes include several relations and ignore the rest
  */
 export function getRelations(
-  modelClass: any,
+  modelClass: Function,
   includes?: string[],
 ): RelationDescription[] {
   const relations: RelationDescription[] =
-    Reflect.hasMetadata("db:relations", modelClass.prototype)
-      ? Reflect.getMetadata("db:relations", modelClass.prototype)
+    Reflect.hasMetadata(metadata.relations, modelClass.prototype)
+      ? Reflect.getMetadata(metadata.relations, modelClass.prototype)
       : [];
   return includes
     ? relations.filter((item) => includes.includes(item.propertyKey))
     : relations;
 }
 
-export function extractRelationalRecord(result: any, modelClass: typeof Model) {
-  const values: { [key: string]: any } = {};
+export function extractRelationalRecord(
+  result: DatabaseResult,
+  modelClass: Function,
+): ModelValues {
+  const values: ModelValues = {};
   const tableName = getTableName(modelClass);
   const columns = getColumns(modelClass);
 
@@ -68,15 +84,15 @@ export function extractRelationalRecord(result: any, modelClass: typeof Model) {
  * @param fromDatabase Check whether the data is saved to the database or not
  */
 export function createModel<T>(
-  modelClass: typeof Model,
-  data: { [key: string]: any },
+  modelClass: Function,
+  data: ModelValues,
   fromDatabase: boolean = false,
 ): T {
   const relations = getRelations(modelClass);
 
   for (const relation of relations) {
     const relationModel = relation.getModel();
-    const relationData = data[relation.propertyKey];
+    const relationData = data[relation.propertyKey] as ModelValues;
 
     if (relation.type === RelationType.BelongsTo) {
       if (typeof relationData === "object") {
@@ -124,8 +140,8 @@ export function createModel<T>(
  * @param fromDatabase Check whether the data is saved to the database or not
  */
 export function createModels<T>(
-  modelClass: typeof Model,
-  data: { [key: string]: any }[],
+  modelClass: Function,
+  data: ModelValues[],
   fromDatabase: boolean = false,
 ): T[] {
   return data.map((item) => {
@@ -138,7 +154,7 @@ export function createModels<T>(
  * 
  * @param model the model you want to normalize
  */
-export function normalizeModel<T extends Model>(model: T): T {
+export function normalizeModel<T extends Object>(model: T): T {
   const columns = getColumns(model.constructor);
 
   for (const column of columns) {
@@ -174,9 +190,7 @@ export function normalizeModel<T extends Model>(model: T): T {
 /**
  * Get the original value of a model.
  */
-export function getOriginal<T extends Model>(model: T): {
-  [key: string]: any;
-} | undefined {
+export function getOriginal(model: Object): { [key: string]: any } | undefined {
   return originalValues.get(model);
 }
 
@@ -186,7 +200,7 @@ export function getOriginal<T extends Model>(model: T): {
  * @param model the model you want to change the status
  * @param value the status of the model (saved or not saved)
  */
-export function setSaved<T extends Model>(model: T, value: boolean): void {
+export function setSaved(model: Object, value: boolean): void {
   savedModels.set(model, value);
 
   if (value) {
@@ -201,7 +215,7 @@ export function setSaved<T extends Model>(model: T, value: boolean): void {
  *
  * @param model the model you want to check the status
  */
-export function isSaved<T extends Model>(model: T): boolean {
+export function isSaved(model: Object): boolean {
   return savedModels.get(model) ? true : false;
 }
 
@@ -213,14 +227,14 @@ export function isSaved<T extends Model>(model: T): boolean {
  * @param result the query result itself
  */
 export function mapRelationalResult(
-  modelClass: typeof Model,
+  modelClass: Function,
   includes: string[],
-  result: any[],
-): any[] {
+  result: DatabaseResult[],
+): ModelValues[] {
   const relations = getRelations(modelClass, includes);
   const primaryKey = getPrimaryKeyInfo(modelClass);
 
-  return result.reduce((prev, next) => {
+  return result.reduce<ModelValues[]>((prev, next) => {
     if (
       prev.length !== 0 &&
       prev[prev.length - 1][primaryKey.propertyKey] ===
@@ -232,9 +246,15 @@ export function mapRelationalResult(
             next,
             relation.getModel(),
           );
-          prev[prev.length - 1][relation.propertyKey] =
-            (prev[prev.length - 1][relation.propertyKey] || [])
-              .concat(data);
+          const previousData: ModelValues[] | undefined =
+            prev[prev.length - 1][relation.propertyKey] as ModelValues[];
+
+          if (Array.isArray(previousData)) {
+            prev[prev.length - 1][relation.propertyKey] = previousData
+              .concat([data]);
+          } else {
+            prev[prev.length - 1][relation.propertyKey] = [data];
+          }
         }
       }
     } else {
@@ -274,10 +294,16 @@ export function mapRelationalResult(
 /**
  * Get the default table name from a model class
  */
-export function getTableName(modelClass: typeof Model): string {
-  return modelClass.tableName
-    ? modelClass.tableName
-    : modelClass.name.toLowerCase() + "s";
+export function getTableName(modelClass: Function): string {
+  const tableName = Reflect.getMetadata(metadata.tableName, modelClass);
+
+  if (!tableName) {
+    throw new Error(
+      `Class '${modelClass.name}' must be wrapped with @Entity decorator!`,
+    );
+  }
+
+  return tableName;
 }
 
 /**
@@ -285,7 +311,7 @@ export function getTableName(modelClass: typeof Model): string {
  *
  * @param model the model you want to compare
  */
-export function compareWithOriginal<T extends Model>(model: T): {
+export function compareWithOriginal(model: Object): {
   isDirty: boolean;
   changedFields: string[];
 } {
@@ -316,12 +342,15 @@ export function compareWithOriginal<T extends Model>(model: T): {
 /**
  * Get model values as a plain JavaScript object
  * 
+ * TODO: Convert values to database compatible values
+ * 
  * @param model the model you want to get the values from
  * @param columns the columns to be retrieved
  */
-export function getValues<T extends Model>(model: T, columns?: string[]): {
-  [key: string]: any;
-} {
+export function getValues(
+  model: Object,
+  columns?: string[],
+): { [key: string]: DatabaseValues } {
   // If the `columns` parameter is provided, return only the selected columns
   const selectedColumns = columns
     ? getColumns(model.constructor)
@@ -368,26 +397,23 @@ export function getValues<T extends Model>(model: T, columns?: string[]): {
 /**
  * Get the primary key value of a model.
  */
-export function getPrimaryKey<T extends Model>(model: T): number {
-  const primaryKey = getPrimaryKeyInfo(<typeof Model> model.constructor);
+export function getPrimaryKey(model: Object): number {
+  const primaryKey = getPrimaryKeyInfo(model.constructor);
   return (model as any)[primaryKey.propertyKey];
 }
 
 /**
  * Set the primary key value of a model.
  */
-export function setPrimaryKey<T extends Model>(
-  model: T,
-  value: number,
-) {
-  const primaryKey = getPrimaryKeyInfo(<typeof Model> model.constructor);
+export function setPrimaryKey(model: Object, value: number) {
+  const primaryKey = getPrimaryKeyInfo(model.constructor);
   (model as any)[primaryKey.propertyKey] = value;
 }
 
 /**
  * Get the primary field column description from a model class.
  */
-export function getPrimaryKeyInfo(modelClass: typeof Model): ColumnDescription {
+export function getPrimaryKeyInfo(modelClass: Function): ColumnDescription {
   const primaryKey = getColumns(modelClass)
     .find((item) => item.isPrimaryKey);
 

@@ -1,5 +1,5 @@
 import { PostgresClient } from "../../deps.ts";
-import { Adapter, ConnectionOptions } from "./adapter.ts";
+import { Adapter, ConnectionOptions, DatabaseResult } from "./adapter.ts";
 import { DatabaseDialect } from "../connect.ts";
 
 /**
@@ -39,11 +39,11 @@ export class PostgresAdapter extends Adapter {
     return this.client.end();
   }
 
-  public async query<T>(query: string, values?: any[]): Promise<T[]> {
+  public async query(query: string, values?: any[]): Promise<DatabaseResult[]> {
     let result = Array.isArray(values) && values.length >= 1
       ? await this.client.query({ text: query, args: values })
       : await this.client.query(query);
 
-    return result.rowsOfObjects() as T[];
+    return result.rowsOfObjects();
   }
 }

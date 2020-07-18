@@ -1,4 +1,4 @@
-import { Adapter } from "../adapters/adapter.ts";
+import { Adapter, DatabaseResult } from "../adapters/adapter.ts";
 import { range } from "../utils/number.ts";
 import { RelationType } from "./fields.ts";
 import {
@@ -17,6 +17,7 @@ import {
   getPrimaryKeyInfo,
   getPrimaryKey,
   setPrimaryKey,
+  ModelValues,
 } from "../utils/models.ts";
 import { quote } from "../utils/dialect.ts";
 
@@ -33,7 +34,6 @@ export interface FindOptions<T> {
  * Database model
  */
 export abstract class Model {
-  static tableName: string;
   static adapter: Adapter;
 
   /**
@@ -126,7 +126,7 @@ export abstract class Model {
       }) ${alias} LIMIT 1;`;
 
       // Execute the distinct query
-      const recordIds = await this.adapter.query<any>(
+      const recordIds = await this.adapter.query(
         queryString,
         values,
       );
@@ -148,10 +148,14 @@ export abstract class Model {
     if (result.length < 1) {
       return null;
     } else {
-      let record: { [key: string]: any };
+      let record: ModelValues;
 
       if (options && Array.isArray(options.includes)) {
-        record = mapRelationalResult(this, options.includes, result)[0];
+        record = mapRelationalResult(
+          this,
+          options.includes,
+          result,
+        )[0] as ModelValues;
       } else {
         record = extractRelationalRecord(result[0], this);
       }
@@ -229,9 +233,9 @@ export abstract class Model {
     query.select(...columnNames);
 
     // Execute query
-    const result = await query.execute<any>();
+    const result = await query.execute();
 
-    let records: any[];
+    let records: ModelValues[];
 
     if (options && Array.isArray(options.includes)) {
       records = mapRelationalResult(this, options.includes, result);
@@ -286,13 +290,13 @@ export abstract class Model {
         query.returning(primaryKey);
       }
 
-      const result = await query.execute<{ [key: string]: number }>();
+      const result = await query.execute();
 
       // Get last inserted id
       let lastInsertedId: number;
 
       if (modelClass.adapter.dialect === "postgres") {
-        lastInsertedId = result[result.length - 1][primaryKey];
+        lastInsertedId = result[result.length - 1][primaryKey] as number;
       } else {
         lastInsertedId = modelClass.adapter.lastInsertedId;
       }
@@ -352,10 +356,10 @@ export abstract class Model {
     data: Partial<T> | Partial<T>[],
   ): Promise<T | T[]> {
     if (Array.isArray(data)) {
-      const models = createModels<T>(this, data);
+      const models = createModels<T>(this, data as ModelValues[]);
       return this._bulkSave<T>(models);
     } else {
-      const model = createModel<T>(this, data);
+      const model = createModel<T>(this, data as ModelValues);
       await model.save();
       return model;
     }
@@ -380,13 +384,13 @@ export abstract class Model {
       query.returning(primaryKey);
     }
 
-    const result = await query.execute<{ [key: string]: number }>();
+    const result = await query.execute();
 
     // Get last inserted id
     let lastInsertedId: number;
 
     if (this.adapter.dialect === "postgres") {
-      lastInsertedId = result[result.length - 1][primaryKey];
+      lastInsertedId = result[result.length - 1][primaryKey] as number;
     } else {
       lastInsertedId = this.adapter.lastInsertedId;
     }

@@ -1,24 +1,25 @@
-import { Field, FieldType } from "./fields.ts";
+import { Column, FieldType } from "./fields.ts";
 import { Reflect } from "../utils/reflect.ts";
 import { assertEquals, assertThrows } from "../../testdeps.ts";
+import { metadata } from "../constants.ts";
 
 Deno.test("Field: basic field", () => {
   class User {
-    @Field()
+    @Column()
     name!: string;
 
-    @Field()
+    @Column()
     age!: number;
 
-    @Field()
+    @Column()
     is_active!: boolean;
 
-    @Field()
+    @Column()
     created_at!: Date;
   }
 
   assertEquals(
-    Reflect.getMetadata("db:columns", User.prototype),
+    Reflect.getMetadata(metadata.columns, User.prototype),
     [{
       propertyKey: "name",
       select: true,
@@ -55,7 +56,7 @@ Deno.test("Field: throw an error if the column type is invalid!", () => {
   assertThrows(
     () => {
       class User {
-        @Field()
+        @Column()
         name!: string | null;
       }
     },
@@ -66,12 +67,12 @@ Deno.test("Field: throw an error if the column type is invalid!", () => {
 
 Deno.test("Field: custom database column name", () => {
   class User {
-    @Field({ name: "full_name" })
+    @Column({ name: "full_name" })
     name!: string;
   }
 
   assertEquals(
-    Reflect.getMetadata("db:columns", User.prototype),
+    Reflect.getMetadata(metadata.columns, User.prototype),
     [{
       propertyKey: "name",
       select: true,
@@ -87,21 +88,21 @@ Deno.test("Field: default value", () => {
   const newDate = () => new Date();
 
   class User {
-    @Field({ default: "john" })
+    @Column({ default: "john" })
     name!: string;
 
-    @Field({ default: 16 })
+    @Column({ default: 16 })
     age!: string;
 
-    @Field({ default: true })
+    @Column({ default: true })
     is_active!: string;
 
-    @Field({ default: newDate })
+    @Column({ default: newDate })
     created_at!: Date;
   }
 
   assertEquals(
-    Reflect.getMetadata("db:columns", User.prototype),
+    Reflect.getMetadata(metadata.columns, User.prototype),
     [{
       propertyKey: "name",
       select: true,
@@ -140,12 +141,12 @@ Deno.test("Field: default value", () => {
 
 Deno.test("Field: custom type", () => {
   class User {
-    @Field({ type: FieldType.Number })
+    @Column({ type: FieldType.Number })
     age!: string;
   }
 
   assertEquals(
-    Reflect.getMetadata("db:columns", User.prototype),
+    Reflect.getMetadata(metadata.columns, User.prototype),
     [{
       propertyKey: "age",
       select: true,
@@ -159,12 +160,12 @@ Deno.test("Field: custom type", () => {
 
 Deno.test("Field: explicit deselect", () => {
   class User {
-    @Field({ select: false })
+    @Column({ select: false })
     name!: string;
   }
 
   assertEquals(
-    Reflect.getMetadata("db:columns", User.prototype),
+    Reflect.getMetadata(metadata.columns, User.prototype),
     [{
       propertyKey: "name",
       select: false,
@@ -178,12 +179,12 @@ Deno.test("Field: explicit deselect", () => {
 
 Deno.test("Field: nullable", () => {
   class User {
-    @Field({ isNullable: true })
+    @Column({ isNullable: true })
     name!: string;
   }
 
   assertEquals(
-    Reflect.getMetadata("db:columns", User.prototype),
+    Reflect.getMetadata(metadata.columns, User.prototype),
     [{
       propertyKey: "name",
       select: true,

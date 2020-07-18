@@ -122,12 +122,12 @@ export class Schema {
     }
 
     // Execute query
-    const result = await this.adapter.query<any>(query);
+    const result = await this.adapter.query(query);
 
     // Get the result
     switch (this.adapter.dialect) {
       case "postgres":
-        return result[0] ? result[0].exists : false;
+        return result[0] && result[0].exists ? true : false;
       case "mysql":
       case "sqlite":
       default:
@@ -161,14 +161,14 @@ export class Schema {
     }
 
     // Execute the query
-    const result = await this.adapter.query<any>(query);
+    const result = await this.adapter.query(query);
 
     // Extract the result
     switch (this.adapter.dialect) {
       case "sqlite":
         return !!result.find((item) => item.name === columnName);
       case "postgres":
-        return result[0] ? result[0].exists : false;
+        return result[0] && result[0].exists ? true : false;
       case "mysql":
         return !!result[0][Object.keys(result[0])[0]];
       default:

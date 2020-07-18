@@ -4,7 +4,7 @@ export { Model, FindOptions } from "./src/models/model.ts";
 export { Schema } from "./src/migrations/schema.ts";
 export { MigrationRunner } from "./src/migrations/migrationrunner.ts";
 export {
-  Field,
+  Column,
   FieldType,
   Relation,
   RelationType,
