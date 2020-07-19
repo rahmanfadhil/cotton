@@ -1,9 +1,12 @@
-import { Column, FieldType } from "./fields.ts";
-import { Reflect } from "../utils/reflect.ts";
-import { assertEquals, assertThrows } from "../../testdeps.ts";
-import { metadata } from "../constants.ts";
+import { Column, ColumnType } from "./model.ts";
+import { Reflect } from "./utils/reflect.ts";
+import { assertEquals, assertThrows } from "../testdeps.ts";
+import { metadata } from "./constants.ts";
 
-Deno.test("Field: basic field", () => {
+// TODO: create tests on @Model
+// TODO: create tests on @Relation
+
+Deno.test("Column: basic column", () => {
   class User {
     @Column()
     name!: string;
@@ -24,35 +27,35 @@ Deno.test("Field: basic field", () => {
       propertyKey: "name",
       select: true,
       name: "name",
-      type: FieldType.String,
+      type: ColumnType.String,
       isPrimaryKey: false,
-      isNullable: false,
+      isNullable: true,
     }, {
       propertyKey: "age",
       select: true,
       name: "age",
-      type: FieldType.Number,
+      type: ColumnType.Number,
       isPrimaryKey: false,
-      isNullable: false,
+      isNullable: true,
     }, {
       propertyKey: "is_active",
       select: true,
       name: "is_active",
-      type: FieldType.Boolean,
+      type: ColumnType.Boolean,
       isPrimaryKey: false,
-      isNullable: false,
+      isNullable: true,
     }, {
       propertyKey: "created_at",
       select: true,
       name: "created_at",
-      type: FieldType.Date,
+      type: ColumnType.Date,
       isPrimaryKey: false,
-      isNullable: false,
+      isNullable: true,
     }],
   );
 });
 
-Deno.test("Field: throw an error if the column type is invalid!", () => {
+Deno.test("Column: throw an error if the column type is invalid!", () => {
   assertThrows(
     () => {
       class User {
@@ -61,11 +64,11 @@ Deno.test("Field: throw an error if the column type is invalid!", () => {
       }
     },
     Error,
-    "Cannot assign column 'name' without a type!",
+    "Column 'name' must have a type!",
   );
 });
 
-Deno.test("Field: custom database column name", () => {
+Deno.test("Column: custom database column name", () => {
   class User {
     @Column({ name: "full_name" })
     name!: string;
@@ -77,14 +80,14 @@ Deno.test("Field: custom database column name", () => {
       propertyKey: "name",
       select: true,
       name: "full_name",
-      type: FieldType.String,
+      type: ColumnType.String,
       isPrimaryKey: false,
-      isNullable: false,
+      isNullable: true,
     }],
   );
 });
 
-Deno.test("Field: default value", () => {
+Deno.test("Column: default value", () => {
   const newDate = () => new Date();
 
   class User {
@@ -108,40 +111,40 @@ Deno.test("Field: default value", () => {
       select: true,
       default: "john",
       name: "name",
-      type: FieldType.String,
+      type: ColumnType.String,
       isPrimaryKey: false,
-      isNullable: false,
+      isNullable: true,
     }, {
       propertyKey: "age",
       select: true,
       default: 16,
       name: "age",
-      type: FieldType.String,
+      type: ColumnType.String,
       isPrimaryKey: false,
-      isNullable: false,
+      isNullable: true,
     }, {
       propertyKey: "is_active",
       select: true,
       default: true,
       name: "is_active",
-      type: FieldType.String,
+      type: ColumnType.String,
       isPrimaryKey: false,
-      isNullable: false,
+      isNullable: true,
     }, {
       propertyKey: "created_at",
       select: true,
       default: newDate,
       name: "created_at",
-      type: FieldType.Date,
+      type: ColumnType.Date,
       isPrimaryKey: false,
-      isNullable: false,
+      isNullable: true,
     }],
   );
 });
 
-Deno.test("Field: custom type", () => {
+Deno.test("Column: custom type", () => {
   class User {
-    @Column({ type: FieldType.Number })
+    @Column({ type: ColumnType.Number })
     age!: string;
   }
 
@@ -151,14 +154,14 @@ Deno.test("Field: custom type", () => {
       propertyKey: "age",
       select: true,
       name: "age",
-      type: FieldType.Number,
+      type: ColumnType.Number,
       isPrimaryKey: false,
-      isNullable: false,
+      isNullable: true,
     }],
   );
 });
 
-Deno.test("Field: explicit deselect", () => {
+Deno.test("Column: explicit deselect", () => {
   class User {
     @Column({ select: false })
     name!: string;
@@ -170,16 +173,16 @@ Deno.test("Field: explicit deselect", () => {
       propertyKey: "name",
       select: false,
       name: "name",
-      type: FieldType.String,
+      type: ColumnType.String,
       isPrimaryKey: false,
-      isNullable: false,
+      isNullable: true,
     }],
   );
 });
 
-Deno.test("Field: nullable", () => {
+Deno.test("Column: nullable", () => {
   class User {
-    @Column({ isNullable: true })
+    @Column({ isNullable: false })
     name!: string;
   }
 
@@ -189,9 +192,9 @@ Deno.test("Field: nullable", () => {
       propertyKey: "name",
       select: true,
       name: "name",
-      type: FieldType.String,
+      type: ColumnType.String,
       isPrimaryKey: false,
-      isNullable: true,
+      isNullable: false,
     }],
   );
 });

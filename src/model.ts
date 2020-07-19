@@ -1,16 +1,16 @@
-import { Reflect } from "../utils/reflect.ts";
-import { metadata } from "../constants.ts";
+import { Reflect } from "./utils/reflect.ts";
+import { metadata } from "./constants.ts";
 
 /**
  * Define a class as a database model.
  * 
  * @param tableName a custom table name for this model
  */
-export function Entity(tableName?: string) {
+export function Model(tableName?: string) {
   return (target: Function) => {
     Reflect.defineMetadata(
       metadata.tableName,
-      tableName || target.name.toLowerCase() + "s",
+      tableName || target.name.toLowerCase(),
       target,
     );
   };
@@ -19,7 +19,7 @@ export function Entity(tableName?: string) {
 /**
  * Transform database value to JavaScript types
  */
-export enum FieldType {
+export enum ColumnType {
   String = "string",
   Date = "date",
   Number = "number",
@@ -31,7 +31,7 @@ export enum FieldType {
  */
 export interface ColumnOptions {
   /** JavaScript type which will be converted from the database */
-  type: FieldType;
+  type: ColumnType;
 
   /** The column name on the database */
   name: string;
@@ -51,15 +51,15 @@ export type ColumnDescription = ColumnOptions & {
   isPrimaryKey: boolean;
 };
 
-function getFieldType(type: any): FieldType | null {
+function getColumnType(type: any): ColumnType | null {
   if (type === String) {
-    return FieldType.String;
+    return ColumnType.String;
   } else if (type === Number) {
-    return FieldType.Number;
+    return ColumnType.Number;
   } else if (type === Date) {
-    return FieldType.Date;
+    return ColumnType.Date;
   } else if (type === Boolean) {
-    return FieldType.Boolean;
+    return ColumnType.Boolean;
   } else {
     return null;
   }
@@ -77,15 +77,15 @@ export function Column(options?: Partial<ColumnOptions>) {
       columns = Reflect.getMetadata(metadata.columns, target);
     }
 
-    const fieldTypeMetadata = Reflect.getMetadata(
+    const columnTypeMetadata = Reflect.getMetadata(
       "design:type",
       target,
       propertyKey,
     );
-    const fieldType = getFieldType(fieldTypeMetadata);
-    if (!fieldType) {
+    const columnType = getColumnType(columnTypeMetadata);
+    if (!columnType) {
       throw new Error(
-        `Cannot assign column '${propertyKey}' without a type!`,
+        `Column '${propertyKey}' must have a type!`,
       );
     }
 
@@ -95,9 +95,9 @@ export function Column(options?: Partial<ColumnOptions>) {
         propertyKey: propertyKey,
         select: true,
         name: propertyKey,
-        type: fieldType,
+        type: columnType,
         isPrimaryKey: false,
-        isNullable: false,
+        isNullable: true,
       },
       options,
     );
@@ -155,7 +155,7 @@ export interface PrimaryFieldOptions {
  *
  * @param options primary field options
  */
-export function PrimaryField(options?: PrimaryFieldOptions) {
+export function PrimaryColumn(options?: PrimaryFieldOptions) {
   return (target: Object, propertyKey: string) => {
     let columns: ColumnDescription[] = [];
     if (Reflect.hasMetadata(metadata.columns, target)) {
@@ -166,7 +166,7 @@ export function PrimaryField(options?: PrimaryFieldOptions) {
       propertyKey,
       select: true,
       name: options?.name || "id",
-      type: FieldType.Number,
+      type: ColumnType.Number,
       isPrimaryKey: true,
       isNullable: false,
     });

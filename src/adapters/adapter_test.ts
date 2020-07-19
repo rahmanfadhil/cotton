@@ -1,30 +1,7 @@
-import { Model } from "../models/model.ts";
-import { Column, Entity } from "../models/fields.ts";
 import { testDB } from "../testutils.ts";
 import { assertEquals } from "../../testdeps.ts";
 import { QueryBuilder } from "../querybuilder.ts";
 import { formatDate } from "../utils/date.ts";
-
-@Entity()
-class User extends Model {
-  @Column()
-  email!: string;
-
-  @Column()
-  age!: number;
-
-  @Column()
-  created_at!: Date;
-}
-
-testDB(
-  "BaseAdapter: `addModel` should populate `adapter` property",
-  (client) => {
-    client.addModel(User);
-
-    assertEquals(User.adapter, client);
-  },
-);
 
 testDB(
   "BaseAdapter: `table` should contains actual query builder",

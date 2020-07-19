@@ -1,5 +1,4 @@
 import { QueryBuilder } from "../querybuilder.ts";
-import { Model } from "../models/model.ts";
 import { DatabaseDialect } from "../connect.ts";
 
 /**
@@ -24,7 +23,6 @@ export interface DatabaseResult {
  * The parent class for all database adapters
  */
 export abstract class Adapter {
-  private models: Array<typeof Model> = [];
   public abstract dialect: DatabaseDialect;
 
   public abstract lastInsertedId: number;
@@ -57,31 +55,5 @@ export abstract class Adapter {
    */
   public table(tableName: string): QueryBuilder {
     return new QueryBuilder(tableName, this);
-  }
-
-  /**
-   * Register a model
-   *
-   * @param model The model to be registered
-   */
-  public addModel(model: typeof Model): void {
-    model.adapter = this;
-    this.models.push(model);
-  }
-
-  /**
-   * Returns an array containing all classes of the Models registered with 'addModel'.
-   */
-  public getModels(): Array<typeof Model> {
-    return this.models;
-  }
-
-  /**
-   * Truncates all registered model tables with 'Model.truncate'.
-   */
-  public async truncateModels(): Promise<void> {
-    for (let i = 0; i < this.models.length; i++) {
-      this.models[i].truncate();
-    }
   }
 }
