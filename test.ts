@@ -13,7 +13,7 @@ import "./src/utils/date_test.ts";
 import "./src/utils/number_test.ts";
 import "./src/utils/dialect_test.ts";
 import "./src/utils/models_test.ts";
-import "./src/manager/fields_test.ts";
+import "./src/manager_test.ts";
 import "./src/querybuilder_test.ts";
 import "./src/querycompiler_test.ts";
 import "./src/migrations/tablebuilder_test.ts";

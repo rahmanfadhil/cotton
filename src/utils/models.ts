@@ -12,15 +12,20 @@ import { metadata } from "../constants.ts";
 // INTERFACES
 // --------------------------------------------------------------------------------
 
-/** Database compatible values of a model. */
+/** Model values from the query result */
 interface ModelValues {
   [key: string]: DatabaseValues | ModelValues | ModelValues[];
+}
+
+/** Model values which can be sent to the database to insert or update */
+interface ModelDatabaseValues {
+  [key: string]: DatabaseValues;
 }
 
 /** The result of comparing the current model with its original value. */
 interface ModelComparisonResult {
   isDirty: boolean;
-  diff: ModelValues;
+  diff: ModelDatabaseValues;
 }
 
 // --------------------------------------------------------------------------------
@@ -153,7 +158,7 @@ export function compareWithOriginal(model: Object): ModelComparisonResult {
   // which means it's dirty.
   if (originalValue) {
     let isDirty = false;
-    let diff: ModelValues = {};
+    let diff: ModelDatabaseValues = {};
     const columns: ColumnDescription[] = [];
 
     // Loop for the fields, if one of the fields doesn't match, the object is dirty
@@ -183,7 +188,10 @@ export function compareWithOriginal(model: Object): ModelComparisonResult {
  * @param model the model you want to get the values from
  * @param columns the columns to be retrieved
  */
-export function getValues(model: Object, columns?: string[]): ModelValues {
+export function getValues(
+  model: Object,
+  columns?: string[],
+): ModelDatabaseValues {
   // If the `columns` parameter is provided, return only the selected columns
   const selectedColumns = columns
     ? getColumns(model.constructor)
@@ -251,8 +259,8 @@ function getNormalizedValues(
   columns: ColumnDescription[],
   data: ModelValues,
   bindTo: "propertyKey" | "name",
-): ModelValues {
-  const result: ModelValues = {};
+): ModelDatabaseValues {
+  const result: ModelDatabaseValues = {};
 
   for (const column of columns) {
     let original = data[column[bindTo]];
@@ -405,11 +413,12 @@ export function createModel<T>(
   data: ModelValues,
   fromDatabase: boolean = false,
 ): T {
-  const values: { [key: string]: any } = getNormalizedValues(
-    getColumns(modelClass),
-    data,
-    "propertyKey",
-  );
+  const values: { [key: string]: DatabaseValues | Object | Object[] } =
+    getNormalizedValues(
+      getColumns(modelClass),
+      data,
+      "propertyKey",
+    );
 
   for (const relation of getRelations(modelClass)) {
     const relationModel = relation.getModel();

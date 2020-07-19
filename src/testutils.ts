@@ -44,7 +44,7 @@ export async function testDB(
   fn: (client: Adapter) => void | Promise<void>,
 ) {
   Deno.test({
-    name: `[sqlite] ${name}`,
+    name: `[sqlite]   ${name}`,
     fn: async () => {
       // Connect to database
       const db = await connect({
@@ -56,9 +56,11 @@ export async function testDB(
       await db.query(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          email VARCHAR(255),
+          first_name VARCHAR(255),
+          last_name VARCHAR(255),
           age INTEGER,
-          created_at DATETIME
+          created_at DATETIME,
+          is_active BOOLEAN
         );
       `);
 
@@ -66,7 +68,9 @@ export async function testDB(
       await db.query(`
         CREATE TABLE IF NOT EXISTS products (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name VARCHAR(255)
+          title VARCHAR(255),
+          user_id INTEGER,
+          FOREIGN KEY (user_id) REFERENCES users(id)
         );
       `);
 
@@ -97,9 +101,11 @@ export async function testDB(
       await db.query(`
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
-          email VARCHAR(255),
+          first_name VARCHAR(255),
+          last_name VARCHAR(255),
           age INTEGER,
-          created_at TIMESTAMP
+          created_at TIMESTAMP,
+          is_active BOOLEAN
         );
       `);
 
@@ -107,7 +113,9 @@ export async function testDB(
       await db.query(`
         CREATE TABLE IF NOT EXISTS products (
           id SERIAL PRIMARY KEY,
-          name VARCHAR(255)
+          title VARCHAR(255),
+          user_id INTEGER,
+          FOREIGN KEY (user_id) REFERENCES users(id)
         );
       `);
 
@@ -115,11 +123,11 @@ export async function testDB(
       try {
         await fn(db);
       } catch (err) {
-        // Drop dummy table `users`
-        await db.query("DROP TABLE users;");
-
         // Drop dummy table `products`
         await db.query("DROP TABLE products;");
+
+        // Drop dummy table `users`
+        await db.query("DROP TABLE users;");
 
         // Disconnect to database
         await db.disconnect();
@@ -127,11 +135,11 @@ export async function testDB(
         throw err;
       }
 
-      // Drop dummy table `users`
-      await db.query("DROP TABLE users;");
-
       // Drop dummy table `products`
       await db.query("DROP TABLE products;");
+
+      // Drop dummy table `users`
+      await db.query("DROP TABLE users;");
 
       // Disconnect to database
       await db.disconnect();
@@ -139,7 +147,7 @@ export async function testDB(
   });
 
   Deno.test({
-    name: `[mysql] ${name}`,
+    name: `[mysql]    ${name}`,
     fn: async () => {
       // Connect to database
       const db = await connect({
@@ -151,9 +159,11 @@ export async function testDB(
       await db.query(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTO_INCREMENT,
-          email VARCHAR(255),
+          first_name VARCHAR(255),
+          last_name VARCHAR(255),
           age INTEGER,
-          created_at DATETIME
+          created_at DATETIME,
+          is_active TINYINT
         );
       `);
 
@@ -161,7 +171,9 @@ export async function testDB(
       await db.query(`
         CREATE TABLE IF NOT EXISTS products (
           id INTEGER PRIMARY KEY AUTO_INCREMENT,
-          name VARCHAR(255)
+          title VARCHAR(255),
+          user_id INTEGER,
+          FOREIGN KEY (user_id) REFERENCES users(id)
         );
       `);
 
@@ -169,11 +181,11 @@ export async function testDB(
       try {
         await fn(db);
       } catch (err) {
-        // Drop dummy table `users`
-        await db.query("DROP TABLE users;");
-
         // Drop dummy table `products`
         await db.query("DROP TABLE products;");
+
+        // Drop dummy table `users`
+        await db.query("DROP TABLE users;");
 
         // Disconnect to database
         await db.disconnect();
@@ -181,11 +193,11 @@ export async function testDB(
         throw err;
       }
 
-      // Drop dummy table `users`
-      await db.query("DROP TABLE users;");
-
       // Drop dummy table `products`
       await db.query("DROP TABLE products;");
+
+      // Drop dummy table `users`
+      await db.query("DROP TABLE users;");
 
       // Disconnect to database
       await db.disconnect();
@@ -243,7 +255,13 @@ export function testQueryCompiler(
   },
 ) {
   for (const dialect in result) {
-    Deno.test(`[${dialect}] QueryCompiler: ${title}`, () => {
+    const spaces = dialect === "postgres"
+      ? " "
+      : dialect === "mysql"
+      ? "    "
+      : "   ";
+
+    Deno.test(`[${dialect}]${spaces}QueryCompiler: ${title}`, () => {
       const compiler = new QueryCompiler(
         Object.assign({}, {
           tableName: "users",
