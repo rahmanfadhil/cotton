@@ -14,6 +14,7 @@ import {
 } from "./utils/models.ts";
 import { Adapter } from "./adapters/adapter.ts";
 import { QueryBuilder } from "./querybuilder.ts";
+import { range } from "./utils/number.ts";
 
 /**
  * Same as Partial<T> but goes deeper and makes Partial<T> all its properties and sub-properties.
@@ -37,7 +38,7 @@ export interface FindOptions<T> {
 export class Manager {
   /**
    * Create a model manager.
-   *
+   * 
    * @param adapter the database adapter to perform queries
    */
   constructor(private adapter: Adapter) {}
@@ -219,8 +220,86 @@ export class Manager {
   public insert<T extends Object>(
     modelClass: { new (): T },
     data: DeepPartial<T>,
-  ): Promise<T> {
-    const model = createModel(modelClass, data as any);
-    return this.save(model);
+  ): Promise<T>;
+
+  /**
+   * Create a model instance and save it to the database.
+   * 
+   * @param modelClass the model you want to create
+   * @param data the data you want your model to be populated with
+   */
+  public insert<T extends Object>(
+    modelClass: { new (): T },
+    data: DeepPartial<T>[],
+  ): Promise<T[]>;
+
+  /**
+   * Create model and save it to the database.
+   */
+  public insert<T extends Object>(
+    modelClass: { new (): T },
+    data: DeepPartial<T> | DeepPartial<T>[],
+  ): Promise<T | T[]> {
+    if (Array.isArray(data)) {
+      const models = createModels(modelClass, data as any);
+      return this._bulkSave(modelClass, models);
+    } else {
+      const model = createModel(modelClass, data as any);
+      return this.save(model);
+    }
+  }
+
+  /**
+   * Save multiple records to the database efficiently
+   */
+  private async _bulkSave<T extends Object>(
+    modelClass: { new (): T },
+    models: T[],
+  ): Promise<T[]> {
+    const tableName = getTableName(modelClass);
+    const primaryKeyInfo = getPrimaryKeyInfo(modelClass);
+
+    // Get all model values
+    const values = models.map((model) => getValues(model));
+
+    // Execute query
+    const query = this.adapter.table(tableName).insert(values);
+
+    // The postgres adapter doesn't have any equivalient `lastInsertedId` property.
+    // So, we need to manually return the primary key.
+    if (this.adapter.dialect === "postgres") {
+      query.returning(primaryKeyInfo.name);
+    }
+
+    // Execute the query
+    const result = await query.execute();
+
+    // Get last inserted id
+    const lastInsertedId = this.adapter.dialect === "postgres"
+      ? result[result.length - 1][primaryKeyInfo.name] as number
+      : this.adapter.lastInsertedId;
+
+    // Set the model primary keys
+    const ids = range(
+      lastInsertedId + 1 - models.length,
+      lastInsertedId,
+    );
+    models.forEach((model, index) => {
+      const value = values[index];
+
+      // Set the primary key
+      value[primaryKeyInfo.propertyKey] = ids[index];
+
+      // Populate empty properties with default value
+      Object.assign(
+        model,
+        mapValueProperties(model.constructor, value, "propertyKey"),
+      );
+
+      // Update the `isSaved` status and save the original values
+      setSaved(model, true);
+    });
+
+    return models;
   }
 }

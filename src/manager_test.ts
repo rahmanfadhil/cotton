@@ -338,14 +338,61 @@ testDB(
 
     users = await client.query("SELECT * FROM users;");
     assertEquals(users.length, 1);
-    assertEquals(users[0].id, 1);
-    assertEquals(users[0].first_name, "John");
-    assertEquals(users[0].last_name, "Doe");
-    assertEquals(users[0].age, 16);
+    assertEquals(users[0].id, user.id);
+    assertEquals(users[0].first_name, user.firstName);
+    assertEquals(users[0].last_name, user.lastName);
+    assertEquals(users[0].age, user.age);
     assertEquals(users[0].is_active, client.dialect === "postgres" ? false : 0);
     assertEquals(
       users[0].created_at,
       client.dialect === "sqlite" ? formatDate(user.createdAt) : user.createdAt,
     );
+  },
+);
+
+testDB(
+  "Manager.insert() -> should create multiple model instances and save them to the database",
+  async (client) => {
+    const manager = new Manager(client);
+
+    assertEquals((await client.query("SELECT id FROM users;")).length, 0);
+
+    const users = await manager.insert(User, [{
+      firstName: "John",
+      lastName: "Doe",
+      age: 16,
+    }, {
+      firstName: "Jane",
+      lastName: "Doe",
+      age: 17,
+    }]);
+    assert(Array.isArray(users));
+    for (let i = 0; i < users.length; i++) {
+      const user = users[i];
+      assertEquals(user.id, i + 1);
+      assertEquals(user.firstName, i ? "Jane" : "John");
+      assertEquals(user.lastName, "Doe");
+      assertEquals(user.age, i ? 17 : 16);
+      assertEquals(user.isActive, false);
+      assert(user.createdAt instanceof Date);
+      assertEquals(user.products, undefined);
+    }
+
+    const result = await client.query("SELECT * FROM users;");
+    assertEquals(result.length, 2);
+    for (let i = 0; i < result.length; i++) {
+      const data = result[i];
+      assertEquals(data.id, users[i].id);
+      assertEquals(data.first_name, users[i].firstName);
+      assertEquals(data.last_name, users[i].lastName);
+      assertEquals(data.age, users[i].age);
+      assertEquals(data.is_active, client.dialect === "postgres" ? false : 0);
+      assertEquals(
+        data.created_at,
+        client.dialect === "sqlite"
+          ? formatDate(users[i].createdAt)
+          : users[i].createdAt,
+      );
+    }
   },
 );
