@@ -12,6 +12,7 @@ import {
   mapSingleQueryResult,
   createModel,
   createModels,
+  mapValueProperties,
 } from "./models.ts";
 import {
   Model,
@@ -398,6 +399,18 @@ Deno.test("getValues() -> throw an error if the a not nullable column is null", 
   assert(values.created_at instanceof Date);
 });
 
+Deno.test("mapValueProperties() -> should rename all properties from name to propertyKey", () => {
+  const post = new Post();
+  post.title = "Post 1";
+  const values = getValues(post);
+
+  assertEquals(mapValueProperties(Post, values), {
+    title: values.title,
+    isPublished: values.is_published,
+    createdAt: values.created_at,
+  });
+});
+
 Deno.test("mapQueryResult() -> should map a typical query result", () => {
   assertEquals(
     mapQueryResult(User, [{
@@ -573,6 +586,8 @@ Deno.test("createModel() -> should create a model", () => {
   assertEquals(user.firstName, "John");
   assertEquals(user.lastName, "Doe");
   assertEquals(user.age, 16);
+  assertEquals(typeof user.products, "undefined");
+  assertEquals(typeof user.posts, "undefined");
 
   const date = new Date();
 
@@ -595,8 +610,8 @@ Deno.test("createModel() -> should create a HasMany relational model", () => {
     lastName: "Doe",
     age: 16,
     posts: [
-      { title: "Post 1", isPublished: false, createdAt: date },
-      { title: "Post 2", isPublished: true, createdAt: date },
+      { title: "Post 1", isPublished: 0, createdAt: date },
+      { title: "Post 2", isPublished: 1, createdAt: date },
     ],
   });
 
@@ -618,8 +633,8 @@ Deno.test("createModel() -> should create a BelongsTo relational model", () => {
   const date = new Date();
   const post = createModel(Post, {
     title: "Post 1",
-    isPublished: false,
-    createdAt: date,
+    isPublished: 0,
+    createdAt: formatDate(date),
     user: {
       firstName: "John",
       lastName: "Doe",
@@ -683,7 +698,7 @@ Deno.test("createModels() -> should create multiple models with relations", () =
   assert(users[0].products[1] instanceof Product);
   assertEquals(users[0].products[1].name, "Rice");
   assertEquals(users[0].products[1].productId, 2);
-  assertEquals(users[0].products[1].user, null);
+  assertEquals(typeof users[0].products[1].user, "undefined");
   assertEquals(users[0].firstName, "John");
   assertEquals(users[0].lastName, "Doe");
   assertEquals(users[0].age, 16);
@@ -692,5 +707,5 @@ Deno.test("createModels() -> should create multiple models with relations", () =
   assertEquals(users[1].firstName, "Tom");
   assertEquals(users[1].lastName, "Cruise");
   assertEquals(users[1].age, 18);
-  assertEquals(users[1].posts, []);
+  assertEquals(typeof users[1].posts, "undefined");
 });

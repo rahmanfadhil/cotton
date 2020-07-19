@@ -5,6 +5,8 @@ import {
   getPrimaryKeyInfo,
   getValues,
   setSaved,
+  getColumns,
+  mapValueProperties,
 } from "./utils/models.ts";
 import { Adapter } from "./adapters/adapter.ts";
 
@@ -12,6 +14,11 @@ import { Adapter } from "./adapters/adapter.ts";
  * Manager allows you to perform queries to your model.
  */
 export class Manager {
+  /**
+   * Create a model manager.
+   *
+   * @param adapter the database adapter to perform queries
+   */
   constructor(private adapter: Adapter) {}
 
   /**
@@ -39,12 +46,12 @@ export class Manager {
           .execute();
       }
     } else {
-      const primaryKeyInfo = getPrimaryKeyInfo(model.constructor);
+      const values = getValues(model);
 
       // Save record to the database
       const query = this.adapter
         .table(tableName)
-        .insert(getValues(model));
+        .insert(values);
 
       // The postgres adapter doesn't have `lastInsertedId`. So, we need to
       // manually return the primary key in order to set the model's primary key
@@ -61,9 +68,13 @@ export class Manager {
         : this.adapter.lastInsertedId;
 
       // Set the primary key
-      (model as any)[primaryKeyInfo.propertyKey] = lastInsertedId;
+      values[primaryKeyInfo.name] = lastInsertedId;
 
-      // TODO: populate empty properties with default value
+      // Populate empty properties with default value
+      Object.assign(
+        model,
+        mapValueProperties(model.constructor, values),
+      );
     }
 
     // Save the model's original values

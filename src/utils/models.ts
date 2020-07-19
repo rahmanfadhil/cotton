@@ -158,8 +158,7 @@ export function compareWithOriginal(model: Object): ModelComparisonResult {
   // which means it's dirty.
   if (originalValue) {
     let isDirty = false;
-    let diff: ModelDatabaseValues = {};
-    const columns: ColumnDescription[] = [];
+    const diff: ModelDatabaseValues = {};
 
     // Loop for the fields, if one of the fields doesn't match, the object is dirty
     for (const column of getColumns(model.constructor)) {
@@ -167,13 +166,8 @@ export function compareWithOriginal(model: Object): ModelComparisonResult {
 
       if (value !== originalValue[column.name]) {
         isDirty = true;
-        diff[column.name] = value;
-        columns.push(column);
+        diff[column.name] = getNormalizedValue(column, value);
       }
-    }
-
-    if (isDirty) {
-      diff = getNormalizedValues(columns, diff, "name");
     }
 
     return { isDirty, diff };
@@ -220,9 +214,10 @@ export function getValues(
         // is nullable, set it to null. Otherwise, throw an error.
         if (typeof column.default !== "undefined") {
           // If the default value is a function, execute it and get the returned value
-          data[column.name] = typeof column.default === "function"
+          const defaultValue = typeof column.default === "function"
             ? column.default()
             : column.default;
+          data[column.name] = getNormalizedValue(column, defaultValue);
         } else if (column.isNullable === true) {
           data[column.name] = null;
         } else {
@@ -231,16 +226,39 @@ export function getValues(
           );
         }
       } else {
-        data[column.name] = (model as any)[column.propertyKey] as any;
+        data[column.name] = getNormalizedValue(
+          column,
+          (model as any)[column.propertyKey],
+        );
       }
     }
   }
 
-  return getNormalizedValues(
-    selectedColumns,
-    data,
-    "name",
-  );
+  return data;
+}
+
+/**
+ * Map values from `getValues` to be compatible with model properties.
+ * 
+ * @param modelClass the model class of those values.
+ * @param values the model values.
+ */
+export function mapValueProperties(
+  modelClass: Function,
+  values: ModelDatabaseValues,
+): ModelDatabaseValues {
+  const data: ModelDatabaseValues = {};
+  const columns = getColumns(modelClass);
+
+  for (const key in values) {
+    const column = columns.find((item) => item.name === key);
+
+    if (column) {
+      data[column.propertyKey] = values[key];
+    }
+  }
+
+  return data;
 }
 
 // --------------------------------------------------------------------------------
@@ -248,51 +266,41 @@ export function getValues(
 // --------------------------------------------------------------------------------
 
 /**
- * Normalize model values from the database or user input.
+ * Normalize value to a database compatible values.
  * 
  * @param columns the column definitions you want to include
- * @param data the model data
- * @param bindTo choose to bind the values on `propertyKey` (for model) or `name` (for database)
- * @param columns include several columns and ignore the rest. 
+ * @param original the original data
  */
-function getNormalizedValues(
-  columns: ColumnDescription[],
-  data: ModelValues,
-  bindTo: "propertyKey" | "name",
-): ModelDatabaseValues {
-  const result: ModelDatabaseValues = {};
+function getNormalizedValue(
+  column: ColumnDescription,
+  original: DatabaseValues,
+): DatabaseValues {
+  let value: any;
 
-  for (const column of columns) {
-    let original = data[column[bindTo]];
-    let value: any;
-
-    if (typeof original === "undefined" || original === null) {
-      value = null;
-    } else if (
-      column.type === ColumnType.Date &&
-      (typeof original === "string" || typeof original === "number")
-    ) {
-      value = new Date(original);
-    } else if (
-      column.type === ColumnType.String && typeof original !== "string"
-    ) {
-      value = String(original);
-    } else if (
-      column.type === ColumnType.Number && typeof original !== "number"
-    ) {
-      value = Number(original);
-    } else if (
-      column.type === ColumnType.Boolean && typeof original !== "boolean"
-    ) {
-      value = Boolean(original);
-    } else {
-      value = original;
-    }
-
-    result[column[bindTo]] = value;
+  if (typeof original === "undefined" || original === null) {
+    value = null;
+  } else if (
+    column.type === ColumnType.Date &&
+    (typeof original === "string" || typeof original === "number")
+  ) {
+    value = new Date(original);
+  } else if (
+    column.type === ColumnType.String && typeof original !== "string"
+  ) {
+    value = String(original);
+  } else if (
+    column.type === ColumnType.Number && typeof original !== "number"
+  ) {
+    value = Number(original);
+  } else if (
+    column.type === ColumnType.Boolean && typeof original !== "boolean"
+  ) {
+    value = Boolean(original);
+  } else {
+    value = original;
   }
 
-  return result;
+  return value;
 }
 
 // --------------------------------------------------------------------------------
@@ -413,26 +421,26 @@ export function createModel<T>(
   data: ModelValues,
   fromDatabase: boolean = false,
 ): T {
-  const values: { [key: string]: DatabaseValues | Object | Object[] } =
-    getNormalizedValues(
-      getColumns(modelClass),
-      data,
-      "propertyKey",
+  const values: { [key: string]: DatabaseValues | Object | Object[] } = {};
+
+  for (const column of getColumns(modelClass)) {
+    values[column.propertyKey] = getNormalizedValue(
+      column,
+      data[column.propertyKey] as DatabaseValues,
     );
+  }
 
   for (const relation of getRelations(modelClass)) {
     const relationModel = relation.getModel();
     const relationData = data[relation.propertyKey] as ModelValues;
 
     if (relation.type === RelationType.BelongsTo) {
-      if (typeof relationData === "object") {
+      if (relationData) {
         values[relation.propertyKey] = createModel(
           relationModel,
           relationData,
           fromDatabase,
         );
-      } else {
-        values[relation.propertyKey] = null;
       }
     } else if (relation.type === RelationType.HasMany) {
       if (
@@ -444,8 +452,6 @@ export function createModel<T>(
           relationData,
           fromDatabase,
         );
-      } else {
-        values[relation.propertyKey] = [];
       }
     }
   }
