@@ -1,5 +1,6 @@
 import { QueryBuilder } from "../querybuilder.ts";
 import { DatabaseDialect } from "../connect.ts";
+import { Manager } from "../manager.ts";
 
 /**
  * Database connection options
@@ -55,5 +56,12 @@ export abstract class Adapter {
    */
   public table(tableName: string): QueryBuilder {
     return new QueryBuilder(tableName, this);
+  }
+
+  /**
+   * Get the model manager
+   */
+  public getManager() {
+    return new Manager(this);
   }
 }

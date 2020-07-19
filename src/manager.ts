@@ -5,7 +5,6 @@ import {
   getPrimaryKeyInfo,
   getValues,
   setSaved,
-  getColumns,
   mapValueProperties,
 } from "./utils/models.ts";
 import { Adapter } from "./adapters/adapter.ts";
