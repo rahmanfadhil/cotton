@@ -77,11 +77,11 @@ export async function testDB(
       // Run the actual test
       await fn(db);
 
-      // Drop dummy table `users`
-      await db.query("DROP TABLE users;");
-
       // Drop dummy table `products`
       await db.query("DROP TABLE products;");
+
+      // Drop dummy table `users`
+      await db.query("DROP TABLE users;");
 
       // Disconnect to database
       await db.disconnect();

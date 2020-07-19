@@ -6,8 +6,28 @@ import {
   getValues,
   setSaved,
   mapValueProperties,
+  getColumns,
+  createModels,
+  mapQueryResult,
 } from "./utils/models.ts";
 import { Adapter } from "./adapters/adapter.ts";
+import { QueryBuilder } from "./querybuilder.ts";
+
+/**
+ * Same as Partial<T> but goes deeper and makes Partial<T> all its properties and sub-properties.
+ */
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends Array<infer U> ? Array<DeepPartial<U>>
+    : T[P] extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+    : DeepPartial<T[P]>;
+};
+
+/**
+ * Query options for find() and findOne()
+ */
+export interface FindOptions<T> {
+  where?: DeepPartial<T>;
+}
 
 /**
  * Manager allows you to perform queries to your model.
@@ -72,7 +92,7 @@ export class Manager {
       // Populate empty properties with default value
       Object.assign(
         model,
-        mapValueProperties(model.constructor, values),
+        mapValueProperties(model.constructor, values, "propertyKey"),
       );
     }
 
@@ -80,5 +100,57 @@ export class Manager {
     setSaved(model, true);
 
     return model;
+  }
+
+  /**
+   * Find models that match given conditions.
+   * 
+   * @param modelClass the model you want to find
+   * @param options find options for filtering the records
+   */
+  public async find<T>(
+    modelClass: { new (): T },
+    options?: FindOptions<T>,
+  ): Promise<T[]> {
+    // Initialize the query builder
+    const query = this.setupQueryBuilder(modelClass, options);
+
+    // Execute the query
+    const result = await query.execute();
+
+    // Build the model objects
+    return createModels(modelClass, mapQueryResult(modelClass, result), true);
+  }
+
+  /**
+   * Setup the query builder for find() and findOne()
+   * 
+   * @param modelClass the model class
+   * @param options find options for filtering the records
+   */
+  private setupQueryBuilder(
+    modelClass: Function,
+    options?: FindOptions<{}>,
+  ): QueryBuilder {
+    const tableName = getTableName(modelClass);
+    const query = this.adapter.table(tableName);
+
+    // Implement the where statements
+    if (options?.where) {
+      const values = mapValueProperties(modelClass, options.where, "name");
+      for (const [key, value] of Object.entries(values)) {
+        query.where(key, value);
+      }
+    }
+
+    // Select the model columns
+    const columns: [string, string][] = getColumns(modelClass)
+      .map((column) => [
+        tableName + "." + column.name,
+        tableName + "__" + column.name,
+      ]);
+    query.select(...columns);
+
+    return query;
   }
 }

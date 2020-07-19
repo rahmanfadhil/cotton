@@ -97,3 +97,105 @@ testDB(
 //   () => {
 //   },
 // );
+
+testDB("Manager.find() -> should return all records", async (client) => {
+  const manager = new Manager(client);
+  let users = await manager.find(User);
+  assert(Array.isArray(users));
+  assertEquals(users.length, 0);
+
+  const data = {
+    first_name: "John",
+    last_name: "Doe",
+    age: 16,
+    created_at: new Date(),
+    is_active: false,
+  };
+  await client.table("users").insert(data).execute();
+
+  users = await manager.find(User);
+  assert(Array.isArray(users));
+  assertEquals(users.length, 1);
+  assert(users[0] instanceof User);
+  assertEquals(users[0].id, 1);
+  assertEquals(users[0].firstName, data.first_name);
+  assertEquals(users[0].lastName, data.last_name);
+  assertEquals(users[0].age, data.age);
+  assertEquals(users[0].isActive, data.is_active);
+  assertEquals(users[0].createdAt, data.created_at);
+});
+
+testDB("Manager.find() -> should query with options", async (client) => {
+  const data = [{
+    id: 1,
+    first_name: "John",
+    last_name: "Doe",
+    age: 16,
+    created_at: new Date(),
+    is_active: false,
+  }, {
+    id: 2,
+    first_name: "Jane",
+    last_name: "Doe",
+    age: 17,
+    created_at: new Date(),
+    is_active: true,
+  }, {
+    id: 3,
+    first_name: "Tom",
+    last_name: "Cruise",
+    age: 18,
+    created_at: new Date(),
+    is_active: true,
+  }];
+  await client.table("users").insert(data).execute();
+
+  const manager = new Manager(client);
+
+  let users = await manager.find(User, { where: { lastName: "Doe" } });
+  assertEquals(users.length, 2);
+  assert(users[0] instanceof User);
+  assert(users[1] instanceof User);
+  assertEquals(users[0].id, 1);
+  assertEquals(users[1].id, 2);
+
+  users = await manager.find(User, { where: { isActive: true } });
+  assertEquals(users.length, 2);
+  assert(users[0] instanceof User);
+  assert(users[1] instanceof User);
+  assertEquals(users[0].id, 2);
+  assertEquals(users[1].id, 3);
+
+  users = await manager.find(User, {
+    where: { lastName: "Doe", isActive: true },
+  });
+  assertEquals(users.length, 1);
+  assert(users[0] instanceof User);
+  assertEquals(users[0].id, 2);
+});
+
+testDB(
+  "Manager.find() -> should have no relation properties by default",
+  async (client) => {
+    await client.table("users").insert({
+      first_name: "John",
+      last_name: "Doe",
+      age: 16,
+      created_at: new Date(),
+      is_active: false,
+    }).execute();
+
+    await client.table("products").insert({
+      title: "Spoon",
+      user_id: 1,
+    }).execute();
+
+    const manager = new Manager(client);
+
+    const users = await manager.find(User);
+    assertEquals(users[0].products, undefined);
+
+    const products = await manager.find(Product);
+    assertEquals(products[0].user, undefined);
+  },
+);

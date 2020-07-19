@@ -1,11 +1,13 @@
 export { QueryBuilder } from "./src/querybuilder.ts";
 export { connect, DatabaseDialect } from "./src/connect.ts";
-export { Model, FindOptions } from "./src/models/model.ts";
+export { Manager, FindOptions } from "./src/manager.ts";
 export { Schema } from "./src/migrations/schema.ts";
 export { MigrationRunner } from "./src/migrations/migrationrunner.ts";
 export {
+  PrimaryColumn,
   Column,
-  FieldType,
+  ColumnType,
   Relation,
   RelationType,
-} from "./src/models/fields.ts";
+  Model,
+} from "./src/model.ts";

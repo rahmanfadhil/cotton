@@ -7,25 +7,25 @@ import { PostgresAdapter } from "./adapters/postgres.ts";
 import { MysqlAdapter } from "./adapters/mysql.ts";
 import { mysqlOptions, postgresOptions, sqliteOptions } from "./testutils.ts";
 
-Deno.test("connect: sqlite", async () => {
+Deno.test("connect() -> sqlite", async () => {
   const db = await connect({ type: "sqlite", ...sqliteOptions });
   assertEquals(db instanceof SqliteAdapter, true);
   await db.disconnect();
 });
 
-Deno.test("connect: postgres", async () => {
+Deno.test("connect() -> postgres", async () => {
   const db = await connect({ type: "postgres", ...postgresOptions });
   assertEquals(db instanceof PostgresAdapter, true);
   await db.disconnect();
 });
 
-Deno.test("connect: mysql", async () => {
+Deno.test("connect() -> mysql", async () => {
   const db = await connect({ type: "mysql", ...mysqlOptions });
   assertEquals(db instanceof MysqlAdapter, true);
   await db.disconnect();
 });
 
-Deno.test("connect: ormconfig.json", async () => {
+Deno.test("connect() -> ormconfig.json", async () => {
   await Deno.writeTextFile(
     joinPath(Deno.cwd(), "./ormconfig.json"),
     JSON.stringify({ type: "sqlite", database: ":memory:" }),
@@ -38,7 +38,7 @@ Deno.test("connect: ormconfig.json", async () => {
   await Deno.remove(joinPath(Deno.cwd(), "./ormconfig.json"));
 });
 
-Deno.test("connect: ormconfig.json not found", async () => {
+Deno.test("connect() -> ormconfig.json not found", async () => {
   await assertThrowsAsync(
     async () => await connect(),
     Error,

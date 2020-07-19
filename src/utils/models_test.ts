@@ -404,10 +404,19 @@ Deno.test("mapValueProperties() -> should rename all properties from name to pro
   post.title = "Post 1";
   const values = getValues(post);
 
-  assertEquals(mapValueProperties(Post, values), {
+  assertEquals(mapValueProperties(Post, values, "propertyKey"), {
     title: values.title,
     isPublished: values.is_published,
     createdAt: values.created_at,
+  });
+});
+
+Deno.test("mapValueProperties() -> should rename all properties from propertyKey to name", () => {
+  const data = { title: "Post 1", isPublished: true, createdAt: new Date() };
+  assertEquals(mapValueProperties(Post, data, "name"), {
+    title: data.title,
+    is_published: data.isPublished,
+    created_at: data.createdAt,
   });
 });
 

@@ -238,23 +238,26 @@ export function getValues(
 }
 
 /**
- * Map values from `getValues` to be compatible with model properties.
+ * Map values from `getValues` to be compatible with model properties vice versa.
  * 
  * @param modelClass the model class of those values.
  * @param values the model values.
+ * @param to the property naming convention you want to convert.
  */
 export function mapValueProperties(
   modelClass: Function,
   values: ModelDatabaseValues,
+  to: "propertyKey" | "name",
 ): ModelDatabaseValues {
   const data: ModelDatabaseValues = {};
   const columns = getColumns(modelClass);
 
   for (const key in values) {
-    const column = columns.find((item) => item.name === key);
+    const column = columns
+      .find((item) => item[to === "name" ? "propertyKey" : "name"] === key);
 
     if (column) {
-      data[column.propertyKey] = values[key];
+      data[column[to]] = values[key];
     }
   }
 
