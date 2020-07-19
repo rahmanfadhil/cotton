@@ -292,3 +292,23 @@ testDB(
     assertEquals(product!.user, undefined);
   },
 );
+
+testDB(
+  "Manager.remove() -> should remove a model from the database",
+  async (client) => {
+    await client.table("users").insert({
+      first_name: "John",
+      last_name: "Doe",
+      age: 16,
+      created_at: new Date(),
+      is_active: false,
+    }).execute();
+
+    const manager = new Manager(client);
+    const user = await manager.findOne(User);
+    await manager.remove(user!);
+    assertEquals(user!.id, undefined);
+
+    assertEquals(await manager.findOne(User), null);
+  },
+);

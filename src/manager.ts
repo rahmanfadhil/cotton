@@ -184,4 +184,29 @@ export class Manager {
 
     return query;
   }
+
+  /**
+   * Remove given model from the database.
+   * 
+   * @param model the model you want to remove.
+   */
+  public async remove<T extends Object>(model: T): Promise<T> {
+    const tableName = getTableName(model.constructor);
+    const primaryKeyInfo = getPrimaryKeyInfo(model.constructor);
+
+    // Only remove model if it's already saved
+    if (isSaved(model)) {
+      const id = (model as any)[primaryKeyInfo.propertyKey];
+      await this.adapter
+        .table(tableName)
+        .where(primaryKeyInfo.name, id)
+        .delete()
+        .execute();
+
+      // Remove the primary key
+      delete (model as any)[primaryKeyInfo.propertyKey];
+    }
+
+    return model;
+  }
 }
