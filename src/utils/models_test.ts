@@ -685,7 +685,7 @@ Deno.test("createModels() -> should create multiple models with relations", () =
     firstName: "Tom",
     lastName: "Cruise",
     age: 18,
-  }]);
+  }], true);
 
   assert(Array.isArray(users));
   assertEquals(users.length, 2);

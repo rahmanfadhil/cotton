@@ -43,7 +43,7 @@ export class Manager {
   constructor(private adapter: Adapter) {}
 
   /**
-   * Save model to the database.
+   * Save model instance to the database.
    *
    * @param model the model you want to save
    */
@@ -105,7 +105,7 @@ export class Manager {
   }
 
   /**
-   * Find models that match given conditions.
+   * Find records that match given conditions.
    * 
    * @param modelClass the model you want to find
    * @param options find options for filtering the records
@@ -125,7 +125,7 @@ export class Manager {
   }
 
   /**
-   * Find a single models that match given conditions. If multiple
+   * Find a single record that match given conditions. If multiple
    * found, it will return the first one. 
    * 
    * @param modelClass the model you want to find
@@ -208,5 +208,19 @@ export class Manager {
     }
 
     return model;
+  }
+
+  /**
+   * Create a model instance and save it to the database.
+   * 
+   * @param modelClass the model you want to create
+   * @param data the data you want your model to be populated with
+   */
+  public insert<T extends Object>(
+    modelClass: { new (): T },
+    data: DeepPartial<T>,
+  ): Promise<T> {
+    const model = createModel(modelClass, data as any);
+    return this.save(model);
   }
 }

@@ -427,10 +427,37 @@ export function createModel<T>(
   const values: { [key: string]: DatabaseValues | Object | Object[] } = {};
 
   for (const column of getColumns(modelClass)) {
-    values[column.propertyKey] = getNormalizedValue(
-      column,
-      data[column.propertyKey] as DatabaseValues,
-    );
+    const value = data[column.propertyKey];
+
+    // If one of the selected columns is the primary key, the record needs to be saved first.
+    if (column.isPrimaryKey) {
+      if (fromDatabase) {
+        values[column.propertyKey] = value as number;
+      }
+    } else {
+      if (typeof value === "undefined") {
+        // If the value is undefined, check the default value. Then, if the column
+        // is nullable, set it to null. Otherwise, throw an error.
+        if (typeof column.default !== "undefined") {
+          // If the default value is a function, execute it and get the returned value
+          const defaultValue = typeof column.default === "function"
+            ? column.default()
+            : column.default;
+          values[column.propertyKey] = getNormalizedValue(column, defaultValue);
+        } else if (column.isNullable === true) {
+          values[column.propertyKey] = null;
+        } else {
+          throw new Error(
+            `Column '${column.propertyKey}' cannot be empty!'`,
+          );
+        }
+      } else {
+        values[column.propertyKey] = getNormalizedValue(
+          column,
+          value as DatabaseValues,
+        );
+      }
+    }
   }
 
   for (const relation of getRelations(modelClass)) {

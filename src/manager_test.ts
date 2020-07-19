@@ -8,6 +8,7 @@ import {
 } from "./model.ts";
 import { Manager } from "./manager.ts";
 import { assert, assertEquals, assertThrowsAsync } from "../testdeps.ts";
+import { formatDate } from "./utils/date.ts";
 
 @Model("users")
 class User {
@@ -310,5 +311,41 @@ testDB(
     assertEquals(user!.id, undefined);
 
     assertEquals(await manager.findOne(User), null);
+  },
+);
+
+testDB(
+  "Manager.insert() -> should create a model instance and save it to the database",
+  async (client) => {
+    const manager = new Manager(client);
+
+    let users = await client.query("SELECT id FROM users;");
+    assertEquals(users.length, 0);
+
+    const user = await manager.insert(User, {
+      firstName: "John",
+      lastName: "Doe",
+      age: 16,
+    });
+    assert(user instanceof User);
+    assertEquals(user.id, 1);
+    assertEquals(user.firstName, "John");
+    assertEquals(user.lastName, "Doe");
+    assertEquals(user.age, 16);
+    assertEquals(user.isActive, false);
+    assert(user.createdAt instanceof Date);
+    assertEquals(user.products, undefined);
+
+    users = await client.query("SELECT * FROM users;");
+    assertEquals(users.length, 1);
+    assertEquals(users[0].id, 1);
+    assertEquals(users[0].first_name, "John");
+    assertEquals(users[0].last_name, "Doe");
+    assertEquals(users[0].age, 16);
+    assertEquals(users[0].is_active, client.dialect === "postgres" ? false : 0);
+    assertEquals(
+      users[0].created_at,
+      client.dialect === "sqlite" ? formatDate(user.createdAt) : user.createdAt,
+    );
   },
 );
