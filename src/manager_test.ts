@@ -199,3 +199,96 @@ testDB(
     assertEquals(products[0].user, undefined);
   },
 );
+
+testDB(
+  "Manager.findOne() -> should return a single record",
+  async (client) => {
+    const manager = new Manager(client);
+    let user = await manager.findOne(User);
+    assertEquals(user, null);
+
+    const data = {
+      first_name: "John",
+      last_name: "Doe",
+      age: 16,
+      created_at: new Date(),
+      is_active: false,
+    };
+    await client.table("users").insert(data).execute();
+
+    user = await manager.findOne(User);
+    assert(user instanceof User);
+    assertEquals(user.id, 1);
+    assertEquals(user.firstName, data.first_name);
+    assertEquals(user.lastName, data.last_name);
+    assertEquals(user.age, data.age);
+    assertEquals(user.isActive, data.is_active);
+    assertEquals(user.createdAt, data.created_at);
+  },
+);
+
+testDB("Manager.find() -> should query with options", async (client) => {
+  const data = [{
+    id: 1,
+    first_name: "John",
+    last_name: "Doe",
+    age: 16,
+    created_at: new Date(),
+    is_active: false,
+  }, {
+    id: 2,
+    first_name: "Jane",
+    last_name: "Doe",
+    age: 17,
+    created_at: new Date(),
+    is_active: true,
+  }, {
+    id: 3,
+    first_name: "Tom",
+    last_name: "Cruise",
+    age: 18,
+    created_at: new Date(),
+    is_active: true,
+  }];
+  await client.table("users").insert(data).execute();
+
+  const manager = new Manager(client);
+
+  let user = await manager.findOne(User, { where: { lastName: "Doe" } });
+  assert(user instanceof User);
+  assertEquals(user.id, 1);
+
+  user = await manager.findOne(User, { where: { isActive: true } });
+  assert(user instanceof User);
+  assertEquals(user.id, 2);
+
+  user = await manager.findOne(User, { where: { id: 3 } });
+  assert(user instanceof User);
+  assertEquals(user.id, 3);
+});
+
+testDB(
+  "Manager.findOne() -> should have no relation properties by default",
+  async (client) => {
+    await client.table("users").insert({
+      first_name: "John",
+      last_name: "Doe",
+      age: 16,
+      created_at: new Date(),
+      is_active: false,
+    }).execute();
+
+    await client.table("products").insert({
+      title: "Spoon",
+      user_id: 1,
+    }).execute();
+
+    const manager = new Manager(client);
+
+    const user = await manager.findOne(User);
+    assertEquals(user!.products, undefined);
+
+    const product = await manager.findOne(Product);
+    assertEquals(product!.user, undefined);
+  },
+);

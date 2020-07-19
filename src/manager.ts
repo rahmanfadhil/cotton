@@ -9,6 +9,8 @@ import {
   getColumns,
   createModels,
   mapQueryResult,
+  createModel,
+  mapSingleQueryResult,
 } from "./utils/models.ts";
 import { Adapter } from "./adapters/adapter.ts";
 import { QueryBuilder } from "./querybuilder.ts";
@@ -120,6 +122,35 @@ export class Manager {
 
     // Build the model objects
     return createModels(modelClass, mapQueryResult(modelClass, result), true);
+  }
+
+  /**
+   * Find a single models that match given conditions. If multiple
+   * found, it will return the first one. 
+   * 
+   * @param modelClass the model you want to find
+   * @param options find options for filtering the records
+   */
+  public async findOne<T>(
+    modelClass: { new (): T },
+    options?: FindOptions<T>,
+  ): Promise<T | null> {
+    // Initialize the query builder
+    const query = this.setupQueryBuilder(modelClass, options);
+
+    // Execute the query
+    const result = await query.execute();
+
+    // Build the model objects
+    if (result.length >= 1) {
+      return createModel(
+        modelClass,
+        mapSingleQueryResult(modelClass, result[0]),
+        true,
+      );
+    } else {
+      return null;
+    }
   }
 
   /**
