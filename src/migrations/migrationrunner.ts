@@ -110,7 +110,7 @@ export class MigrationRunner {
     const migrations = await this.adapter
       .table("migrations")
       .select("name", "batch")
-      .execute<{ name: string; batch: number }>();
+      .execute();
     const migrationFiles = await this.getAllMigrationFiles();
 
     for (const migration of migrations) {
@@ -122,7 +122,7 @@ export class MigrationRunner {
       }
 
       migrationFiles[migrationIndex].isExecuted = true;
-      migrationFiles[migrationIndex].batch = migration.batch;
+      migrationFiles[migrationIndex].batch = migration.batch as number;
     }
 
     const lastBatch = migrationFiles.reduce((prev, current) =>
