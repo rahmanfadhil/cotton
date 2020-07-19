@@ -2,9 +2,10 @@ import { testDB } from "../testutils.ts";
 import { assertEquals, assert } from "../../testdeps.ts";
 import { QueryBuilder } from "../querybuilder.ts";
 import { formatDate } from "../utils/date.ts";
+import { Manager } from "../manager.ts";
 
 testDB(
-  "BaseAdapter: `table` should contains actual query builder",
+  "Adapter: table() -> should contains actual query builder",
   (client) => {
     const query = client.table("users");
     assert(query instanceof QueryBuilder);
@@ -12,7 +13,16 @@ testDB(
   },
 );
 
-testDB("BaseAdapter: `query` bind values", async (client) => {
+testDB(
+  "Adapter: getManager() -> should return a model manager",
+  (client) => {
+    const manager = client.getManager();
+    assert(manager instanceof Manager);
+    assertEquals((manager as any).adapter, client);
+  },
+);
+
+testDB("Adapter: query() -> bind values", async (client) => {
   let query: string;
 
   switch (client.dialect) {
