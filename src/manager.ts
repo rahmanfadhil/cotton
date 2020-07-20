@@ -199,7 +199,7 @@ export class Manager {
   ): Promise<T>;
 
   /**
-   * Create a model instance and save it to the database.
+   * Create model instances and save it to the database.
    * 
    * @param modelClass the model you want to create
    * @param data the data you want your model to be populated with

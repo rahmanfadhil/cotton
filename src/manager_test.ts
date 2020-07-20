@@ -415,7 +415,6 @@ testDB("Manager.find() -> pagination", async (client) => {
   let products = await manager.find(Product, { limit: 3 });
   assertEquals(products.length, 3);
 
-  console.log(products);
   for (let i = 0; i < products.length; i++) {
     assertEquals(products[i].id, i + 1);
   }

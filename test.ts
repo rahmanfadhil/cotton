@@ -20,3 +20,4 @@ import "./src/migrations/tablebuilder_test.ts";
 import "./src/migrations/column_test.ts";
 import "./src/migrations/foreign_test.ts";
 import "./src/model_test.ts";
+import "./src/managedmodel_test.ts";
