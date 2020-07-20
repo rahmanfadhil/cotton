@@ -1,54 +1,84 @@
 import { ManagedModel } from "./managedmodel.ts";
-import { assertEquals, spy } from "../testdeps.ts";
+import { assertEquals, stub } from "../testdeps.ts";
+import { Manager } from "./manager.ts";
 
 class User extends ManagedModel {}
 
 Deno.test("ManagedModel.find() -> should call Manager.find()", () => {
-  const self = { find: spy() };
+  const returned: any = Symbol();
   const parameter: any = Symbol();
 
-  (User as any).manager = self;
-  User.find(parameter);
+  const manager = new Manager({} as any);
+  const managerStub = stub(manager, "find", [returned]);
 
-  assertEquals(self.find.calls, [{ args: [User, parameter], self }]);
+  (User as any).manager = manager;
+
+  assertEquals(User.find(parameter), returned);
+  assertEquals(managerStub.calls, [{
+    args: [User, parameter],
+    self: manager,
+    returned,
+  }]);
 });
 
 Deno.test("ManagedModel.findOne() -> should call Manager.findOne()", () => {
-  const self = { findOne: spy() };
+  const returned: any = Symbol();
   const parameter: any = Symbol();
 
-  (User as any).manager = self;
-  User.findOne(parameter);
+  const manager = new Manager({} as any);
+  const managerStub = stub(manager, "findOne", [returned]);
 
-  assertEquals(self.findOne.calls, [{ args: [User, parameter], self }]);
+  (User as any).manager = manager;
+
+  assertEquals(User.findOne(parameter), returned);
+  assertEquals(managerStub.calls, [{
+    args: [User, parameter],
+    self: manager,
+    returned,
+  }]);
 });
 
 Deno.test("ManagedModel.insert() -> should call Manager.insert()", () => {
-  const self = { insert: spy() };
+  const returned: any = Symbol();
   const parameter: any = Symbol();
 
-  (User as any).manager = self;
-  User.insert(parameter);
+  const manager = new Manager({} as any);
+  const managerStub = stub(manager, "insert", [returned]);
 
-  assertEquals(self.insert.calls, [{ args: [User, parameter], self }]);
+  (User as any).manager = manager;
+
+  assertEquals(User.insert(parameter), returned);
+  assertEquals(managerStub.calls, [{
+    args: [User, parameter],
+    self: manager,
+    returned,
+  }]);
 });
 
 Deno.test("ManagedModel.save() -> should call Manager.save()", () => {
-  const self = { save: spy() };
+  const returned: any = Symbol();
 
-  (User as any).manager = self;
+  const manager = new Manager({} as any);
+  const managerStub = stub(manager, "save", [returned]);
+
+  (User as any).manager = manager;
+
   const user = new User();
-  user.save();
 
-  assertEquals(self.save.calls, [{ args: [user], self }]);
+  assertEquals(user.save(), returned);
+  assertEquals(managerStub.calls, [{ args: [user], self: manager, returned }]);
 });
 
 Deno.test("ManagedModel.remove() -> should call Manager.remove()", () => {
-  const self = { remove: spy() };
+  const returned: any = Symbol();
 
-  (User as any).manager = self;
+  const manager = new Manager({} as any);
+  const managerStub = stub(manager, "remove", [returned]);
+
+  (User as any).manager = manager;
+
   const user = new User();
-  user.remove();
 
-  assertEquals(self.remove.calls, [{ args: [user], self }]);
+  assertEquals(user.remove(), returned);
+  assertEquals(managerStub.calls, [{ args: [user], self: manager, returned }]);
 });
