@@ -1,10 +1,58 @@
-import { Column, ColumnType } from "./model.ts";
+import {
+  Column,
+  ColumnType,
+  Model,
+  Relation,
+  RelationType,
+  RelationDescription,
+} from "./model.ts";
 import { Reflect } from "./utils/reflect.ts";
-import { assertEquals, assertThrows } from "../testdeps.ts";
+import { assertEquals, assertThrows, assert } from "../testdeps.ts";
 import { metadata } from "./constants.ts";
 
-// TODO: create tests on @Model
-// TODO: create tests on @Relation
+Deno.test("Model: should define metadata", () => {
+  @Model()
+  class User {}
+  assertEquals(Reflect.getMetadata(metadata.tableName, User), "user");
+
+  @Model("articles")
+  class Article {}
+  assertEquals(Reflect.getMetadata(metadata.tableName, Article), "articles");
+});
+
+Deno.test("Relation: should define metadata", () => {
+  class User {
+    @Relation(RelationType.HasMany, () => Post, "user_id")
+    posts!: Post[];
+  }
+
+  class Post {
+    @Relation(RelationType.BelongsTo, () => User, "user_id")
+    user!: User;
+  }
+
+  const user: RelationDescription[] = Reflect.getMetadata(
+    metadata.relations,
+    User.prototype,
+  );
+  const post: RelationDescription[] = Reflect.getMetadata(
+    metadata.relations,
+    Post.prototype,
+  );
+  assert(Array.isArray(user));
+  assert(Array.isArray(post));
+  assertEquals(user.length, 1);
+  assertEquals(post.length, 1);
+
+  assertEquals(user[0].getModel(), Post);
+  assertEquals(post[0].getModel(), User);
+  assertEquals(user[0].propertyKey, "posts");
+  assertEquals(post[0].propertyKey, "user");
+  assertEquals(user[0].type, RelationType.HasMany);
+  assertEquals(post[0].type, RelationType.BelongsTo);
+  assertEquals(user[0].targetColumn, "user_id");
+  assertEquals(post[0].targetColumn, "user_id");
+});
 
 Deno.test("Column: basic column", () => {
   class User {

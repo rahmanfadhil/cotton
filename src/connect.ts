@@ -4,13 +4,13 @@ import { joinPath } from "../deps.ts";
 import { MysqlAdapter } from "./adapters/mysql.ts";
 import { PostgresAdapter } from "./adapters/postgres.ts";
 import { SqliteAdapter } from "./adapters/sqlite.ts";
-import { ObjectType, ManagedModel } from "./managedmodel.ts";
+import { ObjectType, BaseModel } from "./basemodel.ts";
 
 export type DatabaseDialect = "mysql" | "postgres" | "sqlite";
 
 interface ConnectionConfig extends ConnectionOptions {
   type: DatabaseDialect;
-  models?: ObjectType<ManagedModel>[];
+  models?: ObjectType<BaseModel>[];
 }
 
 /**
@@ -82,7 +82,7 @@ export async function connect(
 
   if (Array.isArray(connectionOptions.models)) {
     for (let i = 0; i < connectionOptions.models.length; i++) {
-      if (connectionOptions.models[i].prototype instanceof ManagedModel) {
+      if (connectionOptions.models[i].prototype instanceof BaseModel) {
         (connectionOptions.models[i] as any).manager = adapter.getManager();
       }
     }

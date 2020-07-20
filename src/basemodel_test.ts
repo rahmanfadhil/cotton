@@ -1,10 +1,10 @@
-import { ManagedModel } from "./managedmodel.ts";
+import { BaseModel } from "./basemodel.ts";
 import { assertEquals, stub } from "../testdeps.ts";
 import { Manager } from "./manager.ts";
 
-class User extends ManagedModel {}
+class User extends BaseModel {}
 
-Deno.test("ManagedModel.find() -> should call Manager.find()", () => {
+Deno.test("BaseModel.find() -> should call Manager.find()", () => {
   const returned: any = Symbol();
   const parameter: any = Symbol();
 
@@ -21,7 +21,7 @@ Deno.test("ManagedModel.find() -> should call Manager.find()", () => {
   }]);
 });
 
-Deno.test("ManagedModel.findOne() -> should call Manager.findOne()", () => {
+Deno.test("BaseModel.findOne() -> should call Manager.findOne()", () => {
   const returned: any = Symbol();
   const parameter: any = Symbol();
 
@@ -38,7 +38,7 @@ Deno.test("ManagedModel.findOne() -> should call Manager.findOne()", () => {
   }]);
 });
 
-Deno.test("ManagedModel.insert() -> should call Manager.insert()", () => {
+Deno.test("BaseModel.insert() -> should call Manager.insert()", () => {
   const returned: any = Symbol();
   const parameter: any = Symbol();
 
@@ -55,7 +55,7 @@ Deno.test("ManagedModel.insert() -> should call Manager.insert()", () => {
   }]);
 });
 
-Deno.test("ManagedModel.save() -> should call Manager.save()", () => {
+Deno.test("BaseModel.save() -> should call Manager.save()", () => {
   const returned: any = Symbol();
 
   const manager = new Manager({} as any);
@@ -69,7 +69,7 @@ Deno.test("ManagedModel.save() -> should call Manager.save()", () => {
   assertEquals(managerStub.calls, [{ args: [user], self: manager, returned }]);
 });
 
-Deno.test("ManagedModel.remove() -> should call Manager.remove()", () => {
+Deno.test("BaseModel.remove() -> should call Manager.remove()", () => {
   const returned: any = Symbol();
 
   const manager = new Manager({} as any);

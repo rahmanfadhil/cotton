@@ -5,12 +5,12 @@ import {
   DeepPartial,
 } from "./manager.ts";
 
-export type ObjectType<T> = typeof ManagedModel & { new (): T };
+export type ObjectType<T> = typeof BaseModel & { new (): T };
 
 /**
  * Manage your models directly from the model class.
  */
-export abstract class ManagedModel {
+export abstract class BaseModel {
   private static manager: Manager;
 
   /**
@@ -18,7 +18,7 @@ export abstract class ManagedModel {
    * 
    * @param options find options for filtering the records
    */
-  public static find<T extends ManagedModel>(
+  public static find<T extends BaseModel>(
     this: ObjectType<T>,
     options?: FindOptions<T>,
   ): Promise<T[]> {
@@ -31,7 +31,7 @@ export abstract class ManagedModel {
    * 
    * @param options find options for filtering the records
    */
-  public static findOne<T extends ManagedModel>(
+  public static findOne<T extends BaseModel>(
     this: ObjectType<T>,
     options?: FindOneOptions<T>,
   ): Promise<T | null> {
@@ -43,7 +43,7 @@ export abstract class ManagedModel {
    * 
    * @param data the data you want your model to be populated with
    */
-  public static insert<T extends ManagedModel>(
+  public static insert<T extends BaseModel>(
     this: ObjectType<T>,
     data: DeepPartial<T>,
   ): Promise<T>;
@@ -53,7 +53,7 @@ export abstract class ManagedModel {
    * 
    * @param data the data you want your model to be populated with
    */
-  public static insert<T extends ManagedModel>(
+  public static insert<T extends BaseModel>(
     this: ObjectType<T>,
     data: DeepPartial<T>[],
   ): Promise<T[]>;
@@ -61,7 +61,7 @@ export abstract class ManagedModel {
   /**
    * Create model and save it to the database.
    */
-  public static insert<T extends ManagedModel>(
+  public static insert<T extends BaseModel>(
     this: ObjectType<T>,
     data: DeepPartial<T> | DeepPartial<T>[],
   ): Promise<T | T[]> {
@@ -72,7 +72,7 @@ export abstract class ManagedModel {
    * Saves current model to the database.
    */
   public save(): Promise<this> {
-    const modelClass = <typeof ManagedModel> this.constructor;
+    const modelClass = <typeof BaseModel> this.constructor;
     return modelClass.manager.save(this);
   }
 
@@ -80,7 +80,7 @@ export abstract class ManagedModel {
    * Remove current model from the database.
    */
   public remove(): Promise<this> {
-    const modelClass = <typeof ManagedModel> this.constructor;
+    const modelClass = <typeof BaseModel> this.constructor;
     return modelClass.manager.remove(this);
   }
 }

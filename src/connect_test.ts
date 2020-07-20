@@ -6,7 +6,7 @@ import { SqliteAdapter } from "./adapters/sqlite.ts";
 import { PostgresAdapter } from "./adapters/postgres.ts";
 import { MysqlAdapter } from "./adapters/mysql.ts";
 import { mysqlOptions, postgresOptions, sqliteOptions } from "./testutils.ts";
-import { ManagedModel } from "./managedmodel.ts";
+import { BaseModel } from "./basemodel.ts";
 import { Manager } from "./manager.ts";
 
 Deno.test("connect() -> sqlite", async () => {
@@ -28,8 +28,8 @@ Deno.test("connect() -> mysql", async () => {
 });
 
 Deno.test("connect() -> should activate models", async () => {
-  class User extends ManagedModel {}
-  class Post extends ManagedModel {}
+  class User extends BaseModel {}
+  class Post extends BaseModel {}
 
   assertEquals((User as any).manager, undefined);
   assertEquals((Post as any).manager, undefined);
