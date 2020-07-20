@@ -1,64 +1,72 @@
 # Model
 
-A model is nothing more than a class that extends `Model`.
+Cotton provides a type-safe way to work with your database using models. You can define a model by creating a plain class decorated with `@Model`.
 
 ```ts
-import { Model } from "https://deno.land/x/cotton/mod.ts";
+import { Model, Column } from "https://deno.land/x/cotton/mod.ts";
 
-class User extends Model {
-  static tableName = "users";
+@Model("users")
+class User {
+  @PrimaryColumn()
+  id: number;
 
-  @Field()
+  @Column()
   email!: string;
 
-  @Field()
+  @Column()
   age!: number;
 
-  @Field()
-  created_at!: Date;
+  @Column()
+  createdAt!: Date;
 }
 ```
 
-To do CRUD operations to our model, we can use the provided method in our model:
+The `@Model` decorator takes an optional argument for the table name of your model. By default, if the class name is `User`, it will look up for `user` table in your database.
+
+> A model must have a primary column. And at this point, Cotton only supports auto incremented primary keys.
+
+Then, you define each columns by marking the class properties with `@Column`. Cotton is smart enough to determine the data type of that particular column using TypeScript types. However, you can still customize your column types by passing the `type` option like below.
 
 ```ts
-const user = await User.findOne(1); // find user by id
-console.log(user instanceof User); // true
+@Column({ type: ColumnType.String })
+email!: string;
 ```
+
+There are still a plenty of room for customization. You can provide a default value of a column with`default`, define a custom name for your column using `name`, prevent `null` or `undefined` value saved to the database using `isNullable`, and much more.
 
 ```ts
-const users = await User.find(); // find all users
+@Column({ isNullable: false }) // default: true
+email!: string;
 
-for (const user in users) {
-  console.log(user.email);
-}
+@Column({ default: false })
+isActive!: string;
+
+@Column({ default: () => new Date() })
+createdAt!: Date;
+
+@Column({ name: "created_at" }) // different column name on the database
+createdAt!: Date;
 ```
 
-To save the current model to the database, use the `save` method.
+## Model manager
+
+In order to perform queries within a model, you can use the model manager provided by the database connection.
+
+```ts
+const db = await connect({
+  type: "sqlite",
+  // other options...
+});
+
+const manager = db.getManager();
+```
+
+Once you get the manager instance, you can basically perform anything to that model. Let's start by creating a new user!
 
 ```ts
 const user = new User();
 user.email = "a@b.com";
 user.age = 16;
-user.created_at = new Date("1 June, 2020");
-await user.save();
-```
-
-You also can use the `insert` method to create the model instance and save it to the database at the same time.
-
-```ts
-const user = await User.insert({
-  email: "a@b.com",
-  age: 16,
-  created_at: new Date("1 June, 2020"),
-});
-```
-
-To insert multiple records, you can simply pass an array as the parameter.
-
-```ts
-const user = await User.insert([
-  { email: "a@b.com", age: 16, created_at: new Date("1 June, 2020") },
-  { email: "b@c.com", age: 17, created_at: new Date("2 June, 2020") },
-]);
+user.createdAt = new Date();
+await manager.save(user);
 ```

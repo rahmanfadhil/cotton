@@ -71,18 +71,17 @@ await db.disconnect();
 A model is nothing more than a class that extends `Model`.
 
 ```ts
-import { Model } from "https://deno.land/x/cotton/mod.ts";
+import { Model, Column } from "https://deno.land/x/cotton/mod.ts";
 
-class User extends Model {
-  static tableName = "users";
-
-  @Field()
+@Model("users")
+class User {
+  @Column()
   email!: string;
 
-  @Field()
+  @Column()
   age!: number;
 
-  @Field()
+  @Column()
   created_at!: Date;
 }
 ```
@@ -100,8 +99,10 @@ Keep in mind that you need to override the default TypeScript configration in or
 }
 ```
 
+To run your app, you need to explicitly tell Deno that you have a custom TypeScript configuration by passing the `--config` argument.
+
 ```
-$ deno run -c tsconfig.json main.ts
+$ deno run --config tsconfig.json main.ts
 ```
 
 To do CRUD operations to our model, we can use the provided method in our model:
