@@ -473,15 +473,16 @@ export function createModel<T>(
         );
       }
     } else if (relation.type === RelationType.HasMany) {
-      if (
-        Array.isArray(relationData) &&
-        relationData.length > 0
-      ) {
-        values[relation.propertyKey] = createModels(
-          relationModel,
-          relationData,
-          fromDatabase,
-        );
+      if (Array.isArray(relationData)) {
+        if (relationData.length >= 1) {
+          values[relation.propertyKey] = createModels(
+            relationModel,
+            relationData,
+            fromDatabase,
+          );
+        } else {
+          values[relation.propertyKey] = [];
+        }
       }
     }
   }

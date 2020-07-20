@@ -23,7 +23,7 @@ class User {
 
 The `@Model` decorator takes an optional argument for the table name of your model. By default, if the class name is `User`, it will look up for `user` table in your database.
 
-> A model must have a primary column. And at this point, Cotton only supports auto incremented primary keys.
+> A model must have a primary column. And at this point, Cotton only supports auto incremental primary keys.
 
 Then, you define each columns by marking the class properties with `@Column`. Cotton is smart enough to determine the data type of that particular column using TypeScript types. However, you can still customize your column types by passing the `type` option like below.
 
@@ -61,7 +61,7 @@ const db = await connect({
 const manager = db.getManager();
 ```
 
-Once you get the manager instance, you can basically perform anything to that model. Let's start by creating a new user!
+Once you get the manager instance, you can basically perform anything to that models. Let's start by creating a new user!
 
 ```ts
 const user = new User();
@@ -71,7 +71,7 @@ user.createdAt = new Date();
 await manager.save(user);
 ```
 
-# Finding records
+### Finding records
 
 To fetch records from a model, you can use the `find` method.
 
@@ -94,3 +94,28 @@ await manager.find(User, { limit: 10 });
 // Read the next page
 await manager.find(User, { limit: 10, offset: 10 });
 ```
+
+## Managed models
+
+If you find it difficult to use model manager, managed models might be a perfect solution for you.
+
+In a nutshell, managed model is a model that extends the `ManagedModel` class. This class provides you the exact same functionalities as the model manager, but you can call them directly from your model class via static methods.
+
+```ts
+@Model("users")
+class User extends ManagedModel {
+  @Column()
+  email!: string;
+
+  @Column()
+  age: number;
+}
+```
+
+## What's the difference?
+
+The most obvious difference between model manager and managed model is that model manager is model agnostic. Which means it will work with any models you have.
+
+In model manager, your model is just a plain class that only act as a representation of your data in the database but has no access to it. In order to do interact with the database, you need to use your model to the manager. Some people find it safer than the managed models because it seperates the business logic and the schema. You can see this pattern a lot in Java frameworks such as Hibernate.
+
+Managed models on the other hand, your models act as both model manager and the schema. You can see this pattern in Laravel's Eloquent and ActiveRecord. A lot of people find this pattern easier to use because once you have access to the model class, you can basically do anything with it.

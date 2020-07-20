@@ -11,10 +11,13 @@ import {
   mapQueryResult,
   createModel,
   mapSingleQueryResult,
+  getRelations,
 } from "./utils/models.ts";
-import { Adapter } from "./adapters/adapter.ts";
+import { Adapter, DatabaseResult } from "./adapters/adapter.ts";
 import { QueryBuilder } from "./querybuilder.ts";
 import { range } from "./utils/number.ts";
+import { RelationType } from "./model.ts";
+import { quote } from "./utils/dialect.ts";
 
 /**
  * Same as Partial<T> but goes deeper and makes Partial<T> all its properties and sub-properties.
@@ -30,6 +33,7 @@ export type DeepPartial<T> = {
  */
 export interface FindOneOptions<T> {
   where?: DeepPartial<T>;
+  includes?: string[];
 }
 
 /**
@@ -130,7 +134,11 @@ export class Manager {
     const result = await query.execute();
 
     // Build the model objects
-    return createModels(modelClass, mapQueryResult(modelClass, result), true);
+    return createModels(
+      modelClass,
+      mapQueryResult(modelClass, result, options?.includes),
+      true,
+    );
   }
 
   /**
@@ -147,16 +155,62 @@ export class Manager {
     // Initialize the query builder
     const query = this.setupQueryBuilder(modelClass, options);
 
-    // Execute the query
-    const result = await query.execute();
+    // Check whether this query contains a HasMany relationship
+    const isIncludingHasMany = options?.includes &&
+      getRelations(modelClass, options.includes).find((item) => {
+        return item.type === RelationType.HasMany;
+      });
 
-    // Build the model objects
+    let result: DatabaseResult[];
+
+    // If the `includes` option contains a HasMany relationship,
+    // we need to get the record primary key first, then, we can fetch
+    // the whole data.
+    if (isIncludingHasMany) {
+      const primaryKeyInfo = getPrimaryKeyInfo(modelClass);
+
+      // If the user already filter based on the primary key, skip the entire process.
+      if (
+        options?.where && (options.where as any)[primaryKeyInfo.propertyKey]
+      ) {
+        result = await query.execute();
+      } else {
+        const tableName = getTableName(modelClass);
+
+        // Get the distinct query
+        const alias = quote("distinctAlias", this.adapter.dialect);
+        const primaryColumn = quote(
+          tableName + "__" + primaryKeyInfo.name,
+          this.adapter.dialect,
+        );
+        const { text, values } = query.toSQL();
+        const queryString = `SELECT DISTINCT ${alias}.${primaryColumn} FROM (${
+          text.slice(0, text.length - 1)
+        }) ${alias} LIMIT 1;`;
+
+        // Execute the distinct query
+        const recordIds = await this.adapter.query(queryString, values);
+
+        // If the record found, fetch the relations
+        if (recordIds.length === 1) {
+          const id = recordIds[0][tableName + "__" + primaryKeyInfo.name];
+          result = await query
+            .where(primaryKeyInfo.name, id)
+            .execute();
+        } else {
+          return null;
+        }
+      }
+    } else {
+      result = await query.first().execute();
+    }
+
+    // Create the model instances
     if (result.length >= 1) {
-      return createModel(
-        modelClass,
-        mapSingleQueryResult(modelClass, result[0]),
-        true,
-      );
+      const record = options?.includes
+        ? mapQueryResult(modelClass, result, options.includes)[0]
+        : mapSingleQueryResult(modelClass, result[0]);
+      return createModel(modelClass, record, true);
     } else {
       return null;
     }
@@ -310,13 +364,41 @@ export class Manager {
       query.offset(options.offset);
     }
 
+    // Fetch relations if exists
+    if (options?.includes) {
+      for (const relation of getRelations(modelClass, options.includes)) {
+        const relationTableName = getTableName(relation.getModel());
+
+        if (relation.type === RelationType.HasMany) {
+          query.leftJoin(
+            relationTableName,
+            relationTableName + "." + relation.targetColumn,
+            tableName + ".id",
+          );
+        } else if (relation.type === RelationType.BelongsTo) {
+          query.leftJoin(
+            relationTableName,
+            relationTableName + ".id",
+            tableName + "." + relation.targetColumn,
+          );
+        }
+
+        const selectColumns = getColumns(relation.getModel())
+          .map((item): [string, string] => [
+            relationTableName + "." + item.name,
+            relationTableName + "__" + item.name,
+          ]);
+        query.select(...selectColumns);
+      }
+    }
+
     // Select the model columns
-    const columns: [string, string][] = getColumns(modelClass)
-      .map((column) => [
+    const selectColumns = getColumns(modelClass)
+      .map((column): [string, string] => [
         tableName + "." + column.name,
         tableName + "__" + column.name,
       ]);
-    query.select(...columns);
+    query.select(...selectColumns);
 
     return query;
   }
