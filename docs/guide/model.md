@@ -95,15 +95,15 @@ await manager.find(User, { limit: 10 });
 await manager.find(User, { limit: 10, offset: 10 });
 ```
 
-## Managed models
+## BaseModel
 
-If you find it difficult to use model manager, managed models might be a perfect solution for you.
+If you find it difficult to use model manager, base model might be a perfect solution for you.
 
-In a nutshell, managed model is a model that extends the `ManagedModel` class. This class provides you the exact same functionalities as the model manager, but you can call them directly from your model class via static methods.
+In a nutshell, base model is a model that extends the `BaseModel` class. This class provides you the exact same functionalities as the model manager, but you can call them directly from your model class via static methods.
 
 ```ts
 @Model("users")
-class User extends ManagedModel {
+class User extends BaseModel {
   @Column()
   email!: string;
 
@@ -114,8 +114,8 @@ class User extends ManagedModel {
 
 ## What's the difference?
 
-The most obvious difference between model manager and managed model is that model manager is model agnostic. Which means it will work with any models you have.
+The most obvious difference between model manager and base model is that model manager is model agnostic. Which means it will work with any models you have.
 
-In model manager, your model is just a plain class that only act as a representation of your data in the database but has no access to it. In order to do interact with the database, you need to use your model to the manager. Some people find it safer than the managed models because it seperates the business logic and the schema. You can see this pattern a lot in Java frameworks such as Hibernate.
+In model manager, your model is just a plain class that only act as a representation of your data in the database but has no access to it. In order to do interact with the database, you need to use your model to the manager. Some people find it safer than the base models because it seperates the business logic and the schema. You can see this pattern a lot in Java frameworks such as Hibernate.
 
-Managed models on the other hand, your models act as both model manager and the schema. You can see this pattern in Laravel's Eloquent and ActiveRecord. A lot of people find this pattern easier to use because once you have access to the model class, you can basically do anything with it.
+base models on the other hand, your models act as both model manager and the schema. You can see this pattern in Laravel's Eloquent and ActiveRecord. A lot of people find this pattern easier to use because once you have access to the model class, you can basically do anything with it.
