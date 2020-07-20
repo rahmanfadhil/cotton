@@ -142,7 +142,7 @@ export class Manager {
    */
   public async findOne<T>(
     modelClass: { new (): T },
-    options?: FindOptions<T>,
+    options?: FindOneOptions<T>,
   ): Promise<T | null> {
     // Initialize the query builder
     const query = this.setupQueryBuilder(modelClass, options);
