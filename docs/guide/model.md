@@ -70,3 +70,27 @@ user.age = 16;
 user.createdAt = new Date();
 await manager.save(user);
 ```
+
+# Finding records
+
+To fetch records from a model, you can use the `find` method.
+
+```ts
+await manager.find(User);
+```
+
+You can also filter records by a certain conditions.
+
+```ts
+await manager.find(User, { where: { email: "a@b.com" } });
+```
+
+By default, it will fetch all records that match the conditions, which is not so efficient. However, you can easlily paginate those records by passing `limit` and `offset` options.
+
+```ts
+// Get the first ten users
+await manager.find(User, { limit: 10 });
+
+// Read the next page
+await manager.find(User, { limit: 10, offset: 10 });
+```

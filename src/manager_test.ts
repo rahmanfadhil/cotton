@@ -396,3 +396,33 @@ testDB(
     }
   },
 );
+
+testDB("Manager.find() -> pagination", async (client) => {
+  await client.table("users").insert({ id: 1 }).execute();
+  await client.table("products")
+    .insert([
+      { id: 1, title: "Post 1", user_id: 1 },
+      { id: 2, title: "Post 2", user_id: 1 },
+      { id: 3, title: "Post 3", user_id: 1 },
+      { id: 4, title: "Post 4", user_id: 1 },
+      { id: 5, title: "Post 5", user_id: 1 },
+      { id: 6, title: "Post 6", user_id: 1 },
+    ])
+    .execute();
+
+  const manager = new Manager(client);
+
+  let products = await manager.find(Product, { limit: 3 });
+  assertEquals(products.length, 3);
+
+  console.log(products);
+  for (let i = 0; i < products.length; i++) {
+    assertEquals(products[i].id, i + 1);
+  }
+
+  products = await manager.find(Product, { limit: 3, offset: 3 });
+  assertEquals(products.length, 3);
+  for (let i = 0; i < products.length; i++) {
+    assertEquals(products[i].id, i + 4);
+  }
+});

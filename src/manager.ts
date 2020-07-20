@@ -26,11 +26,19 @@ export type DeepPartial<T> = {
 };
 
 /**
- * Query options for find() and findOne()
+ * Query options to find a single record.
  */
-export interface FindOptions<T> {
+export interface FindOneOptions<T> {
   where?: DeepPartial<T>;
 }
+
+/**
+ * Query options to find multiple records.
+ */
+export type FindOptions<T> = FindOneOptions<T> & {
+  limit?: number;
+  offset?: number;
+};
 
 /**
  * Manager allows you to perform queries to your model.
@@ -155,38 +163,6 @@ export class Manager {
   }
 
   /**
-   * Setup the query builder for find() and findOne()
-   * 
-   * @param modelClass the model class
-   * @param options find options for filtering the records
-   */
-  private setupQueryBuilder(
-    modelClass: Function,
-    options?: FindOptions<{}>,
-  ): QueryBuilder {
-    const tableName = getTableName(modelClass);
-    const query = this.adapter.table(tableName);
-
-    // Implement the where statements
-    if (options?.where) {
-      const values = mapValueProperties(modelClass, options.where, "name");
-      for (const [key, value] of Object.entries(values)) {
-        query.where(key, value);
-      }
-    }
-
-    // Select the model columns
-    const columns: [string, string][] = getColumns(modelClass)
-      .map((column) => [
-        tableName + "." + column.name,
-        tableName + "__" + column.name,
-      ]);
-    query.select(...columns);
-
-    return query;
-  }
-
-  /**
    * Remove given model from the database.
    * 
    * @param model the model you want to remove.
@@ -242,7 +218,7 @@ export class Manager {
   ): Promise<T | T[]> {
     if (Array.isArray(data)) {
       const models = createModels(modelClass, data as any);
-      return this._bulkSave(modelClass, models);
+      return this.bulkSave(modelClass, models);
     } else {
       const model = createModel(modelClass, data as any);
       return this.save(model);
@@ -252,7 +228,7 @@ export class Manager {
   /**
    * Save multiple records to the database efficiently
    */
-  private async _bulkSave<T extends Object>(
+  private async bulkSave<T extends Object>(
     modelClass: { new (): T },
     models: T[],
   ): Promise<T[]> {
@@ -301,5 +277,47 @@ export class Manager {
     });
 
     return models;
+  }
+
+  /**
+   * Setup the query builder for find() and findOne()
+   * 
+   * @param modelClass the model class
+   * @param options find options for filtering the records
+   */
+  private setupQueryBuilder(
+    modelClass: Function,
+    options?: FindOptions<{}>,
+  ): QueryBuilder {
+    const tableName = getTableName(modelClass);
+    const query = this.adapter.table(tableName);
+
+    // Implement the where statements
+    if (options?.where) {
+      const values = mapValueProperties(modelClass, options.where, "name");
+      for (const [key, value] of Object.entries(values)) {
+        query.where(key, value);
+      }
+    }
+
+    // Add limit (if exists)
+    if (options?.limit) {
+      query.limit(options.limit);
+    }
+
+    // Add offset (if exists)
+    if (options?.offset) {
+      query.offset(options.offset);
+    }
+
+    // Select the model columns
+    const columns: [string, string][] = getColumns(modelClass)
+      .map((column) => [
+        tableName + "." + column.name,
+        tableName + "__" + column.name,
+      ]);
+    query.select(...columns);
+
+    return query;
   }
 }
