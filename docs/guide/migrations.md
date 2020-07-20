@@ -81,16 +81,6 @@ export async function down(schema: Schema) {
 
 The code is very straight forward. We have an `up` function to **apply** this migration to the database, and a `down` function to **revert** it back to the previous version.
 
-## Migration info
-
-```
-Applied  Migration
--------  ------------------------------
-Yes      20200717134438_CreateUserTable
-```
-
-## Applying migrations
-
 To apply existing migrations, all you have to do is run `cotton migration:up`.
 
 ```
@@ -99,8 +89,6 @@ $ cotton migration:up
 Migrating: 20200717134438_CreateUserTable
 Migrated:  20200717134438_CreateUserTable
 ```
-
-## Migration revert
 
 Going back to the previous version of your database super easy.
 
@@ -111,4 +99,18 @@ Reverting: 20200717134438_CreateUserTable
 Reverted:  20200717134438_CreateUserTable
 ```
 
-By default, this will revert the last "batch" of your migrations.
+By default, this will revert the last migration "batch", which can be consists of multiple migrations. However, you can specify how many migrations you want to revert by passing the `--steps` option.
+
+```
+$ cotton migration:down --steps 1
+```
+
+## Migration info
+
+You can see all of your available migrations via `migration:info` command. This will print out every single migrations and check whether it's already applied to the database or not.
+
+```
+Applied  Migration
+-------  ------------------------------
+Yes      20200717134438_CreateUserTable
+```
