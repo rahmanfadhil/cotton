@@ -2,7 +2,7 @@ import { testDB } from "./testutils.ts";
 import {
   Model,
   Column,
-  PrimaryColumn,
+  Primary,
   Relation,
   RelationType,
 } from "./model.ts";
@@ -12,7 +12,7 @@ import { formatDate } from "./utils/date.ts";
 
 @Model("users")
 class User {
-  @PrimaryColumn()
+  @Primary()
   id!: number;
 
   @Column({ name: "first_name", isNullable: false })
@@ -36,7 +36,7 @@ class User {
 
 @Model("products")
 class Product {
-  @PrimaryColumn()
+  @Primary()
   id!: number;
 
   @Column({ isNullable: false })
@@ -436,7 +436,9 @@ testDB(
     assertEquals(users[0].is_active, client.dialect === "postgres" ? false : 0);
     assertEquals(
       users[0].created_at,
-      client.dialect === "sqlite" ? formatDate(user.createdAt) : user.createdAt,
+      client.dialect === "sqlite"
+        ? formatDate(user.createdAt)
+        : user.createdAt,
     );
   },
 );

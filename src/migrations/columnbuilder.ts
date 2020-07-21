@@ -4,10 +4,11 @@ import { DatabaseDialect } from "../connect.ts";
 /**
  * Represents a table column for Schema
  */
-export class Column {
+export class ColumnBuilder {
   private isPrimaryKey: boolean = false;
   private isNotNull: boolean = false;
   private isUnique: boolean = false;
+  private isUnsigned: boolean = false;
   private defaultValue: any;
   private isDefaultValueAnExpression = false;
 
@@ -20,20 +21,26 @@ export class Column {
     private length?: number,
   ) {}
 
+  /** Make this integer column unsigned */
+  public unsigned() {
+    this.isUnsigned = true;
+    return this;
+  }
+
   /** Set this column to be the PRIMARY KEY */
-  public primary(): Column {
+  public primary(): ColumnBuilder {
     this.isPrimaryKey = true;
     return this;
   }
 
   /** Add the NOT NULL constraint */
-  public notNull(): Column {
+  public notNull(): ColumnBuilder {
     this.isNotNull = true;
     return this;
   }
 
   /** Add the UNIQUE constraint */
-  public unique(): Column {
+  public unique(): ColumnBuilder {
     this.isUnique = true;
     return this;
   }
@@ -57,16 +64,26 @@ export class Column {
    */
   public toSQL(dialect: DatabaseDialect): string {
     // If the type is VARCHAR, set the length
-    let lengthStr = "";
-    if (COLUMN_TYPES[this.type][dialect] == "varchar") {
-      lengthStr = typeof this.length === "undefined"
-        ? "(255)"
-        : `(${this.length})`;
+
+    let columnType = COLUMN_TYPES[this.type][dialect].toUpperCase();
+
+    if (
+      (this.type === "integer" ||
+        this.type === "bigInteger" ||
+        this.type === "smallInteger") &&
+      this.isUnsigned
+    ) {
+      columnType = "UNSIGNED " + columnType;
+    }
+
+    if (this.type === "varchar") {
+      columnType += typeof this.length === "number"
+        ? `(${this.length})`
+        : "(255)";
     }
 
     // Set the column name and its type (for a specific database dialect)
-    const columnType = COLUMN_TYPES[this.type][dialect].toUpperCase();
-    const query = [`${this.getColumnName(dialect)} ${columnType}${lengthStr}`];
+    const query = [`${this.getColumnName(dialect)} ${columnType}`];
 
     // Add the PRIMARY KEY
     if (this.isPrimaryKey) {
@@ -130,7 +147,7 @@ export class Column {
     }
   }
 
-  public getColumnName(dialect: DatabaseDialect): string {
+  private getColumnName(dialect: DatabaseDialect): string {
     switch (dialect) {
       case "postgres":
         return `"${this.name}"`;

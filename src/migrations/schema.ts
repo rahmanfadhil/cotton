@@ -1,7 +1,6 @@
 import { Adapter } from "../adapters/adapter.ts";
 import { TableBuilder, CreateTableOptions } from "./tablebuilder.ts";
-import { COLUMN_TYPES } from "../constants.ts";
-import { Column } from "./column.ts";
+import { ColumnBuilder } from "./columnbuilder.ts";
 
 /**
  * Database schema migration helper
@@ -211,17 +210,9 @@ export class Schema {
    * Create a new column
    * 
    * @param tableName the table name where the column should be added
-   * @param columnName the new column name
-   * @param type the column datatype
-   * @param length the maximum length of the column's value (varchar only)
+   * @param column the column builder
    */
-  public async addColumn(
-    tableName: string,
-    columnName: string,
-    type: keyof typeof COLUMN_TYPES,
-    length?: number,
-  ) {
-    const column = new Column(columnName, type, length);
+  public async addColumn(tableName: string, column: ColumnBuilder) {
     await this.adapter.query(
       `ALTER TABLE ${tableName} ADD ${column.toSQL(this.adapter.dialect)}`,
     );
@@ -250,5 +241,10 @@ export class Schema {
         );
         break;
     }
+  }
+
+  /** Execute SQL query */
+  public query(query: string) {
+    return this.adapter.query(query);
   }
 }

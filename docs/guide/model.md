@@ -7,7 +7,7 @@ import { Model, Column } from "https://deno.land/x/cotton/mod.ts";
 
 @Model("users")
 class User {
-  @PrimaryColumn()
+  @Primary()
   id: number;
 
   @Column()
@@ -47,6 +47,10 @@ createdAt!: Date;
 @Column({ name: "created_at" }) // different column name on the database
 createdAt!: Date;
 ```
+
+## TypeScript configuration
+
+Keep in mind that this feature requires a custom TypeScript configuration to tell Deno that we want to use [decorators](https://www.typescriptlang.org/docs/handbook/decorators.html), which currently still an experimental feature.
 
 ## Model manager
 
@@ -95,7 +99,52 @@ await manager.find(User, { limit: 10 });
 await manager.find(User, { limit: 10, offset: 10 });
 ```
 
-## BaseModel
+### Relations
+
+Cotton allows you to setup model relations with ease. Currently, Cotton only supports one-to-many relations.
+
+```ts
+@Model()
+class User {
+  @Primary()
+  id!: number;
+
+  @Column()
+  email: string;
+
+  @Relation(RelationType.HasMany, () => User, "user_id")
+  post: Post;
+}
+
+@Model()
+class Post {
+  @Primary()
+  id!: number;
+
+  @Column()
+  title: string;
+
+  @Relation(RelationType.BelongsTo, () => User, "user_id")
+  user: User;
+}
+```
+
+As you can see, a user can have multiple posts, but the a post belongs to a single user.
+
+### Saving relations
+
+Lorem ipsum.
+
+### Fetching relations
+
+By default, `find` and `findOne` doesn't fetch your relations. To fetch them, you need to explicitly say which relations you want to include.
+
+```ts
+const users = await User.find({ relations: ["posts"] });
+const post = await Post.findOne({ relations: ["user"] });
+```
+
+## Base model
 
 If you find it difficult to use model manager, base model might be a perfect solution for you.
 

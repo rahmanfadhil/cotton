@@ -17,7 +17,7 @@ import {
 import {
   Model,
   Column,
-  PrimaryColumn,
+  Primary,
   Relation,
   RelationType,
   ColumnType,
@@ -33,7 +33,7 @@ const getCreationDate = () => new Date();
 
 @Model("users")
 class User {
-  @PrimaryColumn()
+  @Primary()
   id!: number;
 
   @Column({ name: "first_name", isNullable: false })
@@ -54,7 +54,7 @@ class User {
 
 @Model("posts")
 class Post {
-  @PrimaryColumn()
+  @Primary()
   id!: number;
 
   @Column({ isNullable: false })
@@ -72,7 +72,7 @@ class Post {
 
 @Model("products")
 class Product {
-  @PrimaryColumn({ name: "identifier" })
+  @Primary({ name: "identifier" })
   productId!: number;
 
   @Column()

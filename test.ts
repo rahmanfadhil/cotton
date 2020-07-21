@@ -17,7 +17,7 @@ import "./src/utils/models_test.ts";
 import "./src/querybuilder_test.ts";
 import "./src/querycompiler_test.ts";
 import "./src/migrations/tablebuilder_test.ts";
-import "./src/migrations/column_test.ts";
+import "./src/migrations/columnbuilder_test.ts";
 import "./src/migrations/foreign_test.ts";
 import "./src/model_test.ts";
 import "./src/basemodel_test.ts";

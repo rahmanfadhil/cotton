@@ -1,7 +1,7 @@
 import { TableBuilder } from "./tablebuilder.ts";
 import { assertEquals } from "../../testdeps.ts";
 import { DatabaseDialect } from "../connect.ts";
-import { Column } from "./column.ts";
+import { ColumnBuilder } from "./columnbuilder.ts";
 import { ForeignActions } from "./foreign.ts";
 import { quote } from "../utils/dialect.ts";
 
@@ -18,6 +18,7 @@ function createBasicTable(dialect: DatabaseDialect) {
   builder.datetime("published_at");
   builder.date("date_approved");
   builder.timestamps();
+  builder.custom("token VARCHAR(100)");
   builder.foreignId("user_id", "users", { onDelete: ForeignActions.Cascade });
 
   return builder;
@@ -27,7 +28,7 @@ Deno.test("TableBuilder: mysql basic table", () => {
   const builder = createBasicTable("mysql");
   assertEquals(
     builder.toSQL(),
-    "CREATE TABLE `posts` (`id` BIGINT PRIMARY KEY AUTO_INCREMENT, `title` VARCHAR(100), `description` VARCHAR(255), `content` LONGTEXT, `likes` INTEGER, `price` BIGINT, `is_published` TINYINT, `published_at` DATETIME, `date_approved` DATE, `created_at` DATETIME, `updated_at` DATETIME, `user_id` BIGINT, FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE);",
+    "CREATE TABLE `posts` (`id` BIGINT PRIMARY KEY AUTO_INCREMENT, `title` VARCHAR(100), `description` VARCHAR(255), `content` LONGTEXT, `likes` INTEGER, `price` BIGINT, `is_published` TINYINT, `published_at` DATETIME, `date_approved` DATE, `created_at` DATETIME, `updated_at` DATETIME, token VARCHAR(100), `user_id` BIGINT, FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE);",
   );
 });
 
@@ -35,7 +36,7 @@ Deno.test("TableBuilder: postgres basic table", () => {
   const builder = createBasicTable("postgres");
   assertEquals(
     builder.toSQL(),
-    'CREATE TABLE "posts" ("id" BIGSERIAL PRIMARY KEY, "title" VARCHAR(100), "description" VARCHAR(255), "content" TEXT, "likes" INTEGER, "price" BIGINT, "is_published" BOOLEAN, "published_at" TIMESTAMP, "date_approved" DATE, "created_at" TIMESTAMP, "updated_at" TIMESTAMP, "user_id" BIGINT, FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE);',
+    'CREATE TABLE "posts" ("id" BIGSERIAL PRIMARY KEY, "title" VARCHAR(100), "description" VARCHAR(255), "content" TEXT, "likes" INTEGER, "price" BIGINT, "is_published" BOOLEAN, "published_at" TIMESTAMP, "date_approved" DATE, "created_at" TIMESTAMP, "updated_at" TIMESTAMP, token VARCHAR(100), "user_id" BIGINT, FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE);',
   );
 });
 
@@ -43,7 +44,7 @@ Deno.test("TableBuilder: sqlite basic table", () => {
   const builder = createBasicTable("sqlite");
   assertEquals(
     builder.toSQL(),
-    "CREATE TABLE `posts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` VARCHAR(100), `description` VARCHAR(255), `content` TEXT, `likes` INTEGER, `price` BIGINT, `is_published` BOOLEAN, `published_at` DATETIME, `date_approved` DATE, `created_at` DATETIME, `updated_at` DATETIME, `user_id` INTEGER, FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE);",
+    "CREATE TABLE `posts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` VARCHAR(100), `description` VARCHAR(255), `content` TEXT, `likes` INTEGER, `price` BIGINT, `is_published` BOOLEAN, `published_at` DATETIME, `date_approved` DATE, `created_at` DATETIME, `updated_at` DATETIME, token VARCHAR(100), `user_id` INTEGER, FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE);",
   );
 });
 
@@ -67,7 +68,7 @@ for (const method of methods) {
       const builder = new TableBuilder("users", {} as any);
 
       const column = (builder as any)[method]("name");
-      assertEquals(column instanceof Column, true);
+      assertEquals(column instanceof ColumnBuilder, true);
       assertEquals((column as any).name, "name");
       assertEquals((column as any).type, method);
     });

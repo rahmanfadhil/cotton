@@ -122,6 +122,10 @@ export interface RelationDescription {
 
 /**
  * Define a relation field
+ * 
+ * @param type the type of this relation (belongs to, has many, etc.)
+ * @param getModel a callback function that returns the model associated with this relation.
+ * @param column the column name that being targetted in this relation.
  */
 export function Relation(
   type: RelationType,
@@ -155,7 +159,7 @@ export interface PrimaryFieldOptions {
  *
  * @param options primary field options
  */
-export function PrimaryColumn(options?: PrimaryFieldOptions) {
+export function Primary(options?: PrimaryFieldOptions) {
   return (target: Object, propertyKey: string) => {
     let columns: ColumnDescription[] = [];
     if (Reflect.hasMetadata(metadata.columns, target)) {
