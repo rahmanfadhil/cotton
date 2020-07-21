@@ -9,7 +9,7 @@ module.exports = {
       { text: "GitHub", link: "https://github.com/rahmanfadhil/cotton" },
     ],
     sidebar: {
-      "/guide/": ["query-builder", "model", "migrations"],
+      "/guide/": ["query-builder", "model", "migrations", "connection"],
     },
   },
 };
