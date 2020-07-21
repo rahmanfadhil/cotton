@@ -1,92 +1,32 @@
 # Query Builder
 
-### Basic query
+Cotton provides a powerful SQL query builder which you can use to construct and execute SQL queries in a type-safe way.
+
+Once you have established a connection, you can now use the query builder via `table` method.
 
 ```ts
-await db
-  .table("users")
-  .where("email", "a@b.com")
-  .where("name", "john")
-  .execute();
-// SELECT * FROM users WHERE email = 'a@b.com' AND name = 'john';
+const db = connect({
+  type: "sqlite",
+  // other options...
+});
+
+const users = await db.table("users").execute(); // SELECT * FROM `users`;
+
+for (const user of users) {
+  console.log(user); // { id: 1, email: 'a@b.com', ... }
+}
 ```
 
-### orWhere and notWhere
+The `table` methods takes only one argument, which is the name of the table you want to fetch. This method returns a `QueryBuilder` instance, which contains more methods to add more constraints and perform other things.
 
 ```ts
-await db.table("users").notWhere("name", "kevin").execute();
-// SELECT * FROM users WHERE NOT name = 'kevin';
-
-await db
-  .table("users")
-  .where("name", "kevin")
-  .orWhere("name", "john")
-  .execute();
-// SELECT * FROM users WHERE name = 'kevin' OR name = 'john';
+// SELECT * FROM `users` WHERE `id` = 1;
+const users = db.table("users").where("id", 1).execute();
 ```
 
-### Select columns
+If you just want to get the SQL query string and don't want run the it, you can end the statement with `toSQL` instead of `execute`.
 
 ```ts
-await db.table("users").select("email").execute();
-// SELECT (email) FROM users;
-
-await db.table("users").select("id", "email").execute();
-// SELECT (id, email) FROM users;
-
-await db.table("users").select("id").select("email").execute();
-// SELECT (id, email) FROM users;
-```
-
-### Pagination
-
-```ts
-await db.table("users").limit(5).offset(5).execute(); // Skip 5 row and take 5
-// SELECT * FROM users LIMIT 5 OFFSET 5;
-```
-
-### Insert data
-
-```ts
-await db
-  .table("users")
-  .insert({
-    email: "a@b.com",
-    age: 16,
-    created_at: new Date("5 June, 2020"),
-  })
-  .execute();
-// INSERT INTO users (email, age, created_at) VALUES ('a@b.com', 16, '2020-06-05 00:00:00');
-```
-
-### Replace data
-
-```ts
-await db
-  .table("users")
-  .replace({
-    email: "a@b.com",
-    age: 16,
-    created_at: new Date("5 June, 2020"),
-  })
-  .execute();
-// REPLACE INTO users (email, age, created_at) VALUES ('a@b.com', 16, '2020-06-05 00:00:00');
-```
-
-### Delete data
-
-```ts
-await db.table("users").where("email", "a@b.com").delete().execute();
-// DELETE FROM users WHERE email = 'a@b.com';
-```
-
-### Update data
-
-```ts
-await db
-  .table("users")
-  .where("email", "a@b.com")
-  .update({ name: "John" })
-  .execute();
-// UPDATE users SET name = 'John' WHERE email = 'a@b.com';
+const sql = db.table("users").where("id", 1).toSQL();
+console.log(sql); // "SELECT * FROM `users` WHERE `id` = 1;"
 ```
