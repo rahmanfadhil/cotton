@@ -142,6 +142,22 @@ db.table("users").replace([
 ]);
 ```
 
+## Update
+
+To perform update, you need to chain `update` method and pass the values you want to update. The value parameter is a key-value pair which represents the column name and it's value. This method can be chained with other constraints such as `where`, `not`, `or`, `limit`, etc.
+
+```ts
+db.table("users").where("id", 1).update({ email: "a@b.com" });
+```
+
+## Delete
+
+The only thing you need to do to perform DELETE query is by adding `delete` method to the query builder.
+
+```ts
+db.table("users").where("id", 1).delete();
+```
+
 ## Returning
 
 Returning is a statement that typically used in INSERT or REPLACE query. Note that this feature only works in PostgreSQL. However, you can still build this query in MySQL or SQLite connection.
