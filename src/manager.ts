@@ -306,6 +306,8 @@ export class Manager {
     modelClass: { new (): T },
     data: DeepPartial<T> | DeepPartial<T>[],
   ): Promise<T | T[]> {
+    // TODO: save relationships
+
     if (Array.isArray(data)) {
       const models = createModels(modelClass, data as any);
       return this.bulkInsert(modelClass, models);
