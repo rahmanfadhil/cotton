@@ -13,6 +13,7 @@ import {
   createModel,
   createModels,
   mapValueProperties,
+  getRelationValues,
 } from "./models.ts";
 import {
   Model,
@@ -397,6 +398,121 @@ Deno.test("getValues() -> throw an error if the a not nullable column is null", 
   assertEquals(values.title, "Post 1");
   assertEquals(values.is_published, false);
   assert(values.created_at instanceof Date);
+});
+
+Deno.test("getRelationValues() -> should get has many values", () => {
+  const post1 = new Post();
+  post1.id = 1;
+  post1.title = "Post 1";
+  setSaved(post1, true);
+
+  const post2 = new Post();
+  post2.id = 1;
+  post2.title = "Post 1";
+  setSaved(post2, true);
+
+  const user = new User();
+  user.id = 1;
+  user.firstName = "John";
+  user.lastName = "Doe";
+  user.age = 16;
+  user.posts = [post1, post2];
+  setSaved(user, true);
+
+  const userValues = getRelationValues(user);
+  assert(Array.isArray(userValues));
+  assertEquals(userValues.length, 1);
+  assertEquals(userValues[0].value, [post1.id, post2.id]);
+  assertEquals(userValues[0].description, {
+    propertyKey: "posts",
+    targetColumn: "user_id",
+    type: RelationType.HasMany,
+    getModel: toPost,
+  });
+});
+
+Deno.test("getRelationValues() -> should get belongs to values", () => {
+  const user = new User();
+  user.id = 1;
+  user.firstName = "John";
+  user.lastName = "Doe";
+  user.age = 16;
+  setSaved(user, true);
+
+  const post1 = new Post();
+  post1.id = 1;
+  post1.title = "Post 1";
+  post1.user = user;
+  setSaved(post1, true);
+
+  const post2 = new Post();
+  post2.id = 1;
+  post2.title = "Post 1";
+  post2.user = user;
+  setSaved(post2, true);
+
+  for (let i = 0; i < 2; i++) {
+    const postValues = getRelationValues(i ? post2 : post1);
+    assert(Array.isArray(postValues));
+    assertEquals(postValues.length, 1);
+    assertEquals(postValues[0].value, user.id);
+    assertEquals(postValues[0].description, {
+      propertyKey: "user",
+      targetColumn: "user_id",
+      type: RelationType.BelongsTo,
+      getModel: toUser,
+    });
+  }
+});
+
+Deno.test("getRelationValues() -> should get nothing when there is no relational data", () => {
+  const post = new Post();
+  post.id = 1;
+  post.title = "Post 1";
+  setSaved(post, true);
+
+  const user = new User();
+  user.id = 1;
+  user.firstName = "John";
+  user.lastName = "Doe";
+  user.age = 16;
+  setSaved(user, true);
+
+  const userValues = getRelationValues(user);
+  assertEquals(userValues.length, 0);
+
+  const postValues = getRelationValues(post);
+  assertEquals(postValues.length, 0);
+});
+
+Deno.test("getRelationValues() -> should throw an error if the relation is not saved", () => {
+  const post = new Post();
+  post.id = 1;
+  post.title = "Post 1";
+
+  const user = new User();
+  user.id = 1;
+  user.firstName = "John";
+  user.lastName = "Doe";
+  user.age = 16;
+
+  assertThrows(
+    () => {
+      user.posts = [post];
+      getRelationValues(user);
+    },
+    Error,
+    "Unsaved relationships found when trying to insert 'User' model!",
+  );
+
+  assertThrows(
+    () => {
+      post.user = user;
+      getRelationValues(post);
+    },
+    Error,
+    "Unsaved relationships found when trying to insert 'Post' model!",
+  );
 });
 
 Deno.test("mapValueProperties() -> should rename all properties from name to propertyKey", () => {

@@ -9,6 +9,7 @@ import {
 import { Manager } from "./manager.ts";
 import { assert, assertEquals, assertThrowsAsync } from "../testdeps.ts";
 import { formatDate } from "./utils/date.ts";
+import { getRelationValues } from "./utils/models.ts";
 
 @Model("users")
 class User {
@@ -93,11 +94,76 @@ testDB(
   },
 );
 
-// testDB(
-//   "Manager.save() -> should save the relations",
-//   () => {
-//   },
-// );
+testDB(
+  "Manager.save() -> should save belongs to relations",
+  async (client) => {
+    const manager = new Manager(client);
+
+    const user = new User();
+    user.firstName = "John";
+    user.lastName = "Doe";
+    user.age = 16;
+    await manager.save(user);
+
+    const product = new Product();
+    product.title = "Spoon";
+    product.user = user;
+    await manager.save(product);
+
+    const users = await client.query("SELECT id, first_name FROM users");
+    assertEquals(users.length, 1);
+    assertEquals(users[0].id, user.id);
+    assertEquals(users[0].first_name, user.firstName);
+
+    const products = await client.query(
+      "SELECT id, user_id, title FROM products",
+    );
+    assertEquals(products.length, 1);
+    assertEquals(products[0].id, product.id);
+    assertEquals(products[0].user_id, product.user.id);
+    assertEquals(products[0].title, product.title);
+  },
+);
+
+testDB(
+  "Manager.save() -> should save has many relations",
+  async (client) => {
+    const manager = new Manager(client);
+
+    const product1 = new Product();
+    product1.title = "Spoon";
+    await manager.save(product1);
+
+    const product2 = new Product();
+    product2.title = "Table";
+    await manager.save(product2);
+
+    console.log(product1);
+    console.log(product2);
+
+    const user = new User();
+    user.firstName = "John";
+    user.lastName = "Doe";
+    user.age = 16;
+    user.products = [product1, product2];
+    await manager.save(user);
+
+    const users = await client.query("SELECT id, first_name FROM users");
+    assertEquals(users.length, 1);
+    assertEquals(users[0].id, user.id);
+    assertEquals(users[0].first_name, user.firstName);
+
+    const products = await client.query(
+      "SELECT id, user_id, title FROM products",
+    );
+    assertEquals(products.length, 2);
+    assertEquals(products[0].id, product1.id);
+    assertEquals(products[1].id, product2.id);
+    for (let i = 0; i < products.length; i++) {
+      assertEquals(products[i].user_id, user.id);
+    }
+  },
+);
 
 testDB("Manager.find() -> should return all records", async (client) => {
   const manager = new Manager(client);

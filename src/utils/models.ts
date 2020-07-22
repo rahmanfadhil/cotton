@@ -28,6 +28,11 @@ interface ModelComparisonResult {
   diff: ModelDatabaseValues;
 }
 
+interface ModelRelationComparisonResult {
+  isDirty: boolean;
+  diff: { type: RelationType; data: number | number[] }[];
+}
+
 // --------------------------------------------------------------------------------
 // MODEL INFORMATION
 // --------------------------------------------------------------------------------
@@ -156,24 +161,24 @@ export function compareWithOriginal(model: Object): ModelComparisonResult {
 
   // If there's is no original value, the object is not saved to the database yet
   // which means it's dirty.
-  if (originalValue) {
-    let isDirty = false;
-    const diff: ModelDatabaseValues = {};
-
-    // Loop for the fields, if one of the fields doesn't match, the object is dirty
-    for (const column of getColumns(model.constructor)) {
-      const value = (model as any)[column.propertyKey];
-
-      if (value !== originalValue[column.name]) {
-        isDirty = true;
-        diff[column.name] = getNormalizedValue(column, value);
-      }
-    }
-
-    return { isDirty, diff };
-  } else {
+  if (!originalValue) {
     return { isDirty: true, diff: {} };
   }
+
+  let isDirty = false;
+  const diff: ModelDatabaseValues = {};
+
+  // Loop for the fields, if one of the fields doesn't match, the object is dirty
+  for (const column of getColumns(model.constructor)) {
+    const value = (model as any)[column.propertyKey];
+
+    if (value !== originalValue[column.name]) {
+      isDirty = true;
+      diff[column.name] = getNormalizedValue(column, value);
+    }
+  }
+
+  return { isDirty, diff };
 }
 
 /**
@@ -231,6 +236,72 @@ export function getValues(
           (model as any)[column.propertyKey],
         );
       }
+    }
+  }
+
+  return data;
+}
+
+/**
+ * Get relational values in a model.
+ * 
+ * @param model the model object you want to check the relations
+ * @param relations include specific relation names and ignore the rest
+ */
+export function getRelationValues(model: Object, relations?: string[]) {
+  const data: {
+    description: RelationDescription;
+    value: number | number[];
+  }[] = [];
+
+  for (const relation of getRelations(model.constructor, relations)) {
+    const relationData = (model as any)[relation.propertyKey];
+
+    // Add belongs to relationships to `data`
+    if (
+      relation.type === RelationType.BelongsTo &&
+      relationData &&
+      relationData instanceof relation.getModel()
+    ) {
+      // If the target record is not saved yet, throw an error.
+      if (!isSaved(relationData)) {
+        throw new Error(
+          `Unsaved relationships found when trying to insert '${model.constructor.name}' model!`,
+        );
+      }
+
+      // Get the primary key propertyKey of the related model
+      const relationIdProperty =
+        getPrimaryKeyInfo(relation.getModel()).propertyKey;
+
+      data.push({
+        description: relation,
+        value: relationData[relationIdProperty],
+      });
+    }
+
+    // Add has many relationships to `data`
+    if (
+      relation.type === RelationType.HasMany &&
+      Array.isArray(relationData) &&
+      relationData.length >= 1
+    ) {
+      // Get the primary key propertyKey of the related model
+      const relationIdProperty =
+        getPrimaryKeyInfo(relation.getModel()).propertyKey;
+
+      // Get all relationships primary key, if one of those isn't saved yet, throw an error.
+      const value = relationData.map((item) => {
+        if (!isSaved(item)) {
+          throw new Error(
+            `Unsaved relationships found when trying to insert '${model.constructor.name}' model!`,
+          );
+        }
+
+        return item[relationIdProperty];
+      });
+
+      data.push({ description: relation, value });
     }
   }
 

@@ -12,11 +12,12 @@ import {
   createModel,
   mapSingleQueryResult,
   getRelations,
+  getRelationValues,
 } from "./utils/models.ts";
 import { Adapter, DatabaseResult } from "./adapters/adapter.ts";
 import { QueryBuilder } from "./querybuilder.ts";
 import { range } from "./utils/number.ts";
-import { RelationType } from "./model.ts";
+import { RelationType, Relation } from "./model.ts";
 import { quote } from "./utils/dialect.ts";
 
 /**
@@ -82,6 +83,15 @@ export class Manager {
     } else {
       const values = getValues(model);
 
+      const relationalValues = getRelationValues(model);
+
+      // If there's a belongs to relationship, add it to the INSERT statement
+      for (const relation of relationalValues) {
+        if (relation.description.type === RelationType.BelongsTo) {
+          values[relation.description.targetColumn] = relation.value as number;
+        }
+      }
+
       // Save record to the database
       const query = this.adapter
         .table(tableName)
@@ -109,6 +119,32 @@ export class Manager {
         model,
         mapValueProperties(model.constructor, values, "propertyKey"),
       );
+
+      // If there's a has many relationship, update the foreign key
+      for (const relation of relationalValues) {
+        if (relation.description.type === RelationType.HasMany) {
+          const ids = relation.value as number[];
+          const tableName = getTableName(relation.description.getModel());
+          const relationPkInfo = getPrimaryKeyInfo(
+            relation.description.getModel(),
+          );
+
+          await this.adapter
+            .table(tableName)
+            .update({
+              [relation.description.targetColumn]:
+                (model as any)[primaryKeyInfo.propertyKey],
+            })
+            .where(relationPkInfo.name, "in", ids)
+            .execute();
+
+          for (let i = 0; i < ids.length; i++) {
+            (model as any)[relation.description.propertyKey][i][
+              relation.description.targetColumn
+            ] = (model as any)[primaryKeyInfo.propertyKey];
+          }
+        }
+      }
     }
 
     // Save the model's original values
@@ -272,7 +308,7 @@ export class Manager {
   ): Promise<T | T[]> {
     if (Array.isArray(data)) {
       const models = createModels(modelClass, data as any);
-      return this.bulkSave(modelClass, models);
+      return this.bulkInsert(modelClass, models);
     } else {
       const model = createModel(modelClass, data as any);
       return this.save(model);
@@ -280,9 +316,9 @@ export class Manager {
   }
 
   /**
-   * Save multiple records to the database efficiently
+   * Insert multiple records to the database efficiently
    */
-  private async bulkSave<T extends Object>(
+  private async bulkInsert<T extends Object>(
     modelClass: { new (): T },
     models: T[],
   ): Promise<T[]> {
