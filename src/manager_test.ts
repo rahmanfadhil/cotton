@@ -9,7 +9,6 @@ import {
 import { Manager } from "./manager.ts";
 import { assert, assertEquals, assertThrowsAsync } from "../testdeps.ts";
 import { formatDate } from "./utils/date.ts";
-import { getRelationValues } from "./utils/models.ts";
 
 @Model("users")
 class User {
