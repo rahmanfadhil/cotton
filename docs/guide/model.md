@@ -52,6 +52,15 @@ createdAt!: Date;
 
 Keep in mind that this feature requires a custom TypeScript configuration to tell Deno that we want to use [decorators](https://www.typescriptlang.org/docs/handbook/decorators.html), which currently still an experimental feature.
 
+```json
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
+```
+
 ## Model manager
 
 In order to perform queries within a model, you can use the model manager provided by the database connection.
@@ -113,7 +122,7 @@ class User {
   email: string;
 
   @Relation(RelationType.HasMany, () => User, "user_id")
-  post: Post;
+  posts: Post[];
 }
 
 @Model()
@@ -133,7 +142,40 @@ As you can see, a user can have multiple posts, but the a post belongs to a sing
 
 ### Saving relations
 
-Lorem ipsum.
+Saving relations can be done using `save` method alone.
+
+```ts
+const post1 = new Post();
+post1.title = "Post 1";
+await manager.save(post1);
+
+const post2 = new Post();
+post2.title = "Post 2";
+await manager.save(post2);
+
+const user = new User();
+user.email = "a@b.com";
+user.posts = [post1, post2];
+await manager.save(user);
+```
+
+You also can reverse it.
+
+```ts
+const user = new User();
+user.email = "a@b.com";
+await manager.save(user);
+
+const post1 = new Post();
+post1.title = "Post 1";
+post1.user = user;
+await manager.save(post1);
+
+const post2 = new Post();
+post2.title = "Post 1";
+post2.user = user;
+await manager.save(post2);
+```
 
 ### Fetching relations
 
