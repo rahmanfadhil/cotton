@@ -234,13 +234,11 @@ export class ModelQuery<T> {
    */
   private selectModelColumns(modelClass: Function) {
     const tableName = getTableName(modelClass);
-    console.log(tableName);
     const selectColumns = getColumns(modelClass)
       .map((column): [string, string] => [
         tableName + "." + column.name,
         tableName + "__" + column.name,
       ]);
-    console.log(selectColumns);
     this.builder.select(...selectColumns);
   }
 }
