@@ -303,7 +303,7 @@ export class QueryBuilder {
    * @param column Table field
    * @param direction "ASC" or "DESC"
    */
-  public orderBy(
+  public order(
     column: string,
     direction: OrderDirection = "ASC",
   ): QueryBuilder {

@@ -8,6 +8,7 @@ import "./src/adapters/mysql_test.ts";
 import "./src/adapters/adapter_test.ts";
 import "./src/migrations/schema_test.ts";
 import "./src/manager_test.ts";
+import "./src/modelquery_test.ts";
 
 // Unit tests
 import "./src/utils/date_test.ts";

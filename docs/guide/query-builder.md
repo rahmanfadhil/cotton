@@ -87,22 +87,22 @@ query.table("users").where("name", "John").or("name", "Jane");
 
 ## Sorting
 
-You can sort a column using `orderBy`.
+You can sort a column using `order`.
 
 ```ts
-db.table("users").orderBy("age");
+db.table("users").order("age");
 ```
 
 By default this will sort in ascending order. You can change this by passing the second parameter.
 
 ```ts
-db.table("users").orderBy("age", "DESC"); // or ASC
+db.table("users").order("age", "DESC"); // or ASC
 ```
 
 To sort multiple column, you can chain this method as many as you want.
 
 ```ts
-db.table("users").orderBy("age", "DESC").orderBy("created_at");
+db.table("users").order("age", "DESC").order("created_at");
 ```
 
 ## Pagination

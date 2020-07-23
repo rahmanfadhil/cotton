@@ -401,7 +401,7 @@ testDB(
   },
 );
 
-testDB("Manager.find() -> should fetch the relations", async (client) => {
+testDB("Manager.findOne() -> should fetch the relations", async (client) => {
   await client.table("users").insert([{
     id: 1,
     first_name: "John",
