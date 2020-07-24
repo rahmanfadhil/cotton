@@ -42,7 +42,7 @@ export class Collection<T> extends Array<T> {
    * Check if this collection has nothing in it.
    */
   public isEmpty() {
-    return this.length === 0;
+    return this.getPrimaryKeys().length === 0;
   }
 
   /**
@@ -69,30 +69,41 @@ export class Collection<T> extends Array<T> {
   /**
    * Load model relations.
    */
-  public async load(...relations: Extract<keyof T, string>[]) {
+  public async load(...relations: Extract<keyof T, string>[]): Promise<this> {
+    // If the collection is empty, do nothing.
+    if (this.isEmpty()) {
+      return this;
+    }
+
+    // Get the model's table name and primary key name
     const tableName = getTableName(this.modelClass);
     const primaryKeyName = getPrimaryKeyInfo(this.modelClass).name;
 
+    // Initialize the query builder.
     const builder = this.adapter.table(tableName);
+
+    // Select current model columns.
     builder.select(...this.selectModelColumns(this.modelClass));
 
+    // Store all included relationship informations temporarily.
     const includes: {
       type: RelationType;
       modelClass: any;
       propertyKey: string;
     }[] = [];
 
+    // Loop through model relatinships, add left join query to query builder,
+    // and append relation information to `includes`.
     for (const relation of getRelations(this.modelClass, relations)) {
       const relationModelClass = relation.getModel();
       const relationTableName = getTableName(relationModelClass);
-      const primaryKeyInfo = getPrimaryKeyInfo(this.modelClass);
       const relationPrimaryKeyInfo = getPrimaryKeyInfo(relationModelClass);
 
       if (relation.type === RelationType.HasMany) {
         builder.leftJoin(
           relationTableName,
           relationTableName + "." + relation.targetColumn,
-          tableName + "." + primaryKeyInfo.name,
+          tableName + "." + primaryKeyName,
         );
       } else if (relation.type === RelationType.BelongsTo) {
         builder.leftJoin(
@@ -110,23 +121,31 @@ export class Collection<T> extends Array<T> {
       builder.select(...this.selectModelColumns(relationModelClass));
     }
 
+    // Perform query. But before that, only select records inside this
+    // collection, and order the primary key ascendingly.
     const result = await builder
       .where(primaryKeyName, "in", this.getPrimaryKeys())
       .order(tableName + "." + primaryKeyName, "ASC")
       .execute();
 
+    // Transform the query result to plain JavaScript objects.
     const models = mapQueryResult(
       this.modelClass,
       result,
       includes.map((item) => item.propertyKey),
     );
 
+    // If the number of models from the database is not the same
+    // as the collection, throw an error. It means some models
+    // has been deleted or the primary key has been changed.
     if (models.length !== this.length) {
       throw new Error(
         `'${this.modelClass.name}' collection content doesn't match with the database!`,
       );
     }
 
+    // Loop through the query result, and plug the relationships to
+    // the models inside this collection.
     for (let i = 0; i < models.length; i++) {
       for (const relation of includes) {
         let relationData: any;
@@ -155,6 +174,8 @@ export class Collection<T> extends Array<T> {
         (this[i] as any)[relation.propertyKey] = relationData;
       }
     }
+
+    return this;
   }
 
   // --------------------------------------------------------------------------------
@@ -162,11 +183,11 @@ export class Collection<T> extends Array<T> {
   // --------------------------------------------------------------------------------
 
   /**
-   * Select all columns of a model class.
+   * Get all queryable column names from a model class.
    * 
    * @param modelClass the model class to get the columns
    */
-  private selectModelColumns(modelClass: Function) {
+  private selectModelColumns(modelClass: Function): [string, string][] {
     const tableName = getTableName(modelClass);
     const selectColumns = getColumns(modelClass)
       .map((column): [string, string] => [
