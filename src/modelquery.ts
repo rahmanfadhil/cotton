@@ -47,30 +47,54 @@ export class ModelQuery<T> {
   /**
    * Add basic WHERE clause to query.
    */
-  public where(column: keyof T, value: any): this;
-  public where(column: keyof T, operator: WhereOperator, value: any): this;
-  public where(column: keyof T, operator: WhereOperator, value?: any): this {
-    this.builder.where(this.getColumnName(column as string), operator, value);
+  public where(column: Extract<keyof T, string>, value: any): this;
+  public where(
+    column: Extract<keyof T, string>,
+    operator: WhereOperator,
+    value: any,
+  ): this;
+  public where(
+    column: Extract<keyof T, string>,
+    operator: WhereOperator,
+    value?: any,
+  ): this {
+    this.builder.where(this.getColumnName(column), operator, value);
     return this;
   }
 
   /**
    * Add WHERE NOT clause to query.
    */
-  public not(column: keyof T, value: any): this;
-  public not(column: keyof T, operator: WhereOperator, value: any): this;
-  public not(column: keyof T, operator: WhereOperator, value?: any): this {
-    this.builder.not(this.getColumnName(column as string), operator, value);
+  public not(column: Extract<keyof T, string>, value: any): this;
+  public not(
+    column: Extract<keyof T, string>,
+    operator: WhereOperator,
+    value: any,
+  ): this;
+  public not(
+    column: Extract<keyof T, string>,
+    operator: WhereOperator,
+    value?: any,
+  ): this {
+    this.builder.not(this.getColumnName(column), operator, value);
     return this;
   }
 
   /**
    * Add WHERE ... OR clause to query.
    */
-  public or(column: keyof T, value: any): this;
-  public or(column: keyof T, operator: WhereOperator, value: any): this;
-  public or(column: keyof T, operator: WhereOperator, value?: any): this {
-    this.builder.or(this.getColumnName(column as string), operator, value);
+  public or(column: Extract<keyof T, string>, value: any): this;
+  public or(
+    column: Extract<keyof T, string>,
+    operator: WhereOperator,
+    value: any,
+  ): this;
+  public or(
+    column: Extract<keyof T, string>,
+    operator: WhereOperator,
+    value?: any,
+  ): this {
+    this.builder.or(this.getColumnName(column), operator, value);
     return this;
   }
 
@@ -100,7 +124,10 @@ export class ModelQuery<T> {
    * @param column the table column name
    * @param direction "ASC" or "DESC"
    */
-  public order(column: keyof T, direction?: OrderDirection): this {
+  public order(
+    column: Extract<keyof T, string>,
+    direction?: OrderDirection,
+  ): this {
     this.builder.order(this.getColumnName(column as string), direction);
     return this;
   }
@@ -114,8 +141,8 @@ export class ModelQuery<T> {
    * 
    * @param columns all relations you want to include
    */
-  public include(...columns: (keyof T)[]): this {
-    for (const relation of getRelations(this.modelClass, columns as string[])) {
+  public include(...columns: (Extract<keyof T, string>)[]): this {
+    for (const relation of getRelations(this.modelClass, columns)) {
       const relationTableName = getTableName(relation.getModel());
       const primaryKeyInfo = getPrimaryKeyInfo(this.modelClass);
       const relationPrimaryKeyInfo = getPrimaryKeyInfo(relation.getModel());

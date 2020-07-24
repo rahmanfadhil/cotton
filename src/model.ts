@@ -1,6 +1,10 @@
 import { Reflect } from "./utils/reflect.ts";
 import { metadata } from "./constants.ts";
 
+// --------------------------------------------------------------------------------
+// MODELS
+// --------------------------------------------------------------------------------
+
 /**
  * Define a class as a database model.
  * 
@@ -15,6 +19,10 @@ export function Model(tableName?: string) {
     );
   };
 }
+
+// --------------------------------------------------------------------------------
+// COLUMNS
+// --------------------------------------------------------------------------------
 
 /**
  * Transform database value to JavaScript types
@@ -108,47 +116,6 @@ export function Column(options?: Partial<ColumnOptions>) {
   };
 }
 
-export enum RelationType {
-  HasMany = 1,
-  BelongsTo = 2,
-}
-
-export interface RelationDescription {
-  propertyKey: string;
-  type: RelationType;
-  getModel: () => { new (): any };
-  targetColumn: string;
-}
-
-/**
- * Define a relation field
- * 
- * @param type the type of this relation (belongs to, has many, etc.)
- * @param getModel a callback function that returns the model associated with this relation.
- * @param column the column name that being targetted in this relation.
- */
-export function Relation(
-  type: RelationType,
-  getModel: () => { new (): any },
-  column: string,
-) {
-  return (target: Object, propertyKey: string) => {
-    let relations: RelationDescription[] = [];
-    if (Reflect.hasMetadata(metadata.relations, target)) {
-      relations = Reflect.getMetadata(metadata.relations, target);
-    }
-
-    relations.push({
-      propertyKey: propertyKey,
-      type: type,
-      getModel,
-      targetColumn: column,
-    });
-
-    Reflect.defineMetadata(metadata.relations, relations, target);
-  };
-}
-
 /** Options for model's primary field */
 export interface PrimaryFieldOptions {
   name: string;
@@ -177,4 +144,70 @@ export function Primary(options?: PrimaryFieldOptions) {
 
     Reflect.defineMetadata(metadata.columns, columns, target);
   };
+}
+
+// --------------------------------------------------------------------------------
+// RELATIONSHIPS
+// --------------------------------------------------------------------------------
+
+export enum RelationType {
+  HasMany = 1,
+  BelongsTo = 2,
+}
+
+export interface RelationDescription {
+  propertyKey: string;
+  type: RelationType;
+  getModel: () => { new (): any };
+  targetColumn: string;
+}
+
+/**
+ * Define a "belongs to" relational property.
+ * 
+ * @param getModel a callback function that returns the model associated with this relation.
+ * @param column the column name that being targetted in this relation.
+ */
+export function BelongsTo(
+  getModel: () => { new (): any },
+  column: string,
+) {
+  return (target: Object, propertyKey: string) => {
+    addRelation(target, RelationType.BelongsTo, propertyKey, getModel, column);
+  };
+}
+
+/**
+ * Define a "has many" relational property.
+ * 
+ * @param getModel a callback function that returns the model associated with this relation.
+ * @param column the column name that being targetted in this relation.
+ */
+export function HasMany(
+  getModel: () => { new (): any },
+  column: string,
+) {
+  return (target: Object, propertyKey: string) => {
+    addRelation(target, RelationType.HasMany, propertyKey, getModel, column);
+  };
+}
+
+/**
+ * Add relation metadata to a targetted model.
+ */
+function addRelation(
+  target: Object,
+  type: RelationType,
+  propertyKey: string,
+  getModel: () => any,
+  targetColumn: string,
+) {
+  let relations: RelationDescription[] = [];
+  if (Reflect.hasMetadata(metadata.relations, target)) {
+    relations = Reflect.getMetadata(metadata.relations, target);
+  }
+
+  relations.push({ propertyKey, type, getModel, targetColumn });
+
+  Reflect.defineMetadata(metadata.relations, relations, target);
 }

@@ -2,9 +2,10 @@ import {
   Column,
   ColumnType,
   Model,
-  Relation,
   RelationType,
   RelationDescription,
+  HasMany,
+  BelongsTo,
 } from "./model.ts";
 import { Reflect } from "./utils/reflect.ts";
 import { assertEquals, assertThrows, assert } from "../testdeps.ts";
@@ -22,12 +23,12 @@ Deno.test("Model: should define metadata", () => {
 
 Deno.test("Relation: should define metadata", () => {
   class User {
-    @Relation(RelationType.HasMany, () => Post, "user_id")
+    @HasMany(() => Post, "user_id")
     posts!: Post[];
   }
 
   class Post {
-    @Relation(RelationType.BelongsTo, () => User, "user_id")
+    @BelongsTo(() => User, "user_id")
     user!: User;
   }
 

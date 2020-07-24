@@ -1,5 +1,11 @@
 import { testDB } from "./testutils.ts";
-import { Model, Primary, Column, Relation, RelationType } from "./model.ts";
+import {
+  Model,
+  Primary,
+  Column,
+  HasMany,
+  BelongsTo,
+} from "./model.ts";
 import { ModelQuery } from "./modelquery.ts";
 import { assertEquals, assert, stub } from "../testdeps.ts";
 
@@ -23,7 +29,7 @@ class User {
   @Column({ name: "is_active", default: false })
   isActive!: boolean;
 
-  @Relation(RelationType.HasMany, () => Product, "user_id")
+  @HasMany(() => Product, "user_id")
   products!: Product[];
 }
 
@@ -35,7 +41,7 @@ class Product {
   @Column({ isNullable: false })
   title!: string;
 
-  @Relation(RelationType.BelongsTo, () => User, "user_id")
+  @BelongsTo(() => User, "user_id")
   user!: User;
 }
 

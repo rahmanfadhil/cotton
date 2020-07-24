@@ -3,8 +3,8 @@ import {
   Model,
   Column,
   Primary,
-  Relation,
-  RelationType,
+  HasMany,
+  BelongsTo,
 } from "./model.ts";
 import { Manager } from "./manager.ts";
 import { assert, assertEquals, assertThrowsAsync } from "../testdeps.ts";
@@ -31,7 +31,7 @@ class User {
   @Column({ name: "is_active", default: false })
   isActive!: boolean;
 
-  @Relation(RelationType.HasMany, () => Product, "user_id")
+  @HasMany(() => Product, "user_id")
   products!: Product[];
 }
 
@@ -43,7 +43,7 @@ class Product {
   @Column({ isNullable: false })
   title!: string;
 
-  @Relation(RelationType.BelongsTo, () => User, "user_id")
+  @BelongsTo(() => User, "user_id")
   user!: User;
 }
 

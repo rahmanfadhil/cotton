@@ -135,7 +135,7 @@ class User {
   @Column()
   email: string;
 
-  @Relation(RelationType.HasMany, () => User, "user_id")
+  @HasMany(() => User, "user_id")
   posts: Post[];
 }
 
@@ -147,7 +147,7 @@ class Post {
   @Column()
   title: string;
 
-  @Relation(RelationType.BelongsTo, () => User, "user_id")
+  @BelongsTo(() => User, "user_id")
   user: User;
 }
 ```

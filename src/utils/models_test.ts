@@ -20,7 +20,8 @@ import {
   Model,
   Column,
   Primary,
-  Relation,
+  HasMany,
+  BelongsTo,
   RelationType,
   ColumnType,
 } from "../model.ts";
@@ -47,10 +48,10 @@ class User {
   @Column()
   age!: number;
 
-  @Relation(RelationType.HasMany, toPost, "user_id")
+  @HasMany(toPost, "user_id")
   posts!: Post[];
 
-  @Relation(RelationType.HasMany, toProduct, "product_id")
+  @HasMany(toProduct, "product_id")
   products!: Product[];
 }
 
@@ -68,7 +69,7 @@ class Post {
   @Column({ name: "created_at", default: getCreationDate })
   createdAt!: Date;
 
-  @Relation(RelationType.BelongsTo, toUser, "user_id")
+  @BelongsTo(toUser, "user_id")
   user!: User;
 }
 
@@ -80,7 +81,7 @@ class Product {
   @Column()
   name!: string;
 
-  @Relation(RelationType.BelongsTo, toUser, "product_id")
+  @BelongsTo(toUser, "product_id")
   user!: User;
 }
 

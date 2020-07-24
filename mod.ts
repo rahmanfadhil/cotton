@@ -4,12 +4,13 @@ export { Manager, FindOneOptions, FindOptions } from "./src/manager.ts";
 export { BaseModel } from "./src/basemodel.ts";
 export { Schema } from "./src/migrations/schema.ts";
 export { ColumnBuilder } from "./src/migrations/columnbuilder.ts";
+export { ForeignActions } from "./src/migrations/foreign.ts";
 export { MigrationRunner } from "./src/migrations/migrationrunner.ts";
 export {
   Primary,
   Column,
   ColumnType,
-  Relation,
-  RelationType,
+  HasMany,
+  BelongsTo,
   Model,
 } from "./src/model.ts";
