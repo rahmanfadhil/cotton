@@ -220,6 +220,16 @@ class User extends BaseModel {
 }
 ```
 
+The most important thing you need to do when working with base models is registering those models to your database connection. Not registering your models before executing queries with it can cause fatal errors.
+
+```ts
+const db = await connect({
+  type: "sqlite",
+  // other configs...
+  models: [User],
+});
+```
+
 Here's how to can perform query to a base model.
 
 ```ts
