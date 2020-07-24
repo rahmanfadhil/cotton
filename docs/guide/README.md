@@ -29,5 +29,5 @@ You can learn more about Cotton through these links. Have fun! 😃
 
 - [Creating a connection](connection)
 - [Query builder](query-builder.md)
-- [Modeling your table](model.md)
-- [Migrating your database](migration.md)
+- [Object-relational mapper](model.md)
+- [Database migrations](migration.md)
