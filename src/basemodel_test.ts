@@ -4,7 +4,7 @@ import { Manager } from "./manager.ts";
 
 class User extends BaseModel {}
 
-Deno.test("BaseModel.find() -> should call Manager.find()", () => {
+Deno.test("BaseModel.query() -> should call Manager.query()", () => {
   const returned: any = Symbol();
 
   const manager = new Manager({} as any);
