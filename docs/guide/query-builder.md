@@ -85,6 +85,23 @@ Or, if you want to find records if one of the conditions are true, use `or`.
 query.table("users").where("name", "John").or("name", "Jane");
 ```
 
+## Selecting columns
+
+By default, query builder will select every single columns in the table with `*`. However, you can choose which columsnt to select in a query by calling `select`.
+
+```ts
+db.table("users").select("email");
+```
+
+To select multiple columns, you can either pass multiple strings to the parameter or chain it multiple times.
+
+```ts
+db.table("users").select("email", "age", "is_active");
+
+// Alternatively...
+db.table("users").select("email").select("age").select("is_active");
+```
+
 ## Sorting
 
 You can sort a column using `order`.
