@@ -62,3 +62,11 @@ const db = await connect({
 ```
 
 Typically MySQL and PostgreSQL datababase ask for a username and password. However, if there is no password, you can leave it empty.
+
+## Disconnect
+
+Once, you've finished using the database, disconnect it. This can clear more space for you.
+
+```ts
+await db.disconnect();
+```

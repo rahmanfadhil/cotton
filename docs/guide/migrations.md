@@ -1,7 +1,5 @@
 # Migrations
 
-> This feature is available since `v1.0.0` release.
-
 The reason why we use _database toolkit_ instead of _ORM_ for our tagline is because Cotton offers more than just an ORM. We're offering a set of tools that helps you to manage your Deno apps that use a database. We want to make sure that you don't need to jump into multiple tools while developing your apps.
 
 In this section, we're going to show you how to use the migrations feature in Cotton.

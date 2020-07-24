@@ -1,51 +1,33 @@
 # Getting Started
 
-Currently, Cotton supports [SQLite3](https://sqlite.org), [MySQL](https://mysql.com), and [PostgreSQL](https://postgresql.org). To create a connection, use `connect` and pass the connection configurations.
+Here's an example of a Deno project that uses Cotton.
 
 ```ts
-import { connect } from "https://deno.land/x/cotton/mod.ts";
+import { connect } from "https://deno.land/x/mod.ts";
 
 const db = await connect({
-  type: "sqlite", // available type: 'mysql', 'postgres', and 'sqlite'
-  database: "db.sqlite",
-  // other...
+  type: "sqlite",
+  database: "db.sqlite3",
 });
 ```
 
-You can run an SQL statement using the `execute` method.
+To use Cotton in your project, you can import `cotton` package from [deno.land/x](https://deno.land/x) in your file. We highly recommend you to use semantic versioning by explicitly tell Deno which version you want to use in the import URL.
+
+Typically, the first thing you want to do is to create a connection to a database. Here, we're using `connect` and pass our database configuration. You can read more about connection [here](connection.md).
+
+Once our database is connected, do anything with it such as performing an SQL query.
 
 ```ts
-await db.query(`
-  CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email VARCHAR(255),
-  );
-`);
-```
-
-Cotton provides an easy-to-use query builder which allows you to perform queries without writing raw SQL.
-
-```ts
-// Execute "SELECT * FROM users;"
-const users = await db.table("users").execute();
-
-for (const user in users) {
-  console.log(user.email);
-}
-```
-
-However, you can still use raw SQL via `query` method.
-
-```ts
-const users = await db.query("SELECT * FROM users;");
+const users = await db.query("SELECT * FROM users");
 
 for (const user of users) {
-  console.log(user.email);
+  console.log(user); // { email: 'a@b.com', age: 16, ... }
 }
 ```
 
-Once, you've finished using the database, disconnect it.
+You can learn more about Cotton through these links. Have fun! 😃
 
-```ts
-await db.disconnect();
-```
+- [Creating a connection](connection)
+- [Query builder](query-builder.md)
+- [Modeling your table](model.md)
+- [Migrating your database](migration.md)

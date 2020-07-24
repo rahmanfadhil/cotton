@@ -1,4 +1,4 @@
-# Model
+# Models
 
 Cotton provides a type-safe way to work with your database using models. You can define a model by creating a plain class decorated with `@Model`.
 

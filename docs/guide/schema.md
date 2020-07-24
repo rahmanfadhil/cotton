@@ -21,8 +21,6 @@ export async function down(schema: Schema) {
 
 This is an example of a [migration file](migrations.md#creating-a-migration). Here, we're trying to create a basic table called `user`. This table contains two column, an auto incremental primary key called `id` and classic varchar column called `title`.
 
-On the `down` function, where
-
 With `Schema`, you can do the following things:
 
 - Create a table or schema
@@ -84,13 +82,10 @@ if (await schema.hasTable("users")) {
 Adding a new column to a table can be done by using the `addColumn` method.
 
 ```ts
-await schema.addColumn("users", "", "", 255);
-```
-
-Optionally, you can pass a length for a varchar column.
-
-```ts
-await schema.addColumn("users", "name", "varchar", 255);
+const nameColumn = new ColumnBuilder("name", "varchar", 255)
+  .notNull()
+  .default("John");
+await schema.addColumn("users", nameColumn);
 ```
 
 ## Check if a table has a column
@@ -107,20 +102,20 @@ if (await schema.hasTable("users", "name")) {
 
 These are the available column types you can use to build your tables.
 
-| Syntax                          | Description                                                                          |
-| ------------------------------- | ------------------------------------------------------------------------------------ |
-| `schema.id()`                   | Shortcut for `bigIncrements('id')`.                                                  |
-| `schema.increments('id')`       | Auto incremental column (`SERIAL` in PostgreSQL).                                    |
-| `schema.bigIncrements('id')`    | Big auto incremental column.                                                         |
-| `schema.smallIncrements('id')`  | Small auto incremental column.                                                       |
-| `schema.varchar('name', 100)`   | VARCHAR (text) column with a length (default `255`).                                 |
-| `schema.text('content')`        | A large TEXT column (`LONGTEXT` in MySQL).                                           |
-| `schema.boolean('is_active')`   | A boolean compatible column. Tiny int in MySQL & SQLite and `BOOLEAN` in PostgreSQL. |
-| `schema.integer('votes')`       | Basic INTEGER (number) column.                                                       |
-| `schema.bigInteger('price')`    | BIGINT equivalent column.                                                            |
-| `schema.smallInteger('votes')`  | SMALLINT equivalent column.                                                          |
-| `schema.datetime('created_at')` | Date and time column (`TIMESTAMP` in PostgreSQL).                                    |
-| `schema.date('created_at')`     | DATE equvalient column.                                                              |
-| `schema.timestamps()`           | Creates two `datetime` columns called `created_at` and `updated_at`.                 |
-| `schema.custom('age INTEGER')`  | Add column by yoursel using SQL query.                                               |
-| `schema.foreignId('user_id')`   | Add a foreign key to other table's primary key.                                      |
+| Syntax                   | Description                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------ |
+| `id()`                   | Shortcut for `bigIncrements('id')`.                                                  |
+| `increments('id')`       | Auto incremental column (`SERIAL` in PostgreSQL).                                    |
+| `bigIncrements('id')`    | Big auto incremental column.                                                         |
+| `smallIncrements('id')`  | Small auto incremental column.                                                       |
+| `varchar('name', 100)`   | VARCHAR (text) column with a length (default `255`).                                 |
+| `text('content')`        | A large TEXT column (`LONGTEXT` in MySQL).                                           |
+| `boolean('is_active')`   | A boolean compatible column. Tiny int in MySQL & SQLite and `BOOLEAN` in PostgreSQL. |
+| `integer('votes')`       | Basic INTEGER (number) column.                                                       |
+| `bigInteger('price')`    | BIGINT equivalent column.                                                            |
+| `smallInteger('votes')`  | SMALLINT equivalent column.                                                          |
+| `datetime('created_at')` | Date and time column (`TIMESTAMP` in PostgreSQL).                                    |
+| `date('created_at')`     | DATE equvalient column.                                                              |
+| `timestamps()`           | Creates two `datetime` columns called `created_at` and `updated_at`.                 |
+| `custom('age INTEGER')`  | Add column by yoursel using SQL query.                                               |
+| `foreignId('user_id')`   | Add a foreign key to other table's primary key.                                      |
