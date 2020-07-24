@@ -475,6 +475,29 @@ testQueryCompiler("`where` and not", {
   },
 });
 
+testQueryCompiler("`where` order by", {
+  orders: [
+    { column: "id", order: "ASC" },
+    { column: "orders.id", order: "DESC" },
+  ],
+}, {
+  mysql: {
+    text:
+      "SELECT `users`.* FROM `users` ORDER BY `users`.`id` ASC, `orders`.`id` DESC;",
+    values: [],
+  },
+  sqlite: {
+    text:
+      "SELECT `users`.* FROM `users` ORDER BY `users`.`id` ASC, `orders`.`id` DESC;",
+    values: [],
+  },
+  postgres: {
+    text:
+      'SELECT "users".* FROM "users" ORDER BY "users"."id" ASC, "orders"."id" DESC;',
+    values: [],
+  },
+});
+
 testQueryCompiler("`where` inner join", {
   tableName: "orders",
   joins: [{

@@ -341,7 +341,7 @@ export class QueryCompiler {
 
       query.push(
         this.description.orders
-          .map((order) => `${order.column} ${order.order}`)
+          .map((order) => `${this.getColumnName(order.column)} ${order.order}`)
           .join(", "),
       );
     }

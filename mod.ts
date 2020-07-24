@@ -14,3 +14,4 @@ export {
   BelongsTo,
   Model,
 } from "./src/model.ts";
+export { Collection } from "./src/collection.ts";
