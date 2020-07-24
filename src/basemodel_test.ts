@@ -6,36 +6,14 @@ class User extends BaseModel {}
 
 Deno.test("BaseModel.find() -> should call Manager.find()", () => {
   const returned: any = Symbol();
-  const parameter: any = Symbol();
 
   const manager = new Manager({} as any);
-  const managerStub = stub(manager, "find", [returned]);
+  const managerStub = stub(manager, "query", [returned]);
 
   (User as any).manager = manager;
 
-  assertEquals(User.find(parameter), returned);
-  assertEquals(managerStub.calls, [{
-    args: [User, parameter],
-    self: manager,
-    returned,
-  }]);
-});
-
-Deno.test("BaseModel.findOne() -> should call Manager.findOne()", () => {
-  const returned: any = Symbol();
-  const parameter: any = Symbol();
-
-  const manager = new Manager({} as any);
-  const managerStub = stub(manager, "findOne", [returned]);
-
-  (User as any).manager = manager;
-
-  assertEquals(User.findOne(parameter), returned);
-  assertEquals(managerStub.calls, [{
-    args: [User, parameter],
-    self: manager,
-    returned,
-  }]);
+  assertEquals(User.query(), returned);
+  assertEquals(managerStub.calls, [{ args: [User], self: manager, returned }]);
 });
 
 Deno.test("BaseModel.insert() -> should call Manager.insert()", () => {

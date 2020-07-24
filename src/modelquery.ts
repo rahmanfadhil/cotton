@@ -9,6 +9,7 @@ import {
   mapQueryResult,
   mapSingleQueryResult,
   createModel,
+  findColumn,
 } from "./utils/models.ts";
 import { RelationType } from "./model.ts";
 import { quote } from "./utils/dialect.ts";
@@ -49,7 +50,7 @@ export class ModelQuery<T> {
   public where(column: keyof T, value: any): this;
   public where(column: keyof T, operator: WhereOperator, value: any): this;
   public where(column: keyof T, operator: WhereOperator, value?: any): this {
-    this.builder.where(column as string, operator, value);
+    this.builder.where(this.getColumnName(column as string), operator, value);
     return this;
   }
 
@@ -59,7 +60,7 @@ export class ModelQuery<T> {
   public not(column: keyof T, value: any): this;
   public not(column: keyof T, operator: WhereOperator, value: any): this;
   public not(column: keyof T, operator: WhereOperator, value?: any): this {
-    this.builder.not(column as string, operator, value);
+    this.builder.not(this.getColumnName(column as string), operator, value);
     return this;
   }
 
@@ -69,7 +70,7 @@ export class ModelQuery<T> {
   public or(column: keyof T, value: any): this;
   public or(column: keyof T, operator: WhereOperator, value: any): this;
   public or(column: keyof T, operator: WhereOperator, value?: any): this {
-    this.builder.or(column as string, operator, value);
+    this.builder.or(this.getColumnName(column as string), operator, value);
     return this;
   }
 
@@ -99,8 +100,8 @@ export class ModelQuery<T> {
    * @param column the table column name
    * @param direction "ASC" or "DESC"
    */
-  public order(column: keyof T, direction: OrderDirection = "ASC"): this {
-    this.builder.order(column as string, direction);
+  public order(column: keyof T, direction?: OrderDirection): this {
+    this.builder.order(this.getColumnName(column as string), direction);
     return this;
   }
 
@@ -145,7 +146,8 @@ export class ModelQuery<T> {
   // --------------------------------------------------------------------------------
 
   /**
-   * Get the first record from the query
+   * Find a single record that match given conditions. If multiple
+   * found, it will return the first one. 
    */
   public async first(): Promise<T | null> {
     // Check whether this query contains a HasMany relationship
@@ -205,7 +207,7 @@ export class ModelQuery<T> {
   }
 
   /**
-   * Get all records from the query
+   * Find records that match given conditions.
    */
   public async all(): Promise<T[]> {
     // Execute the query
@@ -240,5 +242,22 @@ export class ModelQuery<T> {
         tableName + "__" + column.name,
       ]);
     this.builder.select(...selectColumns);
+  }
+
+  /**
+   * Get column name on the database from a column property key.
+   * 
+   * @param propertyKey the property key of the column
+   */
+  private getColumnName(propertyKey: string): string {
+    const column = findColumn(this.modelClass, propertyKey);
+
+    if (!column) {
+      throw new Error(
+        `Column '${propertyKey}' doesn't exist in model '${this.modelClass.name}'!`,
+      );
+    }
+
+    return column.name;
   }
 }

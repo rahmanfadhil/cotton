@@ -9,6 +9,7 @@ import {
 import { Manager } from "./manager.ts";
 import { assert, assertEquals, assertThrowsAsync } from "../testdeps.ts";
 import { formatDate } from "./utils/date.ts";
+import { ModelQuery } from "./modelquery.ts";
 
 @Model("users")
 class User {
@@ -45,6 +46,15 @@ class Product {
   @Relation(RelationType.BelongsTo, () => User, "user_id")
   user!: User;
 }
+
+Deno.test("Manager.query() -> should return a ModelQuery", () => {
+  const adapter = Symbol();
+  const manager = new Manager(adapter as any);
+  const query = manager.query(User);
+  assert(query instanceof ModelQuery);
+  assertEquals((query as any).adapter, adapter);
+  assertEquals((query as any).modelClass, User);
+});
 
 testDB(
   "Manager.save() -> should save a new record to the database and update it if something changed",
@@ -137,9 +147,6 @@ testDB(
     product2.title = "Table";
     await manager.save(product2);
 
-    console.log(product1);
-    console.log(product2);
-
     const user = new User();
     user.firstName = "John";
     user.lastName = "Doe";
@@ -164,292 +171,6 @@ testDB(
   },
 );
 
-testDB("Manager.find() -> should return all records", async (client) => {
-  const manager = new Manager(client);
-  let users = await manager.find(User);
-  assert(Array.isArray(users));
-  assertEquals(users.length, 0);
-
-  const data = {
-    first_name: "John",
-    last_name: "Doe",
-    age: 16,
-    created_at: new Date(),
-    is_active: false,
-  };
-  await client.table("users").insert(data).execute();
-
-  users = await manager.find(User);
-  assert(Array.isArray(users));
-  assertEquals(users.length, 1);
-  assert(users[0] instanceof User);
-  assertEquals(users[0].id, 1);
-  assertEquals(users[0].firstName, data.first_name);
-  assertEquals(users[0].lastName, data.last_name);
-  assertEquals(users[0].age, data.age);
-  assertEquals(users[0].isActive, data.is_active);
-  assertEquals(users[0].createdAt, data.created_at);
-});
-
-testDB("Manager.find() -> should query with options", async (client) => {
-  const data = [{
-    id: 1,
-    first_name: "John",
-    last_name: "Doe",
-    age: 16,
-    created_at: new Date(),
-    is_active: false,
-  }, {
-    id: 2,
-    first_name: "Jane",
-    last_name: "Doe",
-    age: 17,
-    created_at: new Date(),
-    is_active: true,
-  }, {
-    id: 3,
-    first_name: "Tom",
-    last_name: "Cruise",
-    age: 18,
-    created_at: new Date(),
-    is_active: true,
-  }];
-  await client.table("users").insert(data).execute();
-
-  const manager = new Manager(client);
-
-  let users = await manager.find(User, { where: { lastName: "Doe" } });
-  assertEquals(users.length, 2);
-  assert(users[0] instanceof User);
-  assert(users[1] instanceof User);
-  assertEquals(users[0].id, 1);
-  assertEquals(users[1].id, 2);
-
-  users = await manager.find(User, { where: { isActive: true } });
-  assertEquals(users.length, 2);
-  assert(users[0] instanceof User);
-  assert(users[1] instanceof User);
-  assertEquals(users[0].id, 2);
-  assertEquals(users[1].id, 3);
-
-  users = await manager.find(User, {
-    where: { lastName: "Doe", isActive: true },
-  });
-  assertEquals(users.length, 1);
-  assert(users[0] instanceof User);
-  assertEquals(users[0].id, 2);
-});
-
-testDB(
-  "Manager.find() -> should have no relation properties by default",
-  async (client) => {
-    await client.table("users").insert({
-      first_name: "John",
-      last_name: "Doe",
-      age: 16,
-      created_at: new Date(),
-      is_active: false,
-    }).execute();
-
-    await client.table("products").insert({
-      title: "Spoon",
-      user_id: 1,
-    }).execute();
-
-    const manager = new Manager(client);
-
-    const users = await manager.find(User);
-    assertEquals(users[0].products, undefined);
-
-    const products = await manager.find(Product);
-    assertEquals(products[0].user, undefined);
-  },
-);
-
-testDB("Manager.find() -> should fetch the relations", async (client) => {
-  await client.table("users").insert([{
-    id: 1,
-    first_name: "John",
-    last_name: "Doe",
-    age: 16,
-    created_at: new Date(),
-    is_active: false,
-  }, {
-    id: 2,
-    first_name: "Jane",
-    last_name: "Doe",
-    age: 17,
-    created_at: new Date(),
-    is_active: false,
-  }]).execute();
-
-  await client.table("products").insert([
-    { id: 1, title: "Spoon", user_id: 1 },
-    { id: 2, title: "Table", user_id: 1 },
-  ]).execute();
-
-  const manager = new Manager(client);
-
-  const users = await manager.find(User, { includes: ["products"] });
-  assertEquals(users.length, 2);
-
-  assert(Array.isArray(users[0].products));
-  assertEquals(users[0].products.length, 2);
-  assert(users[0].products[0] instanceof Product);
-  assertEquals(users[0].products[0].title, "Spoon");
-  assert(users[0].products[1] instanceof Product);
-  assertEquals(users[0].products[1].title, "Table");
-
-  assertEquals(users[1].products, []);
-
-  const products = await manager.find(Product, { includes: ["user"] });
-  assertEquals(products.length, 2);
-  for (let i = 0; i < products.length; i++) {
-    assert(products[i].user instanceof User);
-    assertEquals(products[i].user.id, 1);
-    assertEquals(products[i].user.firstName, "John");
-  }
-});
-
-testDB("Manager.findOne() -> should return a single record", async (client) => {
-  const manager = new Manager(client);
-  let user = await manager.findOne(User);
-  assertEquals(user, null);
-
-  const data = {
-    first_name: "John",
-    last_name: "Doe",
-    age: 16,
-    created_at: new Date(),
-    is_active: false,
-  };
-  await client.table("users").insert(data).execute();
-
-  user = await manager.findOne(User);
-  assert(user instanceof User);
-  assertEquals(user.id, 1);
-  assertEquals(user.firstName, data.first_name);
-  assertEquals(user.lastName, data.last_name);
-  assertEquals(user.age, data.age);
-  assertEquals(user.isActive, data.is_active);
-  assertEquals(user.createdAt, data.created_at);
-});
-
-testDB("Manager.find() -> should query with options", async (client) => {
-  const data = [{
-    id: 1,
-    first_name: "John",
-    last_name: "Doe",
-    age: 16,
-    created_at: new Date(),
-    is_active: false,
-  }, {
-    id: 2,
-    first_name: "Jane",
-    last_name: "Doe",
-    age: 17,
-    created_at: new Date(),
-    is_active: true,
-  }, {
-    id: 3,
-    first_name: "Tom",
-    last_name: "Cruise",
-    age: 18,
-    created_at: new Date(),
-    is_active: true,
-  }];
-  await client.table("users").insert(data).execute();
-
-  const manager = new Manager(client);
-
-  let user = await manager.findOne(User, { where: { lastName: "Doe" } });
-  assert(user instanceof User);
-  assertEquals(user.id, 1);
-
-  user = await manager.findOne(User, { where: { isActive: true } });
-  assert(user instanceof User);
-  assertEquals(user.id, 2);
-
-  user = await manager.findOne(User, { where: { id: 3 } });
-  assert(user instanceof User);
-  assertEquals(user.id, 3);
-});
-
-testDB(
-  "Manager.findOne() -> should have no relation properties by default",
-  async (client) => {
-    await client.table("users").insert({
-      first_name: "John",
-      last_name: "Doe",
-      age: 16,
-      created_at: new Date(),
-      is_active: false,
-    }).execute();
-
-    await client.table("products").insert({
-      title: "Spoon",
-      user_id: 1,
-    }).execute();
-
-    const manager = new Manager(client);
-
-    const user = await manager.findOne(User);
-    assertEquals(user!.products, undefined);
-
-    const product = await manager.findOne(Product);
-    assertEquals(product!.user, undefined);
-  },
-);
-
-testDB("Manager.findOne() -> should fetch the relations", async (client) => {
-  await client.table("users").insert([{
-    id: 1,
-    first_name: "John",
-    last_name: "Doe",
-    age: 16,
-    created_at: new Date(),
-    is_active: false,
-  }, {
-    id: 2,
-    first_name: "Jane",
-    last_name: "Doe",
-    age: 17,
-    created_at: new Date(),
-    is_active: false,
-  }]).execute();
-
-  await client.table("products").insert([
-    { id: 1, title: "Spoon", user_id: 1 },
-    { id: 2, title: "Table", user_id: 1 },
-  ]).execute();
-
-  const manager = new Manager(client);
-
-  const user = await manager.findOne(User, { includes: ["products"] });
-  assert(Array.isArray(user!.products));
-  assertEquals(user!.products.length, 2);
-  assert(user!.products[0] instanceof Product);
-  assertEquals(user!.products[0].title, "Spoon");
-  assert(user!.products[1] instanceof Product);
-  assertEquals(user!.products[1].title, "Table");
-
-  const user1 = await manager.findOne(User, {
-    where: { id: 1 },
-    includes: ["products"],
-  });
-  assert(Array.isArray(user1!.products));
-  assertEquals(user1!.products.length, 2);
-  assert(user1!.products[0] instanceof Product);
-  assertEquals(user1!.products[0].title, "Spoon");
-  assert(user1!.products[1] instanceof Product);
-  assertEquals(user1!.products[1].title, "Table");
-
-  const product = await manager.findOne(Product, { includes: ["user"] });
-  assert(product!.user instanceof User);
-  assertEquals(product!.user.id, 1);
-  assertEquals(product!.user.firstName, "John");
-});
-
 testDB(
   "Manager.remove() -> should remove a model from the database",
   async (client) => {
@@ -462,11 +183,11 @@ testDB(
     }).execute();
 
     const manager = new Manager(client);
-    const user = await manager.findOne(User);
+    const user = await manager.query(User).first();
     await manager.remove(user!);
     assertEquals(user!.id, undefined);
 
-    assertEquals(await manager.findOne(User), null);
+    assertEquals(await manager.query(User).first(), null);
   },
 );
 
@@ -570,14 +291,14 @@ testDB("Manager.find() -> pagination", async (client) => {
 
   const manager = new Manager(client);
 
-  let products = await manager.find(Product, { limit: 3 });
+  let products = await manager.query(Product).limit(3).all();
   assertEquals(products.length, 3);
 
   for (let i = 0; i < products.length; i++) {
     assertEquals(products[i].id, i + 1);
   }
 
-  products = await manager.find(Product, { limit: 3, offset: 3 });
+  products = await manager.query(Product).limit(3).offset(3).all();
   assertEquals(products.length, 3);
   for (let i = 0; i < products.length; i++) {
     assertEquals(products[i].id, i + 4);

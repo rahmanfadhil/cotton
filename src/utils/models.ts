@@ -72,6 +72,30 @@ export function getColumns(modelClass: Function): ColumnDescription[] {
 }
 
 /**
+ * Find a single column information from a model.
+ *
+ * @param modelClass the model class you want to get the information from.
+ * @param columnName the column property key
+ */
+export function findColumn(
+  modelClass: Function,
+  columnName: string,
+): ColumnDescription | undefined {
+  const columns: ColumnDescription[] = Reflect.getMetadata(
+    metadata.columns,
+    modelClass.prototype,
+  );
+
+  if (!columns) {
+    throw new Error(
+      `Model '${modelClass.name}' must have at least one column!`,
+    );
+  }
+
+  return columns.find((item) => item.propertyKey === columnName);
+}
+
+/**
  * Get all relationship definitions from a model.
  *
  * @param modelClass the model class you want to get the information from.

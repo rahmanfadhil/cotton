@@ -6,6 +6,8 @@ services:
     container_name: "cotton-postgres"
     ports:
       - "5432:5432"
+    logging:
+      driver: none
     environment:
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
@@ -15,6 +17,8 @@ services:
     container_name: "cotton-mysql"
     ports:
       - "3306:3306"
+    logging:
+      driver: none
     environment:
       MYSQL_ROOT_PASSWORD: test
       MYSQL_USER: test

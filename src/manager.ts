@@ -6,19 +6,14 @@ import {
   getValues,
   setSaved,
   mapValueProperties,
-  getColumns,
   createModels,
-  mapQueryResult,
   createModel,
-  mapSingleQueryResult,
-  getRelations,
   getRelationValues,
 } from "./utils/models.ts";
-import { Adapter, DatabaseResult } from "./adapters/adapter.ts";
-import { QueryBuilder } from "./querybuilder.ts";
+import { Adapter } from "./adapters/adapter.ts";
 import { range } from "./utils/number.ts";
-import { RelationType, Relation } from "./model.ts";
-import { quote } from "./utils/dialect.ts";
+import { RelationType } from "./model.ts";
+import { ModelQuery } from "./modelquery.ts";
 
 /**
  * Same as Partial<T> but goes deeper and makes Partial<T> all its properties and sub-properties.
@@ -55,6 +50,15 @@ export class Manager {
    * @param adapter the database adapter to perform queries
    */
   constructor(private adapter: Adapter) {}
+
+  /**
+   * Query a model.
+   * 
+   * @param modelClass the model you want to query
+   */
+  public query<T extends Object>(modelClass: { new (): T }): ModelQuery<T> {
+    return new ModelQuery(modelClass, this.adapter);
+  }
 
   /**
    * Save model instance to the database.
@@ -151,105 +155,6 @@ export class Manager {
     setSaved(model, true);
 
     return model;
-  }
-
-  /**
-   * Find records that match given conditions.
-   * 
-   * @param modelClass the model you want to find
-   * @param options find options for filtering the records
-   */
-  public async find<T>(
-    modelClass: { new (): T },
-    options?: FindOptions<T>,
-  ): Promise<T[]> {
-    // Initialize the query builder
-    const query = this.setupQueryBuilder(modelClass, options);
-
-    // Execute the query
-    const result = await query.execute();
-
-    // Build the model objects
-    return createModels(
-      modelClass,
-      mapQueryResult(modelClass, result, options?.includes),
-      true,
-    );
-  }
-
-  /**
-   * Find a single record that match given conditions. If multiple
-   * found, it will return the first one. 
-   * 
-   * @param modelClass the model you want to find
-   * @param options find options for filtering the records
-   */
-  public async findOne<T>(
-    modelClass: { new (): T },
-    options?: FindOneOptions<T>,
-  ): Promise<T | null> {
-    // Initialize the query builder
-    const query = this.setupQueryBuilder(modelClass, options);
-
-    // Check whether this query contains a HasMany relationship
-    const isIncludingHasMany = options?.includes &&
-      getRelations(modelClass, options.includes).find((item) => {
-        return item.type === RelationType.HasMany;
-      });
-
-    let result: DatabaseResult[];
-
-    // If the `includes` option contains a HasMany relationship,
-    // we need to get the record primary key first, then, we can fetch
-    // the whole data.
-    if (isIncludingHasMany) {
-      const primaryKeyInfo = getPrimaryKeyInfo(modelClass);
-
-      // If the user already filter based on the primary key, skip the entire process.
-      if (
-        options?.where && (options.where as any)[primaryKeyInfo.propertyKey]
-      ) {
-        result = await query.execute();
-      } else {
-        const tableName = getTableName(modelClass);
-
-        // Get the distinct query
-        const alias = quote("distinctAlias", this.adapter.dialect);
-        const primaryColumn = quote(
-          tableName + "__" + primaryKeyInfo.name,
-          this.adapter.dialect,
-        );
-        const { text, values } = query.toSQL();
-        const queryString = `SELECT DISTINCT ${alias}.${primaryColumn} FROM (${
-          text.slice(0, text.length - 1)
-        }) ${alias} LIMIT 1;`;
-
-        // Execute the distinct query
-        const recordIds = await this.adapter.query(queryString, values);
-
-        // If the record found, fetch the relations
-        if (recordIds.length === 1) {
-          const id = recordIds[0][tableName + "__" + primaryKeyInfo.name];
-          result = await query
-            .where(primaryKeyInfo.name, id)
-            .execute();
-        } else {
-          return null;
-        }
-      }
-    } else {
-      result = await query.first().execute();
-    }
-
-    // Create the model instances
-    if (result.length >= 1) {
-      const record = options?.includes
-        ? mapQueryResult(modelClass, result, options.includes)[0]
-        : mapSingleQueryResult(modelClass, result[0]);
-      return createModel(modelClass, record, true);
-    } else {
-      return null;
-    }
   }
 
   /**
@@ -369,75 +274,5 @@ export class Manager {
     });
 
     return models;
-  }
-
-  /**
-   * Setup the query builder for find() and findOne()
-   * 
-   * @param modelClass the model class
-   * @param options find options for filtering the records
-   */
-  private setupQueryBuilder(
-    modelClass: Function,
-    options?: FindOptions<{}>,
-  ): QueryBuilder {
-    const tableName = getTableName(modelClass);
-    const query = this.adapter.table(tableName);
-
-    // Implement the where statements
-    if (options?.where) {
-      const values = mapValueProperties(modelClass, options.where, "name");
-      for (const [key, value] of Object.entries(values)) {
-        query.where(key, value);
-      }
-    }
-
-    // Add limit (if exists)
-    if (options?.limit) {
-      query.limit(options.limit);
-    }
-
-    // Add offset (if exists)
-    if (options?.offset) {
-      query.offset(options.offset);
-    }
-
-    // Fetch relations if exists
-    if (options?.includes) {
-      for (const relation of getRelations(modelClass, options.includes)) {
-        const relationTableName = getTableName(relation.getModel());
-
-        if (relation.type === RelationType.HasMany) {
-          query.leftJoin(
-            relationTableName,
-            relationTableName + "." + relation.targetColumn,
-            tableName + ".id",
-          );
-        } else if (relation.type === RelationType.BelongsTo) {
-          query.leftJoin(
-            relationTableName,
-            relationTableName + ".id",
-            tableName + "." + relation.targetColumn,
-          );
-        }
-
-        const selectColumns = getColumns(relation.getModel())
-          .map((item): [string, string] => [
-            relationTableName + "." + item.name,
-            relationTableName + "__" + item.name,
-          ]);
-        query.select(...selectColumns);
-      }
-    }
-
-    // Select the model columns
-    const selectColumns = getColumns(modelClass)
-      .map((column): [string, string] => [
-        tableName + "." + column.name,
-        tableName + "__" + column.name,
-      ]);
-    query.select(...selectColumns);
-
-    return query;
   }
 }

@@ -1,9 +1,5 @@
-import {
-  Manager,
-  FindOptions,
-  FindOneOptions,
-  DeepPartial,
-} from "./manager.ts";
+import { Manager, DeepPartial } from "./manager.ts";
+import { ModelQuery } from "./modelquery.ts";
 
 export type ObjectType<T> = typeof BaseModel & { new (): T };
 
@@ -18,24 +14,8 @@ export abstract class BaseModel {
    * 
    * @param options find options for filtering the records
    */
-  public static find<T extends BaseModel>(
-    this: ObjectType<T>,
-    options?: FindOptions<T>,
-  ): Promise<T[]> {
-    return this.manager.find(this, options);
-  }
-
-  /**
-   * Find a single record that match given conditions. If multiple
-   * found, it will return the first one. 
-   * 
-   * @param options find options for filtering the records
-   */
-  public static findOne<T extends BaseModel>(
-    this: ObjectType<T>,
-    options?: FindOneOptions<T>,
-  ): Promise<T | null> {
-    return this.manager.findOne(this, options);
+  public static query<T extends BaseModel>(this: ObjectType<T>): ModelQuery<T> {
+    return this.manager.query(this);
   }
 
   /**

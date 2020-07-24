@@ -14,6 +14,7 @@ import {
   createModels,
   mapValueProperties,
   getRelationValues,
+  findColumn,
 } from "./models.ts";
 import {
   Model,
@@ -195,6 +196,26 @@ Deno.test("getColumns() -> should return all column definitions", () => {
       isNullable: true,
     }],
   );
+});
+
+Deno.test("findColumn() -> should includes several columns and ignore the rest", () => {
+  assertEquals(findColumn(Product, "name"), {
+    propertyKey: "name",
+    select: true,
+    name: "name",
+    type: ColumnType.String,
+    isPrimaryKey: false,
+    isNullable: true,
+  });
+
+  assertEquals(findColumn(User, "lastName"), {
+    propertyKey: "lastName",
+    select: true,
+    name: "last_name",
+    type: ColumnType.String,
+    isPrimaryKey: false,
+    isNullable: false,
+  });
 });
 
 Deno.test("getColumns() -> should throw an error if there's no column found", () => {
