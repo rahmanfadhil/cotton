@@ -8,7 +8,7 @@ import { Model, Column } from "https://deno.land/x/cotton/mod.ts";
 @Model("users")
 class User {
   @Primary()
-  id: number;
+  id!: number;
 
   @Column()
   email!: string;
@@ -50,9 +50,11 @@ createdAt!: Date;
 
 ## TypeScript configuration
 
-Keep in mind that this feature requires a custom TypeScript configuration to tell Deno that we want to use [decorators](https://www.typescriptlang.org/docs/handbook/decorators.html), which currently still an experimental feature.
+Keep in mind that this feature requires a custom TypeScript configuration to tell Deno that we want to use TypeScript [decorators](https://www.typescriptlang.org/docs/handbook/decorators.html), which currently still an experimental feature.
 
 ```json
+// tsconfig.json
+
 {
   "compilerOptions": {
     "experimentalDecorators": true,
@@ -84,28 +86,40 @@ user.createdAt = new Date();
 await manager.save(user);
 ```
 
-### Finding records
-
-To fetch records from a model, you can use the `find` method.
+Alternatively, you can create a new item by using `insert`.
 
 ```ts
-await manager.find(User);
+const user = await manager.insert(User, {
+  email: "a@b.com",
+  age: 16,
+  createdAt: new Date(),
+});
 ```
 
-You can also filter records by a certain conditions.
+### Querying models
+
+Everything you need to query a model is in the `query` method.
 
 ```ts
-await manager.find(User, { where: { email: "a@b.com" } });
+const users = await manager.query(User).all();
+
+for (const user of users) {
+  console.log(user); // User { email: 'a@b.com', age: 16, ... }
+}
 ```
 
-By default, it will fetch all records that match the conditions, which is not so efficient. However, you can easlily paginate those records by passing `limit` and `offset` options.
+The `query` method returns an instance of `ModelQuery` which works like a query builder. You can also filter records by a certain conditions by chaining it with `where`, `or`, and `not`.
 
 ```ts
-// Get the first ten users
-await manager.find(User, { limit: 10 });
+await manager.query(User).where("email", "a@b.com").all();
+```
 
-// Read the next page
-await manager.find(User, { limit: 10, offset: 10 });
+To fetch a single record, you can use `first` instead of `all`.
+
+```ts
+const user = await manager.query(User).where("email", "a@b.com").first();
+
+console.log(user); // User { email: 'a@b.com', age: 16, ... }
 ```
 
 ### Relations
@@ -182,15 +196,15 @@ await manager.save(post2);
 By default, `find` and `findOne` doesn't fetch your relations. To fetch them, you need to explicitly say which relations you want to include.
 
 ```ts
-const users = await User.find({ relations: ["posts"] });
-const post = await Post.findOne({ relations: ["user"] });
+const users = await manager.query(User).include("posts").all();
+const post = await manager.query(Post).include("user").first();
 ```
 
 ## Base model
 
 If you find it difficult to use model manager, base model might be a perfect solution for you.
 
-In a nutshell, base model is a model that extends the `BaseModel` class. This class provides you the exact same functionalities as the model manager, but you can call them directly from your model class via static methods.
+In a nutshell, base model is a model that extends the `BaseModel` class. This class provides you the exact same functionalities as the model manager, but you can call them directly from your model class.
 
 ```ts
 @Model("users")
@@ -200,13 +214,50 @@ class User extends BaseModel {
 
   @Column()
   age: number;
+
+  @Column()
+  createdAt!: Date;
 }
+```
+
+Here's how to can perform query to a base model.
+
+```ts
+const user = await User.query().where("id", 1).first();
+```
+
+Inserting new item:
+
+```ts
+const user = new User();
+user.email = "a@b.com";
+user.age = 16;
+user.createdAt = new Date();
+await user.save();
+
+// Alternatively...
+const user = await User.insert({
+  email: "a@b.com",
+  age: 16,
+  createdAt: new Date(),
+});
+```
+
+Removing an item:
+
+```ts
+const user = await User.query().where("id", 1).first();
+await user.remove();
 ```
 
 ## What's the difference?
 
 The most obvious difference between model manager and base model is that model manager is model agnostic. Which means it will work with any models you have.
 
-In model manager, your model is just a plain class that only act as a representation of your data in the database but has no access to it. In order to do interact with the database, you need to use your model to the manager. Some people find it safer than the base models because it seperates the business logic and the schema. You can see this pattern a lot in Java frameworks such as Hibernate.
+In model manager, your model is just a plain class that only act as a representation of your table schema in the database. In order to do interact with the database, you need to use your model manager. Some people find it safer than the base models because it seperates the business logic and the schema definition. You can see this pattern a lot in Java frameworks such as [Hibernate](https://hibernate.org).
 
-base models on the other hand, your models act as both model manager and the schema. You can see this pattern in Laravel's Eloquent and ActiveRecord. A lot of people find this pattern easier to use because once you have access to the model class, you can basically do anything with it.
+Base models on the other hand, your models act as both model manager and the schema. You can see this pattern in [Laravel's Eloquent](https://laravel.com/docs/7.x/eloquent) and [ActiveRecord](https://guides.rubyonrails.org/active_record_basics.html). A lot of people find this pattern easier to use because once you have access to the model class, you can basically do anything with it.
+
+## Which one should I use?
+
+It's really up to you! I personally think it depends on where you came from. If you came from Java development and you already familiar with JPA, you probably want to use model manager. However, if you came from PHP, Ruby, or Node.js, base model probably looks more natural to you.
