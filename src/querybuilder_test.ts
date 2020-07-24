@@ -288,8 +288,8 @@ testQueryBuilder(
 // Order by
 
 testQueryBuilder(
-  "`orderBy` should order the result",
-  (query) => query.orderBy("age"),
+  "`order` should order the result",
+  (query) => query.order("age"),
   {
     wheres: [],
     orders: [{ column: "age", order: "ASC" }],
@@ -297,8 +297,8 @@ testQueryBuilder(
 );
 
 testQueryBuilder(
-  "`orderBy` should order the result with custom direction",
-  (query) => query.orderBy("age", "DESC"),
+  "`order` should order the result with custom direction",
+  (query) => query.order("age", "DESC"),
   {
     wheres: [],
     orders: [{ column: "age", order: "DESC" }],
@@ -306,8 +306,8 @@ testQueryBuilder(
 );
 
 testQueryBuilder(
-  "multiple `orderBy`",
-  (query) => query.orderBy("age", "DESC").orderBy("created_at"),
+  "multiple `order`",
+  (query) => query.order("age", "DESC").order("created_at"),
   {
     wheres: [],
     orders: [{

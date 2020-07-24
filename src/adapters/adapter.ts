@@ -1,6 +1,6 @@
 import { QueryBuilder } from "../querybuilder.ts";
-import { Model } from "../models/model.ts";
 import { DatabaseDialect } from "../connect.ts";
+import { Manager } from "../manager.ts";
 
 /**
  * Database connection options
@@ -14,11 +14,16 @@ export interface ConnectionOptions {
   applicationName?: string;
 }
 
+export type DatabaseValues = string | number | Date | boolean | null;
+
+export interface DatabaseResult {
+  [key: string]: DatabaseValues;
+}
+
 /**
  * The parent class for all database adapters
  */
 export abstract class Adapter {
-  private models: Array<typeof Model> = [];
   public abstract dialect: DatabaseDialect;
 
   public abstract lastInsertedId: number;
@@ -29,7 +34,10 @@ export abstract class Adapter {
    * @param query SQL query to run (ex: "SELECT * FROM users;")
    * @param values provides values to query placeholders
    */
-  public abstract query<T>(query: string, values?: any[]): Promise<T[]>;
+  public abstract query(
+    query: string,
+    values?: DatabaseValues[],
+  ): Promise<DatabaseResult[]>;
 
   /**
    * Connect database
@@ -51,28 +59,9 @@ export abstract class Adapter {
   }
 
   /**
-   * Register a model
-   *
-   * @param model The model to be registered
+   * Get the model manager
    */
-  public addModel(model: typeof Model): void {
-    model.adapter = this;
-    this.models.push(model);
-  }
-
-  /**
-   * Returns an array containing all classes of the Models registered with 'addModel'.
-   */
-  public getModels(): Array<typeof Model> {
-    return this.models;
-  }
-
-  /**
-   * Truncates all registered model tables with 'Model.truncate'.
-   */
-  public async truncateModels(): Promise<void> {
-    for (const model of this.models) {
-      await model.truncate();
-    }
+  public getManager() {
+    return new Manager(this);
   }
 }

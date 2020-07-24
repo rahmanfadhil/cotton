@@ -4,11 +4,8 @@ There are still a lot of room for improvements. Here are some features that are 
 
 [Query Buider](./src/querybuilder.ts)
 
-- Left Join
-- Inner Join
-- Input Sanitization.
 - MIN and MAX
-- IN operator
+- COUNT
 
 [Adapter](./src/adapters)
 
@@ -25,7 +22,6 @@ There are still a lot of room for improvements. Here are some features that are 
 
 [Model](./src/migrations)
 
-- Column relation
 - Delete a single record with complex query
 - Count records
 - Update records (without querying)

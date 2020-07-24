@@ -1,4 +1,4 @@
-import { Column } from "./column.ts";
+import { ColumnBuilder } from "./columnbuilder.ts";
 import { Adapter } from "../adapters/adapter.ts";
 import { quote } from "../utils/dialect.ts";
 import { ForeignActions, Foreign } from "./foreign.ts";
@@ -12,7 +12,7 @@ export interface CreateTableOptions {
  */
 export class TableBuilder {
   private options: Required<CreateTableOptions>;
-  private columns: (Column | string)[] = [];
+  private columns: (ColumnBuilder | string)[] = [];
   private extras: string[] = [];
 
   constructor(
@@ -34,7 +34,7 @@ export class TableBuilder {
   /**
    * Add an auto incremented primary key called `id`
    */
-  public id(): Column {
+  public id(): ColumnBuilder {
     return this.bigIncrements("id").primary();
   }
 
@@ -43,8 +43,8 @@ export class TableBuilder {
    * 
    * @param name the column name
    */
-  public increments(name: string): Column {
-    const column = new Column(name, "increments");
+  public increments(name: string): ColumnBuilder {
+    const column = new ColumnBuilder(name, "increments");
     this.columns.push(column);
     return column;
   }
@@ -54,8 +54,8 @@ export class TableBuilder {
    * 
    * @param name the column name
    */
-  public bigIncrements(name: string): Column {
-    const column = new Column(name, "bigIncrements");
+  public bigIncrements(name: string): ColumnBuilder {
+    const column = new ColumnBuilder(name, "bigIncrements");
     this.columns.push(column);
     return column;
   }
@@ -65,8 +65,8 @@ export class TableBuilder {
    * 
    * @param name the column name
    */
-  public smallIncrements(name: string): Column {
-    const column = new Column(name, "smallIncrements");
+  public smallIncrements(name: string): ColumnBuilder {
+    const column = new ColumnBuilder(name, "smallIncrements");
     this.columns.push(column);
     return column;
   }
@@ -80,8 +80,8 @@ export class TableBuilder {
    * 
    * @param name the column name
    */
-  public varchar(name: string, length?: number): Column {
-    const column = new Column(name, "varchar", length);
+  public varchar(name: string, length?: number): ColumnBuilder {
+    const column = new ColumnBuilder(name, "varchar", length);
     this.columns.push(column);
     return column;
   }
@@ -91,8 +91,8 @@ export class TableBuilder {
    * 
    * @param name the column name
    */
-  public text(name: string): Column {
-    const column = new Column(name, "text");
+  public text(name: string): ColumnBuilder {
+    const column = new ColumnBuilder(name, "text");
     this.columns.push(column);
     return column;
   }
@@ -106,8 +106,8 @@ export class TableBuilder {
    * 
    * @param name the column name
    */
-  public integer(name: string): Column {
-    const column = new Column(name, "integer");
+  public integer(name: string): ColumnBuilder {
+    const column = new ColumnBuilder(name, "integer");
     this.columns.push(column);
     return column;
   }
@@ -117,8 +117,8 @@ export class TableBuilder {
    * 
    * @param name the column name
    */
-  public bigInteger(name: string): Column {
-    const column = new Column(name, "bigInteger");
+  public bigInteger(name: string): ColumnBuilder {
+    const column = new ColumnBuilder(name, "bigInteger");
     this.columns.push(column);
     return column;
   }
@@ -128,8 +128,8 @@ export class TableBuilder {
    * 
    * @param name the column name
    */
-  public smallInteger(name: string): Column {
-    const column = new Column(name, "smallInteger");
+  public smallInteger(name: string): ColumnBuilder {
+    const column = new ColumnBuilder(name, "smallInteger");
     this.columns.push(column);
     return column;
   }
@@ -143,8 +143,8 @@ export class TableBuilder {
    * 
    * @param name the column name
    */
-  public datetime(name: string): Column {
-    const column = new Column(name, "datetime");
+  public datetime(name: string): ColumnBuilder {
+    const column = new ColumnBuilder(name, "datetime");
     this.columns.push(column);
     return column;
   }
@@ -154,8 +154,8 @@ export class TableBuilder {
    * 
    * @param name the column name
    */
-  public date(name: string): Column {
-    const column = new Column(name, "date");
+  public date(name: string): ColumnBuilder {
+    const column = new ColumnBuilder(name, "date");
     this.columns.push(column);
     return column;
   }
@@ -166,8 +166,8 @@ export class TableBuilder {
    * @param name the column name
    */
   public timestamps() {
-    const createdAt = new Column("created_at", "datetime");
-    const updatedAt = new Column("updated_at", "datetime");
+    const createdAt = new ColumnBuilder("created_at", "datetime");
+    const updatedAt = new ColumnBuilder("updated_at", "datetime");
     this.columns = this.columns.concat(createdAt, updatedAt);
     return [createdAt, updatedAt];
   }
@@ -181,8 +181,8 @@ export class TableBuilder {
    * 
    * @param name the column name
    */
-  public boolean(name: string): Column {
-    const column = new Column(name, "boolean");
+  public boolean(name: string): ColumnBuilder {
+    const column = new ColumnBuilder(name, "boolean");
     this.columns.push(column);
     return column;
   }
@@ -206,7 +206,7 @@ export class TableBuilder {
     onDelete?: ForeignActions;
     onUpdate?: ForeignActions;
   }) {
-    let column: Column;
+    let column: ColumnBuilder;
 
     // SQLite doesn't support big integer for primary key
     if (this.adapter.dialect === "sqlite") {
@@ -245,7 +245,7 @@ export class TableBuilder {
 
     // Generate all column definitions
     const columns: string[] = this.columns.map((column): string => {
-      return column instanceof Column
+      return column instanceof ColumnBuilder
         ? column.toSQL(this.adapter.dialect)
         : column;
     });

@@ -1,4 +1,4 @@
-import { Adapter, ConnectionOptions } from "./adapter.ts";
+import { Adapter, ConnectionOptions, DatabaseResult } from "./adapter.ts";
 import { SqliteDB } from "../../deps.ts";
 import { DatabaseDialect } from "../connect.ts";
 
@@ -48,7 +48,7 @@ export class SqliteAdapter extends Adapter {
     });
   }
 
-  public query<T>(query: string, values?: any[]): Promise<T[]> {
+  public query(query: string, values?: any[]): Promise<DatabaseResult[]> {
     return new Promise((resolve, reject) => {
       // Execute query
       // TODO: handle error with custom error
@@ -61,7 +61,7 @@ export class SqliteAdapter extends Adapter {
       }
 
       // Store fetch records temporarily
-      const records: T[] = [];
+      const records: DatabaseResult[] = [];
 
       // Columns information
       let columns: string[] = [];

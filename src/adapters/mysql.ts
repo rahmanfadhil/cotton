@@ -1,5 +1,5 @@
 import { MysqlClient, MysqlClientConfig } from "../../deps.ts";
-import { Adapter, ConnectionOptions } from "./adapter.ts";
+import { Adapter, ConnectionOptions, DatabaseResult } from "./adapter.ts";
 import { DatabaseDialect } from "../connect.ts";
 
 /**
@@ -45,7 +45,7 @@ export class MysqlAdapter extends Adapter {
   }
 
   // TODO: handle error with custom error
-  async query<T>(query: string, values?: any[]): Promise<T[]> {
+  async query(query: string, values?: any[]): Promise<DatabaseResult[]> {
     let records: any;
 
     if (Array.isArray(values) && values.length >= 1) {

@@ -1,6 +1,4 @@
-FROM hayd/alpine-deno:1.1.3
-
-USER root
+FROM hayd/alpine-deno:1.2.0
 
 WORKDIR /app
 
@@ -10,10 +8,6 @@ RUN deno cache deps.ts testdeps.ts
 
 ADD . .
 
-## Add the wait script to the image
-ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.7.3/wait ./wait
-RUN chmod +x ./wait
-
 ENTRYPOINT []
 
-CMD ./wait && deno test -c tsconfig.json --allow-net --allow-read --allow-write --allow-env test.ts
+CMD ./wait.sh && deno test -c tsconfig.json --allow-net --allow-read --allow-write --allow-env test.ts

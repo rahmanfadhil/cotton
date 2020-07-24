@@ -4,3 +4,4 @@
 !./test.ts
 !./src/**/*
 !./tsconfig.json
+!./wait.sh

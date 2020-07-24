@@ -1,3 +1,12 @@
+/**
+ * A map of all available metadata names you can set or retrieve
+ */
+export const metadata = {
+  tableName: "db:tablename",
+  columns: "db:columns",
+  relations: "db:relations",
+};
+
 // Inspired by deno-nessie from @halvardssm
 // https://github.com/halvardssm/deno-nessie
 export const COLUMN_TYPES = {

@@ -1,6 +1,7 @@
 import { testDB } from "../testutils.ts";
 import { Schema } from "./schema.ts";
 import { assertEquals, assertThrowsAsync } from "../../testdeps.ts";
+import { ColumnBuilder } from "./columnbuilder.ts";
 
 testDB("Schema: hasTable", async (client) => {
   const schema = new Schema(client);
@@ -93,7 +94,8 @@ testDB("Schema: hasColumn, addColumn, and dropColumn", async (client) => {
   assertEquals(await schema.hasColumn("users", "id"), true);
   assertEquals(await schema.hasColumn("users", "name"), false);
 
-  await schema.addColumn("users", "name", "varchar", 255);
+  const column = new ColumnBuilder("name", "varchar", 255);
+  await schema.addColumn("users", column);
 
   assertEquals(await schema.hasColumn("users", "name"), true);
 
@@ -109,4 +111,7 @@ testDB("Schema: hasColumn, addColumn, and dropColumn", async (client) => {
       "SQLite doesn't support DROP COLUMN at the moment!",
     );
   }
+});
+
+testDB("Schema: query", () => {
 });
