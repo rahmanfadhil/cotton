@@ -48,6 +48,9 @@ class User {
   @Column()
   age!: number;
 
+  @Column({ select: false })
+  password!: string;
+
   @HasMany(toPost, "user_id")
   posts!: Post[];
 
@@ -141,6 +144,13 @@ Deno.test("getColumns() -> should return all column definitions", () => {
       type: ColumnType.Number,
       isPrimaryKey: false,
       isNullable: true,
+    }, {
+      propertyKey: "password",
+      select: false,
+      name: "password",
+      type: ColumnType.String,
+      isPrimaryKey: false,
+      isNullable: true,
     }],
   );
 
@@ -199,6 +209,12 @@ Deno.test("getColumns() -> should return all column definitions", () => {
   );
 });
 
+Deno.test("getColumns() -> should select several columns", () => {
+  const columns = getColumns(User, false);
+  assertEquals(columns.length, 4);
+  assert(!columns.find((item) => item.select === false));
+});
+
 Deno.test("findColumn() -> should includes several columns and ignore the rest", () => {
   assertEquals(findColumn(Product, "name"), {
     propertyKey: "name",
@@ -209,13 +225,13 @@ Deno.test("findColumn() -> should includes several columns and ignore the rest",
     isNullable: true,
   });
 
-  assertEquals(findColumn(User, "lastName"), {
-    propertyKey: "lastName",
-    select: true,
-    name: "last_name",
+  assertEquals(findColumn(User, "password"), {
+    propertyKey: "password",
+    select: false,
+    name: "password",
     type: ColumnType.String,
     isPrimaryKey: false,
-    isNullable: false,
+    isNullable: true,
   });
 });
 
@@ -325,6 +341,7 @@ Deno.test("isSaved(), setSaved(), getOriginal(), and compareWithOriginal()", () 
   user.firstName = "John";
   user.lastName = "Doe";
   user.age = 16;
+  user.password = "12345";
   assertEquals(isSaved(user), false);
   assertEquals(getOriginal(user), undefined);
   assertEquals(compareWithOriginal(user).isDirty, true);
@@ -337,6 +354,7 @@ Deno.test("isSaved(), setSaved(), getOriginal(), and compareWithOriginal()", () 
     first_name: "John",
     last_name: "Doe",
     age: 16,
+    password: "12345",
   });
   assertEquals(compareWithOriginal(user).isDirty, false);
   assertEquals(compareWithOriginal(user).diff, {});
@@ -348,6 +366,7 @@ Deno.test("isSaved(), setSaved(), getOriginal(), and compareWithOriginal()", () 
     first_name: "John",
     last_name: "Doe",
     age: 16,
+    password: "12345",
   });
   assertEquals(compareWithOriginal(user).isDirty, true);
   assertEquals(compareWithOriginal(user).diff, { first_name: "Jane" });
@@ -359,6 +378,7 @@ Deno.test("isSaved(), setSaved(), getOriginal(), and compareWithOriginal()", () 
     first_name: "Jane",
     last_name: "Doe",
     age: 16,
+    password: "12345",
   });
   assertEquals(compareWithOriginal(user).isDirty, false);
   assertEquals(compareWithOriginal(user).diff, {});
@@ -376,14 +396,13 @@ Deno.test("compareWithOriginal() -> should return a normalized dirty data", () =
   user.firstName = "John";
   user.lastName = "Doe";
   user.age = 16;
+  user.password = "12345";
   setSaved(user, true);
   user.age = "16" as any;
   assertEquals(compareWithOriginal(user).diff, { age: 16 });
 });
 
 Deno.test("getValues() -> should return the values of a model", () => {
-  // Select columns and ignore the rest
-
   const user = new User();
   user.firstName = "John";
   user.lastName = "Doe";
@@ -393,6 +412,7 @@ Deno.test("getValues() -> should return the values of a model", () => {
     first_name: "John",
     last_name: "Doe",
     age: 16,
+    password: null,
   });
 });
 
@@ -420,6 +440,19 @@ Deno.test("getValues() -> throw an error if the a not nullable column is null", 
   assertEquals(values.title, "Post 1");
   assertEquals(values.is_published, false);
   assert(values.created_at instanceof Date);
+});
+
+Deno.test("getValues() -> should not yell at `isNullable` if the `fromDatabase` parameter is true", () => {
+  const user = new User();
+  user.lastName = "Doe";
+  user.age = 16;
+
+  assertEquals(getValues(user, true), {
+    first_name: null,
+    last_name: "Doe",
+    age: 16,
+    password: null,
+  });
 });
 
 Deno.test("getRelationValues() -> should get has many values", () => {
@@ -705,6 +738,7 @@ Deno.test("mapSingleQueryResult() -> should extract information from the query r
     users__first_name: "John",
     users__last_name: "Doe",
     users__age: 16,
+    users__password: "12345",
     posts__title: "Post 1",
     posts__is_published: 0,
     posts__created_at: date,
@@ -713,7 +747,7 @@ Deno.test("mapSingleQueryResult() -> should extract information from the query r
 
   assertEquals(
     mapSingleQueryResult(User, data),
-    { id: 1, firstName: "John", lastName: "Doe", age: 16 },
+    { id: 1, firstName: "John", lastName: "Doe", age: 16, password: "12345" },
   );
 
   assertEquals(

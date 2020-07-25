@@ -60,7 +60,8 @@ export async function testDB(
           last_name VARCHAR(255),
           age INTEGER,
           created_at DATETIME,
-          is_active BOOLEAN
+          is_active BOOLEAN,
+          password VARCHAR(255)
         );
       `);
 
@@ -105,7 +106,8 @@ export async function testDB(
           last_name VARCHAR(255),
           age INTEGER,
           created_at TIMESTAMP,
-          is_active BOOLEAN
+          is_active BOOLEAN,
+          password VARCHAR(255)
         );
       `);
 
@@ -163,7 +165,8 @@ export async function testDB(
           last_name VARCHAR(255),
           age INTEGER,
           created_at DATETIME,
-          is_active TINYINT
+          is_active TINYINT,
+          password VARCHAR(255)
         );
       `);
 

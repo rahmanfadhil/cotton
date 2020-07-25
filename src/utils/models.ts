@@ -55,32 +55,17 @@ export function getTableName(modelClass: Function): string {
 }
 
 /**
- * Get all column definitions from a model.
+ * Get all column definitions from a model. By default, it won't
+ * return columns with `select: false`. However, you can pass true to
+ * the `selectAll` parameter to get those.
  *
  * @param modelClass the model class you want to get the information from.
+ * @param selectAll select all columns and ignore the `select: false`.
  */
-export function getColumns(modelClass: Function): ColumnDescription[] {
-  const columns = Reflect.getMetadata(metadata.columns, modelClass.prototype);
-
-  if (!columns) {
-    throw new Error(
-      `Model '${modelClass.name}' must have at least one column!`,
-    );
-  }
-
-  return columns;
-}
-
-/**
- * Find a single column information from a model.
- *
- * @param modelClass the model class you want to get the information from.
- * @param columnName the column property key
- */
-export function findColumn(
+export function getColumns(
   modelClass: Function,
-  columnName: string,
-): ColumnDescription | undefined {
+  selectAll = true,
+): ColumnDescription[] {
   const columns: ColumnDescription[] = Reflect.getMetadata(
     metadata.columns,
     modelClass.prototype,
@@ -92,7 +77,23 @@ export function findColumn(
     );
   }
 
-  return columns.find((item) => item.propertyKey === columnName);
+  return selectAll ? columns : columns.filter((item) => item.select);
+}
+
+/**
+ * Find a single column information from a model. This can be used to
+ * get `select: false` column which you cannot get from `getColumns`
+ * by default.
+ *
+ * @param modelClass the model class you want to get the information from.
+ * @param propertyName the column property key
+ */
+export function findColumn(
+  modelClass: Function,
+  propertyName: string,
+): ColumnDescription | undefined {
+  return getColumns(modelClass, true)
+    .find((item) => item.propertyKey === propertyName);
 }
 
 /**
@@ -159,7 +160,7 @@ export function setSaved(model: Object, value: boolean) {
   isSavedValues.set(model, value);
 
   if (value) {
-    originalValues.set(model, getValues(model));
+    originalValues.set(model, getValues(model, true));
   } else {
     originalValues.delete(model);
   }
@@ -209,27 +210,21 @@ export function compareWithOriginal(model: Object): ModelComparisonResult {
  * Get model values as a plain JavaScript object
  * 
  * @param model the model you want to get the values from
- * @param columns the columns to be retrieved
+ * @param fromDatabase if the data is from the database, it won't yell at `isNullable` values.
  */
 export function getValues(
   model: Object,
-  columns?: string[],
+  fromDatabase = false,
 ): ModelDatabaseValues {
   // If the `columns` parameter is provided, return only the selected columns
-  const selectedColumns = columns
-    ? getColumns(model.constructor)
-      .filter((item) => {
-        if (item.isPrimaryKey && !isSaved(model)) return false;
-        return columns.includes(item.propertyKey);
-      })
-    : getColumns(model.constructor)
-      .filter((item) => item.isPrimaryKey && !isSaved(model) ? false : true);
+  const columns = getColumns(model.constructor)
+    .filter((item) => item.isPrimaryKey && !isSaved(model) ? false : true);
 
   // Hold the data temporarily
   const data: { [key: string]: DatabaseValues } = {};
 
   // Loop through the columns
-  for (const column of selectedColumns) {
+  for (const column of columns) {
     const value = (model as any)[column.propertyKey];
 
     // If one of the selected columns is the primary key, the record needs to be saved first.
@@ -247,13 +242,15 @@ export function getValues(
             ? column.default()
             : column.default;
           data[column.name] = getNormalizedValue(column, defaultValue);
-        } else if (column.isNullable === true) {
-          data[column.name] = null;
-        } else {
+        }
+
+        if (column.isNullable === false && !fromDatabase) {
           throw new Error(
-            `Column '${column.propertyKey}' cannot be empty!'`,
+            `Column '${column.propertyKey}' cannot be empty!`,
           );
         }
+
+        data[column.name] = null;
       } else {
         data[column.name] = getNormalizedValue(
           column,
@@ -482,7 +479,7 @@ export function mapSingleQueryResult(
 ): ModelValues {
   const values: ModelValues = {};
   const tableName = getTableName(modelClass);
-  const columns = getColumns(modelClass);
+  const columns = getColumns(modelClass, true);
 
   for (const column in result) {
     if (column.startsWith(tableName + "__")) {
@@ -490,13 +487,9 @@ export function mapSingleQueryResult(
       const propertyKey = columns.find((item) => item.name === columnName)
         ?.propertyKey;
 
-      if (!propertyKey) {
-        throw new Error(
-          `Column '${columnName}' doesn't exist in '${modelClass.name}'!`,
-        );
+      if (propertyKey) {
+        values[propertyKey] = result[column];
       }
-
-      values[propertyKey] = result[column];
     }
   }
 
@@ -530,21 +523,14 @@ export function createModel<T>(
         values[column.propertyKey] = value as number;
       }
     } else {
-      if (typeof value === "undefined") {
-        // If the value is undefined, check the default value. Then, if the column
-        // is nullable, set it to null. Otherwise, throw an error.
+      if (value === undefined) {
+        // If the value is undefined, check the default value.
         if (typeof column.default !== "undefined") {
           // If the default value is a function, execute it and get the returned value
           const defaultValue = typeof column.default === "function"
             ? column.default()
             : column.default;
           values[column.propertyKey] = getNormalizedValue(column, defaultValue);
-        } else if (column.isNullable === true) {
-          values[column.propertyKey] = null;
-        } else {
-          throw new Error(
-            `Column '${column.propertyKey}' cannot be empty!'`,
-          );
         }
       } else {
         values[column.propertyKey] = getNormalizedValue(
