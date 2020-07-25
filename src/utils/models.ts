@@ -242,15 +242,14 @@ export function getValues(
             ? column.default()
             : column.default;
           data[column.name] = getNormalizedValue(column, defaultValue);
+        } else {
+          if (!column.isNullable && !fromDatabase) {
+            throw new Error(
+              `Column '${column.propertyKey}' cannot be empty!`,
+            );
+          }
+          data[column.name] = null;
         }
-
-        if (column.isNullable === false && !fromDatabase) {
-          throw new Error(
-            `Column '${column.propertyKey}' cannot be empty!`,
-          );
-        }
-
-        data[column.name] = null;
       } else {
         data[column.name] = getNormalizedValue(
           column,
