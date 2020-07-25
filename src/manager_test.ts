@@ -31,6 +31,9 @@ class User {
   @Column({ name: "is_active", default: false })
   isActive!: boolean;
 
+  @Column({ select: false })
+  password!: string;
+
   @HasMany(() => Product, "user_id")
   products!: Product[];
 }
@@ -67,15 +70,17 @@ testDB(
     user.firstName = "John";
     user.lastName = "Doe";
     user.age = 16;
+    user.password = "12345";
     await manager.save(user);
 
     assertEquals(user.isActive, false);
     assert(user.createdAt instanceof Date);
 
-    result = await client.query("SELECT id, first_name FROM users;");
+    result = await client.query("SELECT id, first_name, password FROM users;");
     assertEquals(result.length, 1);
     assertEquals(result[0].id, user.id);
-    assertEquals(result[0].first_name, "John");
+    assertEquals(result[0].first_name, user.firstName);
+    assertEquals(result[0].password, user.password);
 
     user.firstName = "Jane";
     await manager.save(user);

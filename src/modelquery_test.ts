@@ -23,6 +23,9 @@ class User {
   @Column()
   age!: number;
 
+  @Column({ select: false })
+  password!: string;
+
   @Column({ name: "created_at", default: () => new Date() })
   createdAt!: Date;
 
@@ -146,6 +149,7 @@ testDB("ModelQuery.all() -> should return all records", async (client) => {
     age: 16,
     created_at: new Date(),
     is_active: false,
+    password: 12345,
   };
   await client.table("users").insert(data).execute();
 
@@ -157,10 +161,33 @@ testDB("ModelQuery.all() -> should return all records", async (client) => {
   assertEquals(users[0].firstName, data.first_name);
   assertEquals(users[0].lastName, data.last_name);
   assertEquals(users[0].age, data.age);
+  assertEquals(users[0].password, undefined);
   assertEquals(users[0].createdAt, data.created_at);
   assertEquals(users[0].isActive, data.is_active);
   assertEquals(users[0].products, undefined);
 });
+
+testDB(
+  "ModelQuery.all() -> should select and deselect columns",
+  async (client) => {
+    await client.table("users").insert({
+      first_name: "John",
+      last_name: "Doe",
+      age: 16,
+      created_at: new Date(),
+      is_active: false,
+      password: "12345",
+    }).execute();
+
+    const users = await new ModelQuery(User, client)
+      .select("password")
+      .deselect("lastName")
+      .all();
+    assertEquals(users[0].firstName, "John");
+    assertEquals(users[0].lastName, undefined);
+    assertEquals(users[0].password, "12345");
+  },
+);
 
 testDB("ModelQuery.all() -> should query with constraints", async (client) => {
   const data = [{
@@ -296,9 +323,33 @@ testDB("ModelQuery.first() -> should get a single record", async (client) => {
   assertEquals(user.firstName, data.first_name);
   assertEquals(user.lastName, data.last_name);
   assertEquals(user.age, data.age);
+  assertEquals(user.password, undefined);
   assertEquals(user.isActive, data.is_active);
   assertEquals(user.createdAt, data.created_at);
 });
+
+testDB(
+  "ModelQuery.first() -> should select and deselect columns",
+  async (client) => {
+    await client.table("users").insert({
+      first_name: "John",
+      last_name: "Doe",
+      age: 16,
+      created_at: new Date(),
+      is_active: false,
+      password: "12345",
+    }).execute();
+
+    const user = await new ModelQuery(User, client)
+      .select("password")
+      .deselect("lastName")
+      .first();
+    assert(user);
+    assertEquals(user.firstName, "John");
+    assertEquals(user.lastName, undefined);
+    assertEquals(user.password, "12345");
+  },
+);
 
 testDB(
   "ModelQuery.first() -> should query with constraints",
