@@ -16,7 +16,7 @@ import {
   getRelationValues,
   findColumn,
 } from "./models.ts";
-import { Model, Column, RelationType, ColumnType } from "../model.ts";
+import { Model, Column, RelationType, DataType } from "../model.ts";
 import {
   Product,
   User,
@@ -55,43 +55,43 @@ Deno.test("getColumns() -> should return all column definitions", () => {
   assertEquals(getColumns(User), [{
     propertyKey: "id",
     name: "id",
-    type: "number",
+    type: DataType.Number,
     isPrimaryKey: true,
   }, {
     propertyKey: "email",
     name: "email",
-    type: "string",
+    type: DataType.String,
     isPrimaryKey: false,
   }, {
     propertyKey: "firstName",
     name: "first_name",
-    type: "string",
+    type: DataType.String,
     isPrimaryKey: false,
   }, {
     propertyKey: "lastName",
     name: "last_name",
-    type: "string",
+    type: DataType.String,
     isPrimaryKey: false,
   }, {
     propertyKey: "age",
     name: "age",
-    type: "number",
+    type: DataType.Number,
     isPrimaryKey: false,
   }, {
     propertyKey: "password",
     name: "password",
-    type: "string",
+    type: DataType.String,
     isPrimaryKey: false,
   }, {
     propertyKey: "createdAt",
     name: "created_at",
-    type: "date",
+    type: DataType.Date,
     isPrimaryKey: false,
     default: getCreationDate,
   }, {
     propertyKey: "isActive",
     name: "is_active",
-    type: "boolean",
+    type: DataType.Boolean,
     isPrimaryKey: false,
     default: false,
   }]);
@@ -101,12 +101,12 @@ Deno.test("getColumns() -> should return all column definitions", () => {
     [{
       propertyKey: "productId",
       name: "product_id",
-      type: ColumnType.Number,
+      type: DataType.Number,
       isPrimaryKey: true,
     }, {
       propertyKey: "title",
       name: "title",
-      type: "string",
+      type: DataType.String,
       isPrimaryKey: false,
     }],
   );
@@ -116,7 +116,7 @@ Deno.test("findColumn() -> should includes several columns and ignore the rest",
   assertEquals(findColumn(User, "password"), {
     propertyKey: "password",
     name: "password",
-    type: ColumnType.String,
+    type: DataType.String,
     isPrimaryKey: false,
   });
 });
@@ -165,14 +165,14 @@ Deno.test("getPrimaryKeyInfo() -> should get the model's primary key column defi
   assertEquals(getPrimaryKeyInfo(User), {
     propertyKey: "id",
     name: "id",
-    type: ColumnType.Number,
+    type: DataType.Number,
     isPrimaryKey: true,
   });
 
   assertEquals(getPrimaryKeyInfo(Product), {
     propertyKey: "productId",
     name: "product_id",
-    type: ColumnType.Number,
+    type: DataType.Number,
     isPrimaryKey: true,
   });
 });

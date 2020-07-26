@@ -1,8 +1,8 @@
 import {
   ColumnDescription,
   RelationDescription,
-  ColumnType,
   RelationType,
+  DataType,
 } from "../model.ts";
 import { DatabaseResult, DatabaseValues } from "../adapters/adapter.ts";
 import { Reflect } from "../utils/reflect.ts";
@@ -26,11 +26,6 @@ interface ModelDatabaseValues {
 interface ModelComparisonResult {
   isDirty: boolean;
   diff: ModelDatabaseValues;
-}
-
-interface ModelRelationComparisonResult {
-  isDirty: boolean;
-  diff: { type: RelationType; data: number | number[] }[];
 }
 
 // --------------------------------------------------------------------------------
@@ -199,7 +194,7 @@ export function compareWithOriginal(model: Object): ModelComparisonResult {
 
     if (value !== originalValue[column.name]) {
       isDirty = true;
-      diff[column.name] = getNormalizedValue(column, value);
+      diff[column.name] = getNormalizedValue(column.type, value);
     }
   }
 
@@ -236,13 +231,13 @@ export function getValues(model: Object): ModelDatabaseValues {
           const defaultValue = typeof column.default === "function"
             ? column.default()
             : column.default;
-          data[column.name] = getNormalizedValue(column, defaultValue);
+          data[column.name] = getNormalizedValue(column.type, defaultValue);
         } else {
           data[column.name] = null;
         }
       } else {
         data[column.name] = getNormalizedValue(
-          column,
+          column.type,
           (model as any)[column.propertyKey],
         );
       }
@@ -346,45 +341,89 @@ export function mapValueProperties(
 }
 
 // --------------------------------------------------------------------------------
-// PRIVATE HELPERS
+// HELPERS
 // --------------------------------------------------------------------------------
+
+/**
+ * Get data type from type metadata.
+ * 
+ * @param type the design:type value from `Reflect.getMetadata`
+ */
+export function getDataType(type: any): DataType | null {
+  if (type === String) {
+    return DataType.String;
+  } else if (type === Number) {
+    return DataType.Number;
+  } else if (type === Date) {
+    return DataType.Date;
+  } else if (type === Boolean) {
+    return DataType.Boolean;
+  } else {
+    return null;
+  }
+}
 
 /**
  * Normalize value to a database compatible values.
  * 
- * @param columns the column definitions you want to include
+ * @param type the data type of the column
  * @param original the original data
+ * @param throws define whether this should throw an error if the value type isn't as expected.
  */
-function getNormalizedValue(
-  column: ColumnDescription,
+export function getNormalizedValue(
+  type: DataType,
   original: DatabaseValues,
+  throws: boolean = false,
 ): DatabaseValues {
-  let value: any;
-
+  // If the original value is either null or undefined, return null.
   if (typeof original === "undefined" || original === null) {
-    value = null;
-  } else if (
-    column.type === ColumnType.Date &&
-    (typeof original === "string" || typeof original === "number")
-  ) {
-    value = new Date(original);
-  } else if (
-    column.type === ColumnType.String && typeof original !== "string"
-  ) {
-    value = String(original);
-  } else if (
-    column.type === ColumnType.Number && typeof original !== "number"
-  ) {
-    value = Number(original);
-  } else if (
-    column.type === ColumnType.Boolean && typeof original !== "boolean"
-  ) {
-    value = Boolean(original);
-  } else {
-    value = original;
+    return null;
   }
 
-  return value;
+  // If the expected type is Date, and the original value is string or number,
+  // convert it to Date object.
+  if (
+    type === DataType.Date &&
+    (typeof original === "string" || typeof original === "number")
+  ) {
+    if (throws) {
+      throw typeof original;
+    }
+
+    return new Date(original);
+  }
+
+  // If the expected type is String, and the original value doesn't,
+  // convert it to String.
+  if (type === DataType.String && typeof original !== "string") {
+    if (throws) {
+      throw typeof original;
+    }
+
+    return String(original);
+  }
+
+  // Do the same thing for numbers.
+  if (type === DataType.Number && typeof original !== "number") {
+    if (throws) {
+      throw typeof original;
+    }
+
+    return Number(original);
+  }
+
+  // If the expected type is Boolean, and the original value doesn't,
+  // convert it to either true if it's truthy (like 1) and false if
+  // it's falsy (like 0).
+  if (type === DataType.Boolean && typeof original !== "boolean") {
+    if (throws) {
+      throw typeof original;
+    }
+
+    return Boolean(original);
+  }
+
+  return original;
 }
 
 // --------------------------------------------------------------------------------
@@ -519,11 +558,14 @@ export function createModel<T>(
           const defaultValue = typeof column.default === "function"
             ? column.default()
             : column.default;
-          values[column.propertyKey] = getNormalizedValue(column, defaultValue);
+          values[column.propertyKey] = getNormalizedValue(
+            column.type,
+            defaultValue,
+          );
         }
       } else {
         values[column.propertyKey] = getNormalizedValue(
-          column,
+          column.type,
           value as DatabaseValues,
         );
       }

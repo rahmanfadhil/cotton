@@ -1,6 +1,6 @@
 import {
   Column,
-  ColumnType,
+  DataType,
   Model,
   RelationType,
   RelationDescription,
@@ -77,22 +77,22 @@ Deno.test("Column: basic column", () => {
     [{
       propertyKey: "name",
       name: "name",
-      type: ColumnType.String,
+      type: DataType.String,
       isPrimaryKey: false,
     }, {
       propertyKey: "age",
       name: "age",
-      type: ColumnType.Number,
+      type: DataType.Number,
       isPrimaryKey: false,
     }, {
       propertyKey: "is_active",
       name: "is_active",
-      type: ColumnType.Boolean,
+      type: DataType.Boolean,
       isPrimaryKey: false,
     }, {
       propertyKey: "created_at",
       name: "created_at",
-      type: ColumnType.Date,
+      type: DataType.Date,
       isPrimaryKey: false,
     }],
   );
@@ -122,7 +122,7 @@ Deno.test("Column: custom database column name", () => {
     [{
       propertyKey: "name",
       name: "full_name",
-      type: ColumnType.String,
+      type: DataType.String,
       isPrimaryKey: false,
     }],
   );
@@ -151,25 +151,25 @@ Deno.test("Column: default value", () => {
       propertyKey: "name",
       default: "john",
       name: "name",
-      type: ColumnType.String,
+      type: DataType.String,
       isPrimaryKey: false,
     }, {
       propertyKey: "age",
       default: 16,
       name: "age",
-      type: ColumnType.String,
+      type: DataType.String,
       isPrimaryKey: false,
     }, {
       propertyKey: "is_active",
       default: true,
       name: "is_active",
-      type: ColumnType.String,
+      type: DataType.String,
       isPrimaryKey: false,
     }, {
       propertyKey: "created_at",
       default: newDate,
       name: "created_at",
-      type: ColumnType.Date,
+      type: DataType.Date,
       isPrimaryKey: false,
     }],
   );
@@ -177,17 +177,14 @@ Deno.test("Column: default value", () => {
 
 Deno.test("Column: custom type", () => {
   class User {
-    @Column({ type: ColumnType.Number })
-    age!: string;
+    @Column({ type: DataType.String })
+    name!: string | null;
   }
 
-  assertEquals(
-    Reflect.getMetadata(metadata.columns, User.prototype),
-    [{
-      propertyKey: "age",
-      name: "age",
-      type: ColumnType.Number,
-      isPrimaryKey: false,
-    }],
-  );
+  assertEquals(Reflect.getMetadata(metadata.columns, User.prototype), [{
+    propertyKey: "name",
+    name: "name",
+    type: DataType.String,
+    isPrimaryKey: false,
+  }]);
 });

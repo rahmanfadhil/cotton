@@ -73,3 +73,14 @@ Deno.test("Serializer.from() -> should throw error if value is not an object", (
     "Expected data to be an object, but got 'string'!",
   );
 });
+
+Deno.test("Serializer.from() -> should throw error if value type doesn't match", () => {
+  const serializer = new Serializer(User);
+  assertThrows(
+    () => {
+      serializer.from({ email: 1 });
+    },
+    Error,
+    "Property 'email' should be of type 'string', but got 'number'",
+  );
+});

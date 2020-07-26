@@ -1,6 +1,7 @@
-import { DeepPartial } from "./manager.ts";
 import { Reflect } from "./utils/reflect.ts";
 import { metadata } from "./constants.ts";
+import { getDataType, getNormalizedValue } from "./utils/models.ts";
+import { DataType } from "./model.ts";
 
 /**
  * Information of a serializable property.
@@ -29,6 +30,11 @@ interface JsonPropertyOptions {
    * This property doesn't allowed to be changed, `false` by default.
    */
   isReadonly: boolean;
+
+  /**
+   * The expected type of the value.
+   */
+  type: DataType;
 }
 
 type JsonPropertyDescription = JsonPropertyOptions & {
@@ -53,9 +59,20 @@ export function JsonProperty(options?: Partial<JsonPropertyOptions>) {
       );
     }
 
+    const typeMetadata = Reflect.getMetadata(
+      "design:type",
+      target,
+      propertyKey,
+    );
+    const type = getDataType(typeMetadata);
+    if (!type && !options?.type) {
+      throw new Error(`Column '${propertyKey}' must have a type!`);
+    }
+
     jsonProperties.push(Object.assign({}, {
       propertyKey,
       name: propertyKey,
+      type,
       isHidden: false,
       isRequired: false,
       isReadonly: false,
@@ -160,9 +177,40 @@ export class Serializer<T> {
         continue;
       }
 
-      model[property.propertyKey] = value;
+      try {
+        model[property.propertyKey] = getNormalizedValue(
+          property.type,
+          value,
+          true,
+        );
+      } catch (err) {
+        throw new Error(
+          `Property '${property.name}' should be of type '${property.type}', but got '${err}'`,
+        );
+      }
     }
 
     return model;
   }
 }
+
+// /**
+//  * A serializer class.
+//  */
+// export interface ISerializer {
+//   serialize(data: any): any;
+// }
+
+// /**
+//  * A deserializer class.
+//  */
+// export interface IDeserializer {
+//   deserialize(data: any): any;
+// }
+
+// /**
+//  * A validator class.
+//  */
+// export interface IValidator {
+//   validate(data: any): void | Promise<void>;
+// }
