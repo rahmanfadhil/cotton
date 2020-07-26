@@ -1,52 +1,6 @@
-import { testDB } from "./testutils.ts";
-import {
-  Model,
-  Primary,
-  Column,
-  HasMany,
-  BelongsTo,
-} from "./model.ts";
+import { testDB, User, Product } from "./testutils.ts";
 import { ModelQuery } from "./modelquery.ts";
 import { assertEquals, assert, stub } from "../testdeps.ts";
-
-@Model("users")
-class User {
-  @Primary()
-  id!: number;
-
-  @Column({ name: "first_name", isNullable: false })
-  firstName!: string;
-
-  @Column({ name: "last_name", isNullable: false })
-  lastName!: string;
-
-  @Column()
-  age!: number;
-
-  @Column({ select: false })
-  password!: string;
-
-  @Column({ name: "created_at", default: () => new Date() })
-  createdAt!: Date;
-
-  @Column({ name: "is_active", default: false })
-  isActive!: boolean;
-
-  @HasMany(() => Product, "user_id")
-  products!: Product[];
-}
-
-@Model("products")
-class Product {
-  @Primary()
-  id!: number;
-
-  @Column({ isNullable: false })
-  title!: string;
-
-  @BelongsTo(() => User, "user_id")
-  user!: User;
-}
 
 Deno.test("ModelQuery.where() -> should call `where` to query builder", () => {
   const query1 = new ModelQuery(User, {} as any);
@@ -149,7 +103,7 @@ testDB("ModelQuery.all() -> should return all records", async (client) => {
     age: 16,
     created_at: new Date(),
     is_active: false,
-    password: 12345,
+    password: "12345",
   };
   await client.table("users").insert(data).execute();
 
@@ -161,33 +115,11 @@ testDB("ModelQuery.all() -> should return all records", async (client) => {
   assertEquals(users[0].firstName, data.first_name);
   assertEquals(users[0].lastName, data.last_name);
   assertEquals(users[0].age, data.age);
-  assertEquals(users[0].password, undefined);
+  assertEquals(users[0].password, data.password);
   assertEquals(users[0].createdAt, data.created_at);
   assertEquals(users[0].isActive, data.is_active);
   assertEquals(users[0].products, undefined);
 });
-
-testDB(
-  "ModelQuery.all() -> should select and deselect columns",
-  async (client) => {
-    await client.table("users").insert({
-      first_name: "John",
-      last_name: "Doe",
-      age: 16,
-      created_at: new Date(),
-      is_active: false,
-      password: "12345",
-    }).execute();
-
-    const users = await new ModelQuery(User, client)
-      .select("password")
-      .deselect("lastName")
-      .all();
-    assertEquals(users[0].firstName, "John");
-    assertEquals(users[0].lastName, undefined);
-    assertEquals(users[0].password, "12345");
-  },
-);
 
 testDB("ModelQuery.all() -> should query with constraints", async (client) => {
   const data = [{
@@ -248,7 +180,7 @@ testDB(
       is_active: false,
     }).execute();
 
-    await client.table("products").insert({
+    await client.table("product").insert({
       title: "Spoon",
       user_id: 1,
     }).execute();
@@ -278,9 +210,9 @@ testDB("ModelQuery.all() -> should fetch the relations", async (client) => {
     is_active: false,
   }]).execute();
 
-  await client.table("products").insert([
-    { id: 1, title: "Spoon", user_id: 1 },
-    { id: 2, title: "Table", user_id: 1 },
+  await client.table("product").insert([
+    { product_id: 1, title: "Spoon", user_id: 1 },
+    { product_id: 2, title: "Table", user_id: 1 },
   ]).execute();
 
   const users = await new ModelQuery(User, client).include("products").all();
@@ -314,6 +246,7 @@ testDB("ModelQuery.first() -> should get a single record", async (client) => {
     age: 16,
     created_at: new Date(),
     is_active: false,
+    password: "12345",
   };
   await client.table("users").insert(data).execute();
 
@@ -323,33 +256,10 @@ testDB("ModelQuery.first() -> should get a single record", async (client) => {
   assertEquals(user.firstName, data.first_name);
   assertEquals(user.lastName, data.last_name);
   assertEquals(user.age, data.age);
-  assertEquals(user.password, undefined);
+  assertEquals(user.password, data.password);
   assertEquals(user.isActive, data.is_active);
   assertEquals(user.createdAt, data.created_at);
 });
-
-testDB(
-  "ModelQuery.first() -> should select and deselect columns",
-  async (client) => {
-    await client.table("users").insert({
-      first_name: "John",
-      last_name: "Doe",
-      age: 16,
-      created_at: new Date(),
-      is_active: false,
-      password: "12345",
-    }).execute();
-
-    const user = await new ModelQuery(User, client)
-      .select("password")
-      .deselect("lastName")
-      .first();
-    assert(user);
-    assertEquals(user.firstName, "John");
-    assertEquals(user.lastName, undefined);
-    assertEquals(user.password, "12345");
-  },
-);
 
 testDB(
   "ModelQuery.first() -> should query with constraints",
@@ -409,7 +319,7 @@ testDB(
       is_active: false,
     }).execute();
 
-    await client.table("products").insert({
+    await client.table("product").insert({
       title: "Spoon",
       user_id: 1,
     }).execute();
@@ -439,9 +349,9 @@ testDB("ModelQuery.first() -> should fetch the relations", async (client) => {
     is_active: false,
   }]).execute();
 
-  await client.table("products").insert([
-    { id: 1, title: "Spoon", user_id: 1 },
-    { id: 2, title: "Table", user_id: 1 },
+  await client.table("product").insert([
+    { product_id: 1, title: "Spoon", user_id: 1 },
+    { product_id: 2, title: "Table", user_id: 1 },
   ]).execute();
 
   const user = await new ModelQuery(User, client).include("products").first();

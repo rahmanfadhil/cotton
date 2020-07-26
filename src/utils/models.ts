@@ -55,17 +55,11 @@ export function getTableName(modelClass: Function): string {
 }
 
 /**
- * Get all column definitions from a model. By default, it won't
- * return columns with `select: false`. However, you can pass true to
- * the `selectAll` parameter to get those.
+ * Get all column definitions from a model.
  *
  * @param modelClass the model class you want to get the information from.
- * @param selectAll select all columns and ignore the `select: false`.
  */
-export function getColumns(
-  modelClass: Function,
-  selectAll = true,
-): ColumnDescription[] {
+export function getColumns(modelClass: Function): ColumnDescription[] {
   const columns: ColumnDescription[] = Reflect.getMetadata(
     metadata.columns,
     modelClass.prototype,
@@ -77,7 +71,7 @@ export function getColumns(
     );
   }
 
-  return selectAll ? columns : columns.filter((item) => item.select);
+  return columns;
 }
 
 /**
@@ -92,7 +86,7 @@ export function findColumn(
   modelClass: Function,
   propertyName: string,
 ): ColumnDescription | undefined {
-  return getColumns(modelClass, true)
+  return getColumns(modelClass)
     .find((item) => item.propertyKey === propertyName);
 }
 
@@ -151,7 +145,8 @@ export function isSaved(model: Object): boolean {
 }
 
 /**
- * Update the `isSaved` status of a model and save the original value.
+ * Update the `isSaved` status of a model, save the original value,
+ * and populate model with default values.
  *
  * @param model the model you want to change the status of
  * @param value the status of the model (saved or not saved)
@@ -160,7 +155,12 @@ export function setSaved(model: Object, value: boolean) {
   isSavedValues.set(model, value);
 
   if (value) {
-    originalValues.set(model, getValues(model, true));
+    const values = getValues(model);
+    originalValues.set(model, values);
+    Object.assign(
+      model,
+      mapValueProperties(model.constructor, values, "propertyKey"),
+    );
   } else {
     originalValues.delete(model);
   }
@@ -210,12 +210,8 @@ export function compareWithOriginal(model: Object): ModelComparisonResult {
  * Get model values as a plain JavaScript object
  * 
  * @param model the model you want to get the values from
- * @param fromDatabase if the data is from the database, it won't yell at `isNullable` values.
  */
-export function getValues(
-  model: Object,
-  fromDatabase = false,
-): ModelDatabaseValues {
+export function getValues(model: Object): ModelDatabaseValues {
   // If the `columns` parameter is provided, return only the selected columns
   const columns = getColumns(model.constructor)
     .filter((item) => item.isPrimaryKey && !isSaved(model) ? false : true);
@@ -234,8 +230,7 @@ export function getValues(
       }
     } else {
       if (typeof value === "undefined") {
-        // If the value is undefined, check the default value. Then, if the column
-        // is nullable, set it to null. Otherwise, throw an error.
+        // If the value is undefined, check the default value. Otherwise, set it to null.
         if (typeof column.default !== "undefined") {
           // If the default value is a function, execute it and get the returned value
           const defaultValue = typeof column.default === "function"
@@ -243,11 +238,6 @@ export function getValues(
             : column.default;
           data[column.name] = getNormalizedValue(column, defaultValue);
         } else {
-          if (!column.isNullable && !fromDatabase) {
-            throw new Error(
-              `Column '${column.propertyKey}' cannot be empty!`,
-            );
-          }
           data[column.name] = null;
         }
       } else {
@@ -478,7 +468,7 @@ export function mapSingleQueryResult(
 ): ModelValues {
   const values: ModelValues = {};
   const tableName = getTableName(modelClass);
-  const columns = getColumns(modelClass, true);
+  const columns = getColumns(modelClass);
 
   for (const column in result) {
     if (column.startsWith(tableName + "__")) {

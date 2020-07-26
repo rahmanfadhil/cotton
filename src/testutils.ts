@@ -3,6 +3,7 @@ import { connect } from "./connect.ts";
 import { QueryBuilder, QueryDescription, QueryType } from "./querybuilder.ts";
 import { assertEquals } from "../testdeps.ts";
 import { QueryCompiler } from "./querycompiler.ts";
+import { Model, Primary, Column, BelongsTo, HasMany } from "./model.ts";
 
 /**
  * Postgres connection options
@@ -56,6 +57,7 @@ export async function testDB(
       await db.query(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email VARCHAR(255),
           first_name VARCHAR(255),
           last_name VARCHAR(255),
           age INTEGER,
@@ -65,10 +67,10 @@ export async function testDB(
         );
       `);
 
-      // Create dummy table `products`
+      // Create dummy table `product`
       await db.query(`
-        CREATE TABLE IF NOT EXISTS products (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CREATE TABLE IF NOT EXISTS product (
+          product_id INTEGER PRIMARY KEY AUTOINCREMENT,
           title VARCHAR(255),
           user_id INTEGER,
           FOREIGN KEY (user_id) REFERENCES users(id)
@@ -78,8 +80,8 @@ export async function testDB(
       // Run the actual test
       await fn(db);
 
-      // Drop dummy table `products`
-      await db.query("DROP TABLE products;");
+      // Drop dummy table `product`
+      await db.query("DROP TABLE product;");
 
       // Drop dummy table `users`
       await db.query("DROP TABLE users;");
@@ -102,6 +104,7 @@ export async function testDB(
       await db.query(`
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
+          email VARCHAR(255),
           first_name VARCHAR(255),
           last_name VARCHAR(255),
           age INTEGER,
@@ -111,10 +114,10 @@ export async function testDB(
         );
       `);
 
-      // Create dummy table `products`
+      // Create dummy table `product`
       await db.query(`
-        CREATE TABLE IF NOT EXISTS products (
-          id SERIAL PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS product (
+          product_id SERIAL PRIMARY KEY,
           title VARCHAR(255),
           user_id INTEGER,
           FOREIGN KEY (user_id) REFERENCES users(id)
@@ -125,8 +128,8 @@ export async function testDB(
       try {
         await fn(db);
       } catch (err) {
-        // Drop dummy table `products`
-        await db.query("DROP TABLE products;");
+        // Drop dummy table `product`
+        await db.query("DROP TABLE product;");
 
         // Drop dummy table `users`
         await db.query("DROP TABLE users;");
@@ -137,8 +140,8 @@ export async function testDB(
         throw err;
       }
 
-      // Drop dummy table `products`
-      await db.query("DROP TABLE products;");
+      // Drop dummy table `product`
+      await db.query("DROP TABLE product;");
 
       // Drop dummy table `users`
       await db.query("DROP TABLE users;");
@@ -161,6 +164,7 @@ export async function testDB(
       await db.query(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTO_INCREMENT,
+          email VARCHAR(255),
           first_name VARCHAR(255),
           last_name VARCHAR(255),
           age INTEGER,
@@ -170,10 +174,10 @@ export async function testDB(
         );
       `);
 
-      // Create dummy table `products`
+      // Create dummy table `product`
       await db.query(`
-        CREATE TABLE IF NOT EXISTS products (
-          id INTEGER PRIMARY KEY AUTO_INCREMENT,
+        CREATE TABLE IF NOT EXISTS product (
+          product_id INTEGER PRIMARY KEY AUTO_INCREMENT,
           title VARCHAR(255),
           user_id INTEGER,
           FOREIGN KEY (user_id) REFERENCES users(id)
@@ -184,8 +188,8 @@ export async function testDB(
       try {
         await fn(db);
       } catch (err) {
-        // Drop dummy table `products`
-        await db.query("DROP TABLE products;");
+        // Drop dummy table `product`
+        await db.query("DROP TABLE product;");
 
         // Drop dummy table `users`
         await db.query("DROP TABLE users;");
@@ -197,7 +201,7 @@ export async function testDB(
       }
 
       // Drop dummy table `products`
-      await db.query("DROP TABLE products;");
+      await db.query("DROP TABLE product;");
 
       // Drop dummy table `users`
       await db.query("DROP TABLE users;");
@@ -282,4 +286,83 @@ export function testQueryCompiler(
       assertEquals(values, (result as any)[dialect].values);
     });
   }
+}
+
+// Here is the model definitions for testing purposes, each
+// items must represent something to test.
+
+export const toUser = () => User;
+export const toProduct = () => Product;
+export const getCreationDate = () => new Date();
+
+@Model("users")
+export class User {
+  /**
+   * Represents a primary key column
+   */
+  @Primary()
+  id!: number;
+
+  /**
+   * Represents column with validation
+   */
+  @Column()
+  email!: string;
+
+  /**
+   * Represents a string column with custom table column name
+   */
+  @Column({ name: "first_name" })
+  firstName!: string;
+
+  /**
+   * Represents a string column with custom table column name
+   */
+  @Column({ name: "last_name" })
+  lastName!: string;
+
+  /**
+   * Represents a number column
+   */
+  @Column()
+  age!: number;
+
+  /**
+   * Represents a hidden column
+   */
+  @Column()
+  password!: string;
+
+  /**
+   * Represents a date column with lazy default value
+   */
+  @Column({ name: "created_at", default: getCreationDate })
+  createdAt!: Date;
+
+  /**
+   * Represents a boolean column with standard default value
+   */
+  @Column({ name: "is_active", default: false })
+  isActive!: boolean;
+
+  /**
+   * Represents a has many relationship
+   */
+  @HasMany(toProduct, "user_id")
+  products!: Product[];
+}
+
+/**
+ * Represents a model with default table name and a custom id
+ */
+@Model()
+export class Product {
+  @Primary({ name: "product_id" })
+  productId!: number;
+
+  @Column()
+  title!: string;
+
+  @BelongsTo(toUser, "user_id")
+  user!: User;
 }

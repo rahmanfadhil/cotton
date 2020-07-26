@@ -27,9 +27,6 @@ export class ModelQuery<T> {
   /** Included relationships */
   private includes: string[] = [];
 
-  /** Deselect columns explicitly */
-  private deselected: string[] = [];
-
   // --------------------------------------------------------------------------------
   // CONSTRUCTOR
   // --------------------------------------------------------------------------------
@@ -40,52 +37,6 @@ export class ModelQuery<T> {
   constructor(private modelClass: { new (): T }, private adapter: Adapter) {
     this.tableName = getTableName(modelClass);
     this.builder = new QueryBuilder(this.tableName, adapter);
-  }
-
-  // --------------------------------------------------------------------------------
-  // SELECT AND DESELECT COLUMNS
-  // --------------------------------------------------------------------------------
-
-  /**
-   * Force to select columns.
-   * 
-   * @param columns the column names you want to select
-   */
-  public select(...columns: Extract<keyof T, string>[]): this {
-    for (const columnProperty of columns) {
-      const column = findColumn(this.modelClass, columnProperty);
-      if (!column) {
-        throw new Error(
-          `No such column as '${columnProperty}' in mode '${this.modelClass.name}'`,
-        );
-      }
-
-      this.builder.select([
-        this.tableName + "." + column.name,
-        this.tableName + "__" + column.name,
-      ]);
-      this.deselected.push(column.name);
-    }
-    return this;
-  }
-
-  /**
-   * Force to deselect columns.
-   * 
-   * @param columns the column names you want to deselect
-   */
-  public deselect(...columns: Extract<keyof T, string>[]): this {
-    for (const columnProperty of columns) {
-      const column = findColumn(this.modelClass, columnProperty);
-      if (!column) {
-        throw new Error(
-          `No such column as '${columnProperty}' in mode '${this.modelClass.name}'`,
-        );
-      }
-
-      this.deselected.push(column.name);
-    }
-    return this;
   }
 
   // --------------------------------------------------------------------------------
@@ -317,8 +268,7 @@ export class ModelQuery<T> {
    */
   private selectModelColumns(modelClass: Function) {
     const tableName = getTableName(modelClass);
-    const columns = getColumns(modelClass, false)
-      .filter((item) => !this.deselected.includes(item.name))
+    const columns = getColumns(modelClass)
       .map((column): [string, string] => [
         tableName + "." + column.name,
         tableName + "__" + column.name,

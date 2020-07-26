@@ -46,12 +46,6 @@ export interface ColumnOptions {
 
   /** The default value */
   default?: any;
-
-  /** Automatically select this column when fetching*/
-  select: boolean;
-
-  /** Is this column allowed to be empty? */
-  isNullable: boolean;
 }
 
 export type ColumnDescription = ColumnOptions & {
@@ -97,18 +91,12 @@ export function Column(options?: Partial<ColumnOptions>) {
       );
     }
 
-    const description: ColumnDescription = Object.assign(
-      {},
-      {
-        propertyKey: propertyKey,
-        select: true,
-        name: propertyKey,
-        type: columnType,
-        isPrimaryKey: false,
-        isNullable: true,
-      },
-      options,
-    );
+    const description: ColumnDescription = Object.assign({}, {
+      propertyKey: propertyKey,
+      name: propertyKey,
+      type: columnType,
+      isPrimaryKey: false,
+    }, options);
 
     columns.push(description);
 
@@ -135,11 +123,9 @@ export function Primary(options?: PrimaryFieldOptions) {
 
     columns.push({
       propertyKey,
-      select: true,
       name: options?.name || "id",
       type: ColumnType.Number,
       isPrimaryKey: true,
-      isNullable: false,
     });
 
     Reflect.defineMetadata(metadata.columns, columns, target);
