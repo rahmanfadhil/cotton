@@ -22,3 +22,4 @@ import "./src/migrations/columnbuilder_test.ts";
 import "./src/migrations/foreign_test.ts";
 import "./src/model_test.ts";
 import "./src/basemodel_test.ts";
+import "./src/serializer_test.ts";
