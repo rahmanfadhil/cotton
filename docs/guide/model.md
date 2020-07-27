@@ -28,7 +28,7 @@ The `@Model` decorator takes an optional argument for the table name of your mod
 Then, you define each columns by marking the class properties with `@Column`. Cotton is smart enough to determine the data type of that particular column using TypeScript types. However, you can still customize your column types by passing the `type` option like below.
 
 ```ts
-@Column({ type: ColumnType.String })
+@Column({ type: DataType.String })
 email!: string;
 ```
 

@@ -113,5 +113,4 @@ testDB("Schema: hasColumn, addColumn, and dropColumn", async (client) => {
   }
 });
 
-testDB("Schema: query", () => {
-});
+// TODO: add tests for Schema.query

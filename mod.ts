@@ -9,7 +9,7 @@ export { MigrationRunner } from "./src/migrations/migrationrunner.ts";
 export {
   Primary,
   Column,
-  ColumnType,
+  DataType,
   HasMany,
   BelongsTo,
   Model,

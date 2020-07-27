@@ -16,82 +16,20 @@ import {
   getRelationValues,
   findColumn,
 } from "./models.ts";
+import { Model, Column, RelationType, DataType } from "../model.ts";
 import {
-  Model,
-  Column,
-  Primary,
-  HasMany,
-  BelongsTo,
-  RelationType,
-  ColumnType,
-} from "../model.ts";
+  Product,
+  User,
+  toUser,
+  toProduct,
+  getCreationDate,
+} from "../testutils.ts";
 import { assertEquals, assertThrows, assert } from "../../testdeps.ts";
 import { formatDate } from "../utils/date.ts";
 
-const toUser = () => User;
-const toPost = () => Post;
-const toProduct = () => Product;
-
-const getCreationDate = () => new Date();
-
-@Model("users")
-class User {
-  @Primary()
-  id!: number;
-
-  @Column({ name: "first_name", isNullable: false })
-  firstName!: string;
-
-  @Column({ name: "last_name", isNullable: false })
-  lastName!: string;
-
-  @Column()
-  age!: number;
-
-  @Column({ select: false })
-  password!: string;
-
-  @HasMany(toPost, "user_id")
-  posts!: Post[];
-
-  @HasMany(toProduct, "product_id")
-  products!: Product[];
-}
-
-@Model("posts")
-class Post {
-  @Primary()
-  id!: number;
-
-  @Column({ isNullable: false })
-  title!: string;
-
-  @Column({ name: "is_published", default: false })
-  isPublished!: boolean;
-
-  @Column({ name: "created_at", default: getCreationDate })
-  createdAt!: Date;
-
-  @BelongsTo(toUser, "user_id")
-  user!: User;
-}
-
-@Model("products")
-class Product {
-  @Primary({ name: "identifier" })
-  productId!: number;
-
-  @Column()
-  name!: string;
-
-  @BelongsTo(toUser, "product_id")
-  user!: User;
-}
-
 Deno.test("getTableName() -> should get the model's custom table name", () => {
   assertEquals(getTableName(User), "users");
-  assertEquals(getTableName(Post), "posts");
-  assertEquals(getTableName(Product), "products");
+  assertEquals(getTableName(Product), "product");
 });
 
 Deno.test("getTableName() -> should get the model's default table name", () => {
@@ -114,124 +52,72 @@ Deno.test("getTableName() -> should throw an error if the class doesn't use @Mod
 });
 
 Deno.test("getColumns() -> should return all column definitions", () => {
-  assertEquals(
-    getColumns(User),
-    [{
-      propertyKey: "id",
-      select: true,
-      name: "id",
-      type: ColumnType.Number,
-      isPrimaryKey: true,
-      isNullable: false,
-    }, {
-      propertyKey: "firstName",
-      select: true,
-      name: "first_name",
-      type: ColumnType.String,
-      isPrimaryKey: false,
-      isNullable: false,
-    }, {
-      propertyKey: "lastName",
-      select: true,
-      name: "last_name",
-      type: ColumnType.String,
-      isPrimaryKey: false,
-      isNullable: false,
-    }, {
-      propertyKey: "age",
-      select: true,
-      name: "age",
-      type: ColumnType.Number,
-      isPrimaryKey: false,
-      isNullable: true,
-    }, {
-      propertyKey: "password",
-      select: false,
-      name: "password",
-      type: ColumnType.String,
-      isPrimaryKey: false,
-      isNullable: true,
-    }],
-  );
-
-  assertEquals(
-    getColumns(Post),
-    [{
-      propertyKey: "id",
-      select: true,
-      name: "id",
-      type: ColumnType.Number,
-      isPrimaryKey: true,
-      isNullable: false,
-    }, {
-      propertyKey: "title",
-      select: true,
-      name: "title",
-      type: ColumnType.String,
-      isPrimaryKey: false,
-      isNullable: false,
-    }, {
-      propertyKey: "isPublished",
-      select: true,
-      name: "is_published",
-      type: ColumnType.Boolean,
-      isPrimaryKey: false,
-      isNullable: true,
-      default: false,
-    }, {
-      propertyKey: "createdAt",
-      select: true,
-      name: "created_at",
-      type: ColumnType.Date,
-      isPrimaryKey: false,
-      isNullable: true,
-      default: getCreationDate,
-    }],
-  );
+  assertEquals(getColumns(User), [{
+    propertyKey: "id",
+    name: "id",
+    type: DataType.Number,
+    isPrimaryKey: true,
+  }, {
+    propertyKey: "email",
+    name: "email",
+    type: DataType.String,
+    isPrimaryKey: false,
+  }, {
+    propertyKey: "firstName",
+    name: "first_name",
+    type: DataType.String,
+    isPrimaryKey: false,
+  }, {
+    propertyKey: "lastName",
+    name: "last_name",
+    type: DataType.String,
+    isPrimaryKey: false,
+  }, {
+    propertyKey: "age",
+    name: "age",
+    type: DataType.Number,
+    isPrimaryKey: false,
+  }, {
+    propertyKey: "password",
+    name: "password",
+    type: DataType.String,
+    isPrimaryKey: false,
+  }, {
+    propertyKey: "createdAt",
+    name: "created_at",
+    type: DataType.Date,
+    isPrimaryKey: false,
+    default: getCreationDate,
+  }, {
+    propertyKey: "isActive",
+    name: "is_active",
+    type: DataType.Boolean,
+    isPrimaryKey: false,
+    default: false,
+  }]);
 
   assertEquals(
     getColumns(Product),
     [{
       propertyKey: "productId",
-      select: true,
-      name: "identifier",
-      type: ColumnType.Number,
+      name: "product_id",
+      type: DataType.Number,
       isPrimaryKey: true,
-      isNullable: false,
     }, {
-      propertyKey: "name",
-      select: true,
-      name: "name",
-      type: ColumnType.String,
+      propertyKey: "title",
+      name: "title",
+      type: DataType.String,
       isPrimaryKey: false,
-      isNullable: true,
     }],
   );
 });
 
-Deno.test("getColumns() -> should select several columns", () => {
-  const columns = getColumns(User, false);
-  assertEquals(columns.length, 4);
-  assert(!columns.find((item) => item.select === false));
-});
-
 Deno.test("findColumn() -> should includes several columns and ignore the rest", () => {
-  assertEquals(findColumn(Product, "name"), {
-    propertyKey: "name",
-    select: true,
-    name: "name",
-    type: ColumnType.String,
-    isPrimaryKey: false,
-    isNullable: true,
-  });
-
   assertEquals(findColumn(User, "password"), {
     propertyKey: "password",
-    select: false,
     name: "password",
-    type: ColumnType.String,
+    type: DataType.String,
     isPrimaryKey: false,
-    isNullable: true,
   });
 });
 
@@ -250,21 +136,9 @@ Deno.test("getColumns() -> should throw an error if there's no column found", ()
 
 Deno.test("getRelations() -> should return all relations", () => {
   assertEquals(getRelations(User), [{
-    propertyKey: "posts",
-    type: RelationType.HasMany,
-    getModel: toPost,
-    targetColumn: "user_id",
-  }, {
     propertyKey: "products",
     type: RelationType.HasMany,
     getModel: toProduct,
-    targetColumn: "product_id",
-  }]);
-
-  assertEquals(getRelations(Post), [{
-    propertyKey: "user",
-    type: RelationType.BelongsTo,
-    getModel: toUser,
     targetColumn: "user_id",
   }]);
 
@@ -272,7 +146,7 @@ Deno.test("getRelations() -> should return all relations", () => {
     propertyKey: "user",
     type: RelationType.BelongsTo,
     getModel: toUser,
-    targetColumn: "product_id",
+    targetColumn: "user_id",
   }]);
 });
 
@@ -281,19 +155,7 @@ Deno.test("getRelations() -> should only return the relations passed by the para
     propertyKey: "products",
     type: RelationType.HasMany,
     getModel: toProduct,
-    targetColumn: "product_id",
-  }]);
-
-  assertEquals(getRelations(User, ["posts", "products"]), [{
-    propertyKey: "posts",
-    type: RelationType.HasMany,
-    getModel: toPost,
     targetColumn: "user_id",
-  }, {
-    propertyKey: "products",
-    type: RelationType.HasMany,
-    getModel: toProduct,
-    targetColumn: "product_id",
   }]);
 
   assertEquals(getRelations(User, []), []);
@@ -302,20 +164,16 @@ Deno.test("getRelations() -> should only return the relations passed by the para
 Deno.test("getPrimaryKeyInfo() -> should get the model's primary key column definition", () => {
   assertEquals(getPrimaryKeyInfo(User), {
     propertyKey: "id",
-    select: true,
     name: "id",
-    type: ColumnType.Number,
+    type: DataType.Number,
     isPrimaryKey: true,
-    isNullable: false,
   });
 
   assertEquals(getPrimaryKeyInfo(Product), {
     propertyKey: "productId",
-    select: true,
-    name: "identifier",
-    type: ColumnType.Number,
+    name: "product_id",
+    type: DataType.Number,
     isPrimaryKey: true,
-    isNullable: false,
   });
 });
 
@@ -338,48 +196,42 @@ Deno.test("getPrimaryKeyInfo() -> should throw an error if there's no primary ke
 Deno.test("isSaved(), setSaved(), getOriginal(), and compareWithOriginal()", () => {
   const user = new User();
   user.id = 1;
+  user.email = "a@b.com";
   user.firstName = "John";
   user.lastName = "Doe";
   user.age = 16;
-  user.password = "12345";
+  user.createdAt = new Date();
   assertEquals(isSaved(user), false);
   assertEquals(getOriginal(user), undefined);
   assertEquals(compareWithOriginal(user).isDirty, true);
   assertEquals(compareWithOriginal(user).diff, {});
 
-  setSaved(user, true);
-  assertEquals(isSaved(user), true);
-  assertEquals(getOriginal(user), {
+  const original = {
     id: 1,
+    email: "a@b.com",
     first_name: "John",
     last_name: "Doe",
     age: 16,
-    password: "12345",
-  });
+    password: null,
+    created_at: user.createdAt,
+    is_active: false,
+  };
+
+  setSaved(user, true);
+  assertEquals(isSaved(user), true);
+  assertEquals(getOriginal(user), original);
   assertEquals(compareWithOriginal(user).isDirty, false);
   assertEquals(compareWithOriginal(user).diff, {});
 
   user.firstName = "Jane";
   assertEquals(isSaved(user), true);
-  assertEquals(getOriginal(user), {
-    id: 1,
-    first_name: "John",
-    last_name: "Doe",
-    age: 16,
-    password: "12345",
-  });
+  assertEquals(getOriginal(user), original);
   assertEquals(compareWithOriginal(user).isDirty, true);
   assertEquals(compareWithOriginal(user).diff, { first_name: "Jane" });
 
   setSaved(user, true);
   assertEquals(isSaved(user), true);
-  assertEquals(getOriginal(user), {
-    id: 1,
-    first_name: "Jane",
-    last_name: "Doe",
-    age: 16,
-    password: "12345",
-  });
+  assertEquals(getOriginal(user), { ...original, first_name: "Jane" });
   assertEquals(compareWithOriginal(user).isDirty, false);
   assertEquals(compareWithOriginal(user).diff, {});
 
@@ -393,13 +245,15 @@ Deno.test("isSaved(), setSaved(), getOriginal(), and compareWithOriginal()", () 
 Deno.test("compareWithOriginal() -> should return a normalized dirty data", () => {
   const user = new User();
   user.id = 1;
+  user.email = "a@b.com";
   user.firstName = "John";
   user.lastName = "Doe";
   user.age = 16;
   user.password = "12345";
   setSaved(user, true);
-  user.age = "16" as any;
-  assertEquals(compareWithOriginal(user).diff, { age: 16 });
+  user.firstName = 1 as any;
+  user.age = "17" as any;
+  assertEquals(compareWithOriginal(user).diff, { first_name: "1", age: 17 });
 });
 
 Deno.test("getValues() -> should return the values of a model", () => {
@@ -408,81 +262,47 @@ Deno.test("getValues() -> should return the values of a model", () => {
   user.lastName = "Doe";
   user.age = 16;
 
-  assertEquals(getValues(user), {
+  const values = getValues(user);
+  assert(values.created_at instanceof Date);
+  assertEquals(values, {
+    email: null,
     first_name: "John",
     last_name: "Doe",
     age: 16,
     password: null,
-  });
-});
-
-Deno.test("getValues() -> should use default value if exists", () => {
-  const post = new Post();
-  post.title = "Post 1";
-
-  const values = getValues(post);
-  assertEquals(values.title, "Post 1");
-  assertEquals(values.is_published, false);
-  assert(values.created_at instanceof Date);
-});
-
-Deno.test("getValues() -> throw an error if the a not nullable column is null", () => {
-  const post = new Post();
-  assertThrows(
-    () => {
-      getValues(post);
-    },
-    Error,
-    "Column 'title' cannot be empty!",
-  );
-  post.title = "Post 1";
-  const values = getValues(post);
-  assertEquals(values.title, "Post 1");
-  assertEquals(values.is_published, false);
-  assert(values.created_at instanceof Date);
-});
-
-Deno.test("getValues() -> should not yell at `isNullable` if the `fromDatabase` parameter is true", () => {
-  const user = new User();
-  user.lastName = "Doe";
-  user.age = 16;
-
-  assertEquals(getValues(user, true), {
-    first_name: null,
-    last_name: "Doe",
-    age: 16,
-    password: null,
+    created_at: values.created_at,
+    is_active: false,
   });
 });
 
 Deno.test("getRelationValues() -> should get has many values", () => {
-  const post1 = new Post();
-  post1.id = 1;
-  post1.title = "Post 1";
-  setSaved(post1, true);
+  const product1 = new Product();
+  product1.productId = 1;
+  product1.title = "Spoon";
+  setSaved(product1, true);
 
-  const post2 = new Post();
-  post2.id = 1;
-  post2.title = "Post 1";
-  setSaved(post2, true);
+  const product2 = new Product();
+  product2.productId = 2;
+  product2.title = "Table";
+  setSaved(product2, true);
 
   const user = new User();
   user.id = 1;
   user.firstName = "John";
   user.lastName = "Doe";
   user.age = 16;
-  user.posts = [post1, post2];
+  user.products = [product1, product2];
   setSaved(user, true);
 
   const userValues = getRelationValues(user);
   assert(Array.isArray(userValues));
   assertEquals(userValues.length, 1);
-  assertEquals(userValues[0].value, [post1.id, post2.id]);
+  assertEquals(userValues[0].value, [product1.productId, product2.productId]);
   assertEquals(userValues[0].description, {
-    propertyKey: "posts",
+    propertyKey: "products",
     targetColumn: "user_id",
     type: RelationType.HasMany,
-    getModel: toPost,
+    getModel: toProduct,
   });
 });
 
@@ -494,20 +314,20 @@ Deno.test("getRelationValues() -> should get belongs to values", () => {
   user.age = 16;
   setSaved(user, true);
 
-  const post1 = new Post();
-  post1.id = 1;
-  post1.title = "Post 1";
-  post1.user = user;
-  setSaved(post1, true);
+  const product1 = new Product();
+  product1.productId = 1;
+  product1.title = "Spoon";
+  product1.user = user;
+  setSaved(product1, true);
 
-  const post2 = new Post();
-  post2.id = 1;
-  post2.title = "Post 1";
-  post2.user = user;
-  setSaved(post2, true);
+  const product2 = new Product();
+  product2.productId = 1;
+  product2.title = "Spoon";
+  product2.user = user;
+  setSaved(product2, true);
 
   for (let i = 0; i < 2; i++) {
-    const postValues = getRelationValues(i ? post2 : post1);
+    const postValues = getRelationValues(i ? product2 : product1);
     assert(Array.isArray(postValues));
     assertEquals(postValues.length, 1);
     assertEquals(postValues[0].value, user.id);
@@ -521,10 +341,10 @@ Deno.test("getRelationValues() -> should get belongs to values", () => {
 });
 
 Deno.test("getRelationValues() -> should get nothing when there is no relational data", () => {
-  const post = new Post();
-  post.id = 1;
-  post.title = "Post 1";
-  setSaved(post, true);
+  const product = new Product();
+  product.productId = 1;
+  product.title = "Spoon";
+  setSaved(product, true);
 
   const user = new User();
   user.id = 1;
@@ -536,14 +356,14 @@ Deno.test("getRelationValues() -> should get nothing when there is no relational
   const userValues = getRelationValues(user);
   assertEquals(userValues.length, 0);
 
-  const postValues = getRelationValues(post);
+  const postValues = getRelationValues(product);
   assertEquals(postValues.length, 0);
 });
 
 Deno.test("getRelationValues() -> should throw an error if the relation is not saved", () => {
-  const post = new Post();
-  post.id = 1;
-  post.title = "Post 1";
+  const product = new Product();
+  product.productId = 1;
+  product.title = "Spoon";
 
   const user = new User();
   user.id = 1;
@@ -553,7 +373,7 @@ Deno.test("getRelationValues() -> should throw an error if the relation is not s
 
   assertThrows(
     () => {
-      user.posts = [post];
+      user.products = [product];
       getRelationValues(user);
     },
     Error,
@@ -562,33 +382,34 @@ Deno.test("getRelationValues() -> should throw an error if the relation is not s
 
   assertThrows(
     () => {
-      post.user = user;
-      getRelationValues(post);
+      product.user = user;
+      getRelationValues(product);
     },
     Error,
-    "Unsaved relationships found when trying to insert 'Post' model!",
+    "Unsaved relationships found when trying to insert 'Product' model!",
   );
 });
 
-Deno.test("mapValueProperties() -> should rename all properties from name to propertyKey", () => {
-  const post = new Post();
-  post.title = "Post 1";
-  const values = getValues(post);
+Deno.test("mapValueProperties() -> should rename all properties from propertyKey to name vice versa", () => {
+  const names = {
+    id: 1,
+    email: "a@b.com",
+    first_name: "John",
+    last_name: "Doe",
+    created_at: new Date(),
+    is_active: true,
+  };
+  const properties = {
+    id: names.id,
+    email: names.email,
+    firstName: names.first_name,
+    lastName: names.last_name,
+    createdAt: names.created_at,
+    isActive: names.is_active,
+  };
 
-  assertEquals(mapValueProperties(Post, values, "propertyKey"), {
-    title: values.title,
-    isPublished: values.is_published,
-    createdAt: values.created_at,
-  });
-});
-
-Deno.test("mapValueProperties() -> should rename all properties from propertyKey to name", () => {
-  const data = { title: "Post 1", isPublished: true, createdAt: new Date() };
-  assertEquals(mapValueProperties(Post, data, "name"), {
-    title: data.title,
-    is_published: data.isPublished,
-    created_at: data.createdAt,
-  });
+  assertEquals(mapValueProperties(User, properties, "name"), names);
+  assertEquals(mapValueProperties(User, names, "propertyKey"), properties);
 });
 
 Deno.test("mapQueryResult() -> should map a typical query result", () => {
@@ -640,29 +461,29 @@ Deno.test("mapQueryResult() -> should map a HasMany relational query result", ()
       users__first_name: "John",
       users__last_name: "Doe",
       users__age: 16,
-      products__name: "Spoon",
-      products__identifier: 1,
+      product__title: "Spoon",
+      product__product_id: 1,
     }, {
       users__id: 1,
       users__first_name: "John",
       users__last_name: "Doe",
       users__age: 16,
-      products__name: "Rice",
-      products__identifier: 2,
+      product__title: "Rice",
+      product__product_id: 2,
     }, {
       users__id: 2,
       users__first_name: "Jane",
       users__last_name: "Doe",
       users__age: 17,
-      products__name: "Table",
-      products__identifier: 3,
+      product__title: "Table",
+      product__product_id: 3,
     }, {
       users__id: 3,
       users__first_name: "Tom",
       users__last_name: "Cruise",
       users__age: 18,
-      products__name: null,
-      products__identifier: null,
+      product__title: null,
+      product__product_id: null,
     }], ["products"]),
     [{
       id: 1,
@@ -670,8 +491,8 @@ Deno.test("mapQueryResult() -> should map a HasMany relational query result", ()
       lastName: "Doe",
       age: 16,
       products: [
-        { name: "Spoon", productId: 1 },
-        { name: "Rice", productId: 2 },
+        { title: "Spoon", productId: 1 },
+        { title: "Rice", productId: 2 },
       ],
     }, {
       id: 2,
@@ -679,7 +500,7 @@ Deno.test("mapQueryResult() -> should map a HasMany relational query result", ()
       lastName: "Doe",
       age: 17,
       products: [
-        { name: "Table", productId: 3 },
+        { title: "Table", productId: 3 },
       ],
     }, {
       id: 3,
@@ -694,22 +515,22 @@ Deno.test("mapQueryResult() -> should map a HasMany relational query result", ()
 Deno.test("mapQueryResult() -> should map a BelongsTo relational query result", () => {
   assertEquals(
     mapQueryResult(Product, [{
-      products__name: "Spoon",
-      products__identifier: 1,
+      product__title: "Spoon",
+      product__product_id: 1,
       users__id: 1,
       users__first_name: "John",
       users__last_name: "Doe",
       users__age: 16,
     }, {
-      products__name: "Rice",
-      products__identifier: 2,
+      product__title: "Rice",
+      product__product_id: 2,
       users__id: 1,
       users__first_name: "John",
       users__last_name: "Doe",
       users__age: 16,
     }, {
-      products__name: "Table",
-      products__identifier: 3,
+      product__title: "Table",
+      product__product_id: 3,
       users__id: null,
       users__first_name: null,
       users__last_name: null,
@@ -717,15 +538,15 @@ Deno.test("mapQueryResult() -> should map a BelongsTo relational query result", 
     }], ["user"]),
     [{
       productId: 1,
-      name: "Spoon",
+      title: "Spoon",
       user: { firstName: "John", lastName: "Doe", age: 16, id: 1 },
     }, {
       productId: 2,
-      name: "Rice",
+      title: "Rice",
       user: { firstName: "John", lastName: "Doe", age: 16, id: 1 },
     }, {
       productId: 3,
-      name: "Table",
+      title: "Table",
       user: null,
     }],
   );
@@ -739,10 +560,8 @@ Deno.test("mapSingleQueryResult() -> should extract information from the query r
     users__last_name: "Doe",
     users__age: 16,
     users__password: "12345",
-    posts__title: "Post 1",
-    posts__is_published: 0,
-    posts__created_at: date,
-    posts__id: 2,
+    product__title: "Spoon",
+    product__product_id: 2,
   };
 
   assertEquals(
@@ -751,8 +570,8 @@ Deno.test("mapSingleQueryResult() -> should extract information from the query r
   );
 
   assertEquals(
-    mapSingleQueryResult(Post, data),
-    { id: 2, title: "Post 1", isPublished: 0, createdAt: date },
+    mapSingleQueryResult(Product, data),
+    { productId: 2, title: "Spoon" },
   );
 });
 
@@ -768,20 +587,11 @@ Deno.test("createModel() -> should create a model", () => {
   assertEquals(user.lastName, "Doe");
   assertEquals(user.age, 16);
   assertEquals(typeof user.products, "undefined");
-  assertEquals(typeof user.posts, "undefined");
 
-  const date = new Date();
+  const product = createModel(Product, { title: "Post 1" });
 
-  const post = createModel(Post, {
-    title: "Post 1",
-    isPublished: 0,
-    createdAt: formatDate(date),
-  });
-
-  assert(post instanceof Post);
-  assertEquals(post.title, "Post 1");
-  assertEquals(post.isPublished, false);
-  assertEquals(post.createdAt, date);
+  assert(product instanceof Product);
+  assertEquals(product.title, "Post 1");
 });
 
 Deno.test("createModel() -> should create a HasMany relational model", () => {
@@ -790,9 +600,9 @@ Deno.test("createModel() -> should create a HasMany relational model", () => {
     firstName: "John",
     lastName: "Doe",
     age: 16,
-    posts: [
-      { title: "Post 1", isPublished: 0, createdAt: date },
-      { title: "Post 2", isPublished: 1, createdAt: date },
+    products: [
+      { title: "Spoon" },
+      { title: "Fork" },
     ],
   });
 
@@ -800,20 +610,16 @@ Deno.test("createModel() -> should create a HasMany relational model", () => {
   assertEquals(user.firstName, "John");
   assertEquals(user.lastName, "Doe");
   assertEquals(user.age, 16);
-  assert(Array.isArray(user.posts));
-  assertEquals(user.posts.length, 2);
-  assertEquals(user.posts[0].title, "Post 1");
-  assertEquals(user.posts[0].isPublished, false);
-  assertEquals(user.posts[0].createdAt, date);
-  assertEquals(user.posts[1].title, "Post 2");
-  assertEquals(user.posts[1].isPublished, true);
-  assertEquals(user.posts[1].createdAt, date);
+  assert(Array.isArray(user.products));
+  assertEquals(user.products.length, 2);
+  assertEquals(user.products[0].title, "Spoon");
+  assertEquals(user.products[1].title, "Fork");
 });
 
 Deno.test("createModel() -> should create a BelongsTo relational model", () => {
   const date = new Date();
-  const post = createModel(Post, {
-    title: "Post 1",
+  const post = createModel(Product, {
+    title: "Spoon",
     isPublished: 0,
     createdAt: formatDate(date),
     user: {
@@ -823,10 +629,8 @@ Deno.test("createModel() -> should create a BelongsTo relational model", () => {
     },
   });
 
-  assert(post instanceof Post);
-  assertEquals(post.title, "Post 1");
-  assertEquals(post.isPublished, false);
-  assertEquals(post.createdAt, date);
+  assert(post instanceof Product);
+  assertEquals(post.title, "Spoon");
   assert(post.user instanceof User);
   assertEquals(post.user.firstName, "John");
   assertEquals(post.user.lastName, "Doe");
@@ -841,7 +645,7 @@ Deno.test("createModels() -> should create multiple models with relations", () =
     age: 16,
     products: [
       {
-        name: "Spoon",
+        title: "Spoon",
         productId: 1,
         user: {
           id: 1,
@@ -850,7 +654,7 @@ Deno.test("createModels() -> should create multiple models with relations", () =
           age: 16,
         },
       },
-      { name: "Rice", productId: 2 },
+      { title: "Rice", productId: 2 },
     ],
   }, {
     id: 3,
@@ -871,13 +675,13 @@ Deno.test("createModels() -> should create multiple models with relations", () =
   assert(Array.isArray(users[0].products));
   assertEquals(users[0].products.length, 2);
   assert(users[0].products[0] instanceof Product);
-  assertEquals(users[0].products[0].name, "Spoon");
+  assertEquals(users[0].products[0].title, "Spoon");
   assertEquals(users[0].products[0].productId, 1);
   assert(users[0].products[0].user instanceof User);
   assertEquals(users[0].products[0].user.id, 1);
   assertEquals(users[0].products[0].user.firstName, "John");
   assert(users[0].products[1] instanceof Product);
-  assertEquals(users[0].products[1].name, "Rice");
+  assertEquals(users[0].products[1].title, "Rice");
   assertEquals(users[0].products[1].productId, 2);
   assertEquals(typeof users[0].products[1].user, "undefined");
   assertEquals(users[0].firstName, "John");
@@ -888,5 +692,5 @@ Deno.test("createModels() -> should create multiple models with relations", () =
   assertEquals(users[1].firstName, "Tom");
   assertEquals(users[1].lastName, "Cruise");
   assertEquals(users[1].age, 18);
-  assertEquals(typeof users[1].posts, "undefined");
+  assertEquals(typeof users[1].products, "undefined");
 });

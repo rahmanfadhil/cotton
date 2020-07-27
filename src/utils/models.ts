@@ -1,8 +1,8 @@
 import {
   ColumnDescription,
   RelationDescription,
-  ColumnType,
   RelationType,
+  DataType,
 } from "../model.ts";
 import { DatabaseResult, DatabaseValues } from "../adapters/adapter.ts";
 import { Reflect } from "../utils/reflect.ts";
@@ -28,11 +28,6 @@ interface ModelComparisonResult {
   diff: ModelDatabaseValues;
 }
 
-interface ModelRelationComparisonResult {
-  isDirty: boolean;
-  diff: { type: RelationType; data: number | number[] }[];
-}
-
 // --------------------------------------------------------------------------------
 // MODEL INFORMATION
 // --------------------------------------------------------------------------------
@@ -55,17 +50,11 @@ export function getTableName(modelClass: Function): string {
 }
 
 /**
- * Get all column definitions from a model. By default, it won't
- * return columns with `select: false`. However, you can pass true to
- * the `selectAll` parameter to get those.
+ * Get all column definitions from a model.
  *
  * @param modelClass the model class you want to get the information from.
- * @param selectAll select all columns and ignore the `select: false`.
  */
-export function getColumns(
-  modelClass: Function,
-  selectAll = true,
-): ColumnDescription[] {
+export function getColumns(modelClass: Function): ColumnDescription[] {
   const columns: ColumnDescription[] = Reflect.getMetadata(
     metadata.columns,
     modelClass.prototype,
@@ -77,7 +66,7 @@ export function getColumns(
     );
   }
 
-  return selectAll ? columns : columns.filter((item) => item.select);
+  return columns;
 }
 
 /**
@@ -92,7 +81,7 @@ export function findColumn(
   modelClass: Function,
   propertyName: string,
 ): ColumnDescription | undefined {
-  return getColumns(modelClass, true)
+  return getColumns(modelClass)
     .find((item) => item.propertyKey === propertyName);
 }
 
@@ -151,7 +140,8 @@ export function isSaved(model: Object): boolean {
 }
 
 /**
- * Update the `isSaved` status of a model and save the original value.
+ * Update the `isSaved` status of a model, save the original value,
+ * and populate model with default values.
  *
  * @param model the model you want to change the status of
  * @param value the status of the model (saved or not saved)
@@ -160,7 +150,12 @@ export function setSaved(model: Object, value: boolean) {
   isSavedValues.set(model, value);
 
   if (value) {
-    originalValues.set(model, getValues(model, true));
+    const values = getValues(model);
+    originalValues.set(model, values);
+    Object.assign(
+      model,
+      mapValueProperties(model.constructor, values, "propertyKey"),
+    );
   } else {
     originalValues.delete(model);
   }
@@ -199,7 +194,7 @@ export function compareWithOriginal(model: Object): ModelComparisonResult {
 
     if (value !== originalValue[column.name]) {
       isDirty = true;
-      diff[column.name] = getNormalizedValue(column, value);
+      diff[column.name] = getNormalizedValue(column.type, value);
     }
   }
 
@@ -210,12 +205,8 @@ export function compareWithOriginal(model: Object): ModelComparisonResult {
  * Get model values as a plain JavaScript object
  * 
  * @param model the model you want to get the values from
- * @param fromDatabase if the data is from the database, it won't yell at `isNullable` values.
  */
-export function getValues(
-  model: Object,
-  fromDatabase = false,
-): ModelDatabaseValues {
+export function getValues(model: Object): ModelDatabaseValues {
   // If the `columns` parameter is provided, return only the selected columns
   const columns = getColumns(model.constructor)
     .filter((item) => item.isPrimaryKey && !isSaved(model) ? false : true);
@@ -234,25 +225,19 @@ export function getValues(
       }
     } else {
       if (typeof value === "undefined") {
-        // If the value is undefined, check the default value. Then, if the column
-        // is nullable, set it to null. Otherwise, throw an error.
+        // If the value is undefined, check the default value. Otherwise, set it to null.
         if (typeof column.default !== "undefined") {
           // If the default value is a function, execute it and get the returned value
           const defaultValue = typeof column.default === "function"
             ? column.default()
             : column.default;
-          data[column.name] = getNormalizedValue(column, defaultValue);
+          data[column.name] = getNormalizedValue(column.type, defaultValue);
         } else {
-          if (!column.isNullable && !fromDatabase) {
-            throw new Error(
-              `Column '${column.propertyKey}' cannot be empty!`,
-            );
-          }
           data[column.name] = null;
         }
       } else {
         data[column.name] = getNormalizedValue(
-          column,
+          column.type,
           (model as any)[column.propertyKey],
         );
       }
@@ -356,45 +341,89 @@ export function mapValueProperties(
 }
 
 // --------------------------------------------------------------------------------
-// PRIVATE HELPERS
+// HELPERS
 // --------------------------------------------------------------------------------
+
+/**
+ * Get data type from type metadata.
+ * 
+ * @param type the design:type value from `Reflect.getMetadata`
+ */
+export function getDataType(type: any): DataType | null {
+  if (type === String) {
+    return DataType.String;
+  } else if (type === Number) {
+    return DataType.Number;
+  } else if (type === Date) {
+    return DataType.Date;
+  } else if (type === Boolean) {
+    return DataType.Boolean;
+  } else {
+    return null;
+  }
+}
 
 /**
  * Normalize value to a database compatible values.
  * 
- * @param columns the column definitions you want to include
+ * @param type the data type of the column
  * @param original the original data
+ * @param throws define whether this should throw an error if the value type isn't as expected.
  */
-function getNormalizedValue(
-  column: ColumnDescription,
+export function getNormalizedValue(
+  type: DataType,
   original: DatabaseValues,
+  throws: boolean = false,
 ): DatabaseValues {
-  let value: any;
-
+  // If the original value is either null or undefined, return null.
   if (typeof original === "undefined" || original === null) {
-    value = null;
-  } else if (
-    column.type === ColumnType.Date &&
-    (typeof original === "string" || typeof original === "number")
-  ) {
-    value = new Date(original);
-  } else if (
-    column.type === ColumnType.String && typeof original !== "string"
-  ) {
-    value = String(original);
-  } else if (
-    column.type === ColumnType.Number && typeof original !== "number"
-  ) {
-    value = Number(original);
-  } else if (
-    column.type === ColumnType.Boolean && typeof original !== "boolean"
-  ) {
-    value = Boolean(original);
-  } else {
-    value = original;
+    return null;
   }
 
-  return value;
+  // If the expected type is Date, and the original value is string or number,
+  // convert it to Date object.
+  if (
+    type === DataType.Date &&
+    (typeof original === "string" || typeof original === "number")
+  ) {
+    if (throws) {
+      throw typeof original;
+    }
+
+    return new Date(original);
+  }
+
+  // If the expected type is String, and the original value doesn't,
+  // convert it to String.
+  if (type === DataType.String && typeof original !== "string") {
+    if (throws) {
+      throw typeof original;
+    }
+
+    return String(original);
+  }
+
+  // Do the same thing for numbers.
+  if (type === DataType.Number && typeof original !== "number") {
+    if (throws) {
+      throw typeof original;
+    }
+
+    return Number(original);
+  }
+
+  // If the expected type is Boolean, and the original value doesn't,
+  // convert it to either true if it's truthy (like 1) and false if
+  // it's falsy (like 0).
+  if (type === DataType.Boolean && typeof original !== "boolean") {
+    if (throws) {
+      throw typeof original;
+    }
+
+    return Boolean(original);
+  }
+
+  return original;
 }
 
 // --------------------------------------------------------------------------------
@@ -478,7 +507,7 @@ export function mapSingleQueryResult(
 ): ModelValues {
   const values: ModelValues = {};
   const tableName = getTableName(modelClass);
-  const columns = getColumns(modelClass, true);
+  const columns = getColumns(modelClass);
 
   for (const column in result) {
     if (column.startsWith(tableName + "__")) {
@@ -529,11 +558,14 @@ export function createModel<T>(
           const defaultValue = typeof column.default === "function"
             ? column.default()
             : column.default;
-          values[column.propertyKey] = getNormalizedValue(column, defaultValue);
+          values[column.propertyKey] = getNormalizedValue(
+            column.type,
+            defaultValue,
+          );
         }
       } else {
         values[column.propertyKey] = getNormalizedValue(
-          column,
+          column.type,
           value as DatabaseValues,
         );
       }
