@@ -5,7 +5,6 @@ export const metadata = {
   tableName: "db:tablename",
   columns: "db:columns",
   relations: "db:relations",
-  jsonProperties: "db:jsonproperties",
 };
 
 // Inspired by deno-nessie from @halvardssm

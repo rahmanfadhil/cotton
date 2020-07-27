@@ -4,7 +4,6 @@ import { QueryBuilder, QueryDescription, QueryType } from "./querybuilder.ts";
 import { assertEquals } from "../testdeps.ts";
 import { QueryCompiler } from "./querycompiler.ts";
 import { Model, Primary, Column, BelongsTo, HasMany } from "./model.ts";
-import { JsonProperty } from "./serializer.ts";
 
 /**
  * Postgres connection options
@@ -302,56 +301,48 @@ export class User {
    * Represents a primary key column
    */
   @Primary()
-  @JsonProperty({ isReadonly: true })
   id!: number;
 
   /**
    * Represents column with validation
    */
   @Column()
-  @JsonProperty({ isRequired: true })
   email!: string;
 
   /**
    * Represents a string column with custom table column name
    */
   @Column({ name: "first_name" })
-  @JsonProperty({ name: "first_name" })
   firstName!: string;
 
   /**
    * Represents a string column with custom table column name
    */
   @Column({ name: "last_name" })
-  @JsonProperty({ name: "last_name" })
   lastName!: string;
 
   /**
    * Represents a number column
    */
   @Column()
-  @JsonProperty()
   age!: number;
 
   /**
    * Represents a hidden column
    */
   @Column()
-  @JsonProperty({ isHidden: true, isReadonly: true })
   password!: string;
 
   /**
    * Represents a date column with lazy default value
    */
   @Column({ name: "created_at", default: getCreationDate })
-  @JsonProperty({ name: "created_at", isReadonly: true })
   createdAt!: Date;
 
   /**
    * Represents a boolean column with standard default value
    */
   @Column({ name: "is_active", default: false })
-  @JsonProperty({ name: "is_active", isReadonly: true })
   isActive!: boolean;
 
   /**
