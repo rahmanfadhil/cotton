@@ -32,12 +32,9 @@ Then, you define each columns by marking the class properties with `@Column`. Co
 email!: string;
 ```
 
-There are still a plenty of room for customization. You can provide a default value of a column with`default`, define a custom name for your column using `name`, prevent `null` or `undefined` value saved to the database using `isNullable`, and much more.
+There are still a plenty of room for customization. You can provide a default value of a column with`default`, define a custom name for your column using `name`, and much more.
 
 ```ts
-@Column({ isNullable: false }) // default: true
-email!: string;
-
 @Column({ default: false })
 isActive!: string;
 
