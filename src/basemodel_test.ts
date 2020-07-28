@@ -16,23 +16,6 @@ Deno.test("BaseModel.query() -> should call Manager.query()", () => {
   assertEquals(managerStub.calls, [{ args: [User], self: manager, returned }]);
 });
 
-Deno.test("BaseModel.insert() -> should call Manager.insert()", () => {
-  const returned: any = Symbol();
-  const parameter: any = Symbol();
-
-  const manager = new Manager({} as any);
-  const managerStub = stub(manager, "insert", [returned]);
-
-  (User as any).manager = manager;
-
-  assertEquals(User.insert(parameter), returned);
-  assertEquals(managerStub.calls, [{
-    args: [User, parameter],
-    self: manager,
-    returned,
-  }]);
-});
-
 Deno.test("BaseModel.save() -> should call Manager.save()", () => {
   const returned: any = Symbol();
 

@@ -1,8 +1,8 @@
 import { testDB, User, Product } from "./testutils.ts";
 import { Manager } from "./manager.ts";
 import { assert, assertEquals, assertThrowsAsync } from "../testdeps.ts";
-import { formatDate } from "./utils/date.ts";
 import { ModelQuery } from "./modelquery.ts";
+import { isSaved } from "./utils/models.ts";
 
 Deno.test("Manager.query() -> should return a ModelQuery", () => {
   const adapter = Symbol();
@@ -16,7 +16,7 @@ Deno.test("Manager.query() -> should return a ModelQuery", () => {
 testDB(
   "Manager.save() -> should save a new record to the database and update it if something changed",
   async (client) => {
-    let result = await client.query("SELECT id FROM users;");
+    let result = await client.table("users").execute();
     assertEquals(result.length, 0);
 
     const manager = new Manager(client);
@@ -31,9 +31,7 @@ testDB(
     assertEquals(user.isActive, false);
     assert(user.createdAt instanceof Date);
 
-    result = await client.query(
-      "SELECT id, email, first_name, password, is_active FROM users;",
-    );
+    result = await client.table("users").execute();
     assertEquals(result.length, 1);
     assertEquals(result[0].id, user.id);
     assertEquals(result[0].email, user.email);
@@ -48,7 +46,7 @@ testDB(
     user.isActive = true;
     await manager.save(user);
 
-    result = await client.query("SELECT id, email, is_active FROM users;");
+    result = await client.table("users").execute();
     assertEquals(result.length, 1);
     assertEquals(result[0].id, user.id);
     assertEquals(result[0].email, user.email);
@@ -88,16 +86,12 @@ testDB(
     product.user = user;
     await manager.save(product);
 
-    const users = await client.query(
-      "SELECT id, first_name FROM users",
-    );
+    const users = await client.table("users").execute();
     assertEquals(users.length, 1);
     assertEquals(users[0].id, user.id);
     assertEquals(users[0].first_name, user.firstName);
 
-    const products = await client.query(
-      "SELECT product_id, user_id, title FROM product",
-    );
+    const products = await client.table("product").execute();
     assertEquals(products.length, 1);
     assertEquals(products[0].product_id, product.productId);
     assertEquals(products[0].user_id, product.user.id);
@@ -126,14 +120,12 @@ testDB(
     user.products = [product1, product2];
     await manager.save(user);
 
-    const users = await client.query("SELECT id, first_name FROM users");
+    const users = await client.table("users").execute();
     assertEquals(users.length, 1);
     assertEquals(users[0].id, user.id);
     assertEquals(users[0].first_name, user.firstName);
 
-    const products = await client.query(
-      "SELECT product_id, user_id, title FROM product",
-    );
+    const products = await client.table("product").execute();
     assertEquals(products.length, 2);
     assertEquals(products[0].product_id, product1.productId);
     assertEquals(products[1].product_id, product2.productId);
@@ -142,6 +134,70 @@ testDB(
     }
   },
 );
+
+testDB("Manager.save() -> should save multiple models", async (client) => {
+  const manager = new Manager(client);
+
+  const product1 = new Product();
+  product1.title = "Spoon";
+
+  const product2 = new Product();
+  product2.title = "Table";
+  await manager.save(product2);
+  product2.title = "Fork";
+
+  const product3 = new Product();
+  product3.title = "Bottle";
+
+  const user1 = new User();
+  user1.email = "a@b.com";
+  user1.firstName = "John";
+  user1.lastName = "Doe";
+  user1.age = 16;
+
+  const user2 = new User();
+  user2.email = "b@c.com";
+  user2.firstName = "Jane";
+  user2.lastName = "Doe";
+  user2.age = 16;
+  await manager.save(user2);
+  user2.firstName = "Jason";
+
+  const models = await manager.save(
+    [product1, product2, product3, user1, user2],
+  );
+
+  assertEquals(models.length, 5);
+  for (const model of models) {
+    assert(isSaved(model));
+  }
+
+  // Check if the update works
+  const [userUpdate] = await client
+    .table("users")
+    .where("id", user2.id)
+    .execute();
+  assertEquals(userUpdate.first_name, user2.firstName);
+  const [productUpdate] = await client
+    .table("product")
+    .where("product_id", product2.productId)
+    .execute();
+  assertEquals(productUpdate.title, product2.title);
+
+  // Check if the insert works
+  const [userInsert] = await client
+    .table("users")
+    .where("id", user1.id)
+    .execute();
+  assertEquals(userInsert.first_name, user1.firstName);
+  assertEquals(userInsert.last_name, user1.lastName);
+  const productInsert = await client
+    .table("product")
+    .where("product_id", "in", [product1.productId, product3.productId])
+    .execute();
+  assertEquals(productInsert[0].title, product1.title);
+  assertEquals(productInsert[1].title, product3.title);
+});
 
 testDB(
   "Manager.remove() -> should remove a model from the database",
@@ -161,105 +217,5 @@ testDB(
     assertEquals(user!.id, undefined);
 
     assertEquals(await manager.query(User).first(), null);
-  },
-);
-
-testDB(
-  "Manager.insert() -> should create a model instance and save it to the database",
-  async (client) => {
-    const manager = new Manager(client);
-
-    let users = await client.query("SELECT id FROM users;");
-    assertEquals(users.length, 0);
-
-    const user = await manager.insert(User, {
-      email: "a@b.com",
-      firstName: "John",
-      lastName: "Doe",
-      age: 16,
-      password: "12345",
-    });
-    assert(user instanceof User);
-    assertEquals(user.id, 1);
-    assertEquals(user.email, "a@b.com");
-    assertEquals(user.firstName, "John");
-    assertEquals(user.lastName, "Doe");
-    assertEquals(user.age, 16);
-    assertEquals(user.password, "12345");
-    assertEquals(user.isActive, false);
-    assert(user.createdAt instanceof Date);
-    assertEquals(user.products, undefined);
-
-    users = await client.query("SELECT * FROM users;");
-    assertEquals(users.length, 1);
-    assertEquals(users[0].id, user.id);
-    assertEquals(users[0].email, user.email);
-    assertEquals(users[0].first_name, user.firstName);
-    assertEquals(users[0].last_name, user.lastName);
-    assertEquals(users[0].age, user.age);
-    assertEquals(users[0].password, user.password);
-    assertEquals(users[0].is_active, client.dialect === "postgres" ? false : 0);
-    assertEquals(
-      users[0].created_at,
-      client.dialect === "sqlite"
-        ? formatDate(user.createdAt)
-        : user.createdAt,
-    );
-  },
-);
-
-testDB(
-  "Manager.insert() -> should create multiple model instances and save them to the database",
-  async (client) => {
-    const manager = new Manager(client);
-
-    assertEquals((await client.query("SELECT id FROM users;")).length, 0);
-
-    const users = await manager.insert(User, [{
-      email: "a@b.com",
-      firstName: "John",
-      lastName: "Doe",
-      age: 16,
-      password: "12345",
-    }, {
-      email: "b@c.com",
-      firstName: "Jane",
-      lastName: "Doe",
-      age: 17,
-      password: "12345",
-    }]);
-    assert(Array.isArray(users));
-    for (let i = 0; i < users.length; i++) {
-      const user = users[i];
-      assert(user instanceof User);
-      assertEquals(user.id, i + 1);
-      assertEquals(user.email, i ? "b@c.com" : "a@b.com");
-      assertEquals(user.firstName, i ? "Jane" : "John");
-      assertEquals(user.lastName, "Doe");
-      assertEquals(user.age, i ? 17 : 16);
-      assertEquals(user.password, "12345");
-      assertEquals(user.isActive, false);
-      assert(user.createdAt instanceof Date);
-      assertEquals(user.products, undefined);
-    }
-
-    const result = await client.query("SELECT * FROM users;");
-    assertEquals(result.length, 2);
-    for (let i = 0; i < result.length; i++) {
-      const data = result[i];
-      assertEquals(data.id, users[i].id);
-      assertEquals(data.email, users[i].email);
-      assertEquals(data.first_name, users[i].firstName);
-      assertEquals(data.last_name, users[i].lastName);
-      assertEquals(data.age, users[i].age);
-      assertEquals(data.password, users[i].password);
-      assertEquals(data.is_active, client.dialect === "postgres" ? false : 0);
-      assertEquals(
-        data.created_at,
-        client.dialect === "sqlite"
-          ? formatDate(users[i].createdAt)
-          : users[i].createdAt,
-      );
-    }
   },
 );

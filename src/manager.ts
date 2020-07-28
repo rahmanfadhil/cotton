@@ -12,7 +12,7 @@ import {
 } from "./utils/models.ts";
 import { Adapter } from "./adapters/adapter.ts";
 import { range } from "./utils/number.ts";
-import { RelationType } from "./model.ts";
+import { RelationType, Model } from "./model.ts";
 import { ModelQuery } from "./modelquery.ts";
 
 /**
@@ -61,98 +61,60 @@ export class Manager {
   }
 
   /**
+   * Save model a instance to the database.
+   *
+   * @param model the model you want to save
+   */
+  public async save<T extends Object>(model: T): Promise<T>;
+
+  /**
+   * Save model instances to the database.
+   *
+   * @param models the models you want to save
+   */
+  public async save<T extends Object>(models: T[]): Promise<T[]>;
+
+  /**
    * Save model instance to the database.
    *
    * @param model the model you want to save
    */
-  public async save<T extends Object>(model: T): Promise<T> {
-    const tableName = getTableName(model.constructor);
-    const primaryKeyInfo = getPrimaryKeyInfo(model.constructor);
+  public async save<T extends Object>(model: T | T[]): Promise<T | T[]> {
+    if (Array.isArray(model)) {
+      const groupedModels = model.reduce((prev, next, index) => {
+        const previousModels = prev.get(next.constructor);
+        const data = { model: next, index, isSaved: isSaved(next) };
+        prev.set(
+          next.constructor,
+          previousModels ? previousModels.concat(data) : [data],
+        );
+        return prev;
+      }, new Map<Function, { model: T; index: number; isSaved: boolean }[]>());
+
+      await this.adapter.transaction(async () => {
+        for (const [key, value] of groupedModels) {
+          const insert: T[] = [];
+
+          for (const data of value) {
+            !data.isSaved
+              ? insert.push(data.model)
+              : await this.update(data.model);
+          }
+
+          await this.bulkInsert(key, insert);
+        }
+      });
+
+      return model;
+    }
 
     // If the record is saved, we assume that the user want to update the record.
     // Otherwise, create a new record to the database.
     if (isSaved(model)) {
-      const { isDirty, diff } = compareWithOriginal(model);
-
-      if (isDirty) {
-        await this.adapter
-          .table(tableName)
-          .where(
-            primaryKeyInfo.name,
-            (model as any)[primaryKeyInfo.propertyKey],
-          )
-          .update(diff)
-          .execute();
-      }
+      await this.update(model);
     } else {
-      const values = getValues(model);
-
-      const relationalValues = getRelationValues(model);
-
-      // If there's a belongs to relationship, add it to the INSERT statement
-      for (const relation of relationalValues) {
-        if (relation.description.type === RelationType.BelongsTo) {
-          values[relation.description.targetColumn] = relation.value as number;
-        }
-      }
-
-      // Save record to the database
-      const query = this.adapter
-        .table(tableName)
-        .insert(values);
-
-      // The postgres adapter doesn't have `lastInsertedId`. So, we need to
-      // manually return the primary key in order to set the model's primary key
-      if (this.adapter.dialect === "postgres") {
-        query.returning(primaryKeyInfo.name);
-      }
-
-      // Execute the query
-      const result = await query.execute();
-
-      // Get last inserted id
-      const lastInsertedId: number = this.adapter.dialect === "postgres"
-        ? result[result.length - 1][primaryKeyInfo.name] as number
-        : this.adapter.lastInsertedId;
-
-      // Set the primary key
-      values[primaryKeyInfo.name] = lastInsertedId;
-
-      // Populate empty properties with default value
-      Object.assign(
-        model,
-        mapValueProperties(model.constructor, values, "propertyKey"),
-      );
-
-      // If there's a has many relationship, update the foreign key
-      for (const relation of relationalValues) {
-        if (relation.description.type === RelationType.HasMany) {
-          const ids = relation.value as number[];
-          const tableName = getTableName(relation.description.getModel());
-          const relationPkInfo = getPrimaryKeyInfo(
-            relation.description.getModel(),
-          );
-
-          await this.adapter
-            .table(tableName)
-            .update({
-              [relation.description.targetColumn]:
-                (model as any)[primaryKeyInfo.propertyKey],
-            })
-            .where(relationPkInfo.name, "in", ids)
-            .execute();
-
-          for (let i = 0; i < ids.length; i++) {
-            (model as any)[relation.description.propertyKey][i][
-              relation.description.targetColumn
-            ] = (model as any)[primaryKeyInfo.propertyKey];
-          }
-        }
-      }
+      await this.bulkInsert(model.constructor, [model]);
     }
-
-    // Save the model's original values
-    setSaved(model, true);
 
     return model;
   }
@@ -183,57 +145,55 @@ export class Manager {
   }
 
   /**
-   * Create a model instance and save it to the database.
+   * Perform update to a model.
    * 
-   * @param modelClass the model you want to create
-   * @param data the data you want your model to be populated with
+   * @param model the model you want to update.
    */
-  public insert<T extends Object>(
-    modelClass: { new (): T },
-    data: DeepPartial<T>,
-  ): Promise<T>;
+  private async update<T extends Object>(model: T): Promise<T> {
+    const tableName = getTableName(model.constructor);
+    const primaryKeyInfo = getPrimaryKeyInfo(model.constructor);
+    const { isDirty, diff } = compareWithOriginal(model);
 
-  /**
-   * Create model instances and save it to the database.
-   * 
-   * @param modelClass the model you want to create
-   * @param data the data you want your model to be populated with
-   */
-  public insert<T extends Object>(
-    modelClass: { new (): T },
-    data: DeepPartial<T>[],
-  ): Promise<T[]>;
+    if (isDirty) {
+      await this.adapter
+        .table(tableName)
+        .where(
+          primaryKeyInfo.name,
+          (model as any)[primaryKeyInfo.propertyKey],
+        )
+        .update(diff)
+        .execute();
 
-  /**
-   * Create model and save it to the database.
-   */
-  public insert<T extends Object>(
-    modelClass: { new (): T },
-    data: DeepPartial<T> | DeepPartial<T>[],
-  ): Promise<T | T[]> {
-    // TODO: save relationships
-
-    if (Array.isArray(data)) {
-      const models = createModels(modelClass, data as any);
-      return this.bulkInsert(modelClass, models);
-    } else {
-      const model = createModel(modelClass, data as any);
-      return this.save(model);
+      // Save the model's original values
+      setSaved(model, true);
     }
+
+    return model;
   }
 
   /**
    * Insert multiple records to the database efficiently
    */
   private async bulkInsert<T extends Object>(
-    modelClass: { new (): T },
+    modelClass: Function,
     models: T[],
   ): Promise<T[]> {
     const tableName = getTableName(modelClass);
     const primaryKeyInfo = getPrimaryKeyInfo(modelClass);
 
     // Get all model values
-    const values = models.map((model) => getValues(model));
+    const values = models.map((model) => {
+      const values = getValues(model);
+
+      // If there's a belongs to relationship, add it to the INSERT statement
+      for (const relation of getRelationValues(model)) {
+        if (relation.description.type === RelationType.BelongsTo) {
+          values[relation.description.targetColumn] = relation.value as number;
+        }
+      }
+
+      return values;
+    });
 
     // Execute query
     const query = this.adapter.table(tableName).insert(values);
@@ -257,21 +217,52 @@ export class Manager {
       lastInsertedId + 1 - models.length,
       lastInsertedId,
     );
-    models.forEach((model, index) => {
-      const value = values[index];
+
+    // Assign values to the models
+    for (const [index, model] of models.entries()) {
+      // Get the models values that has been sent to the database
+      // and map column names from `name` to `propertyKey`.
+      const value = mapValueProperties(
+        model.constructor,
+        values[index],
+        "propertyKey",
+      );
 
       // Set the primary key
       value[primaryKeyInfo.propertyKey] = ids[index];
 
       // Populate empty properties with default value
-      Object.assign(
-        model,
-        mapValueProperties(model.constructor, value, "propertyKey"),
-      );
+      Object.assign(model, value);
+
+      // If there's a has many relationship, update the foreign key
+      for (const relation of getRelationValues(model)) {
+        if (relation.description.type === RelationType.HasMany) {
+          const ids = relation.value as number[];
+          const tableName = getTableName(relation.description.getModel());
+          const relationPkInfo = getPrimaryKeyInfo(
+            relation.description.getModel(),
+          );
+
+          await this.adapter
+            .table(tableName)
+            .update({
+              [relation.description.targetColumn]:
+                (model as any)[primaryKeyInfo.propertyKey],
+            })
+            .where(relationPkInfo.name, "in", ids)
+            .execute();
+
+          for (let i = 0; i < ids.length; i++) {
+            (model as any)[relation.description.propertyKey][i][
+              relation.description.targetColumn
+            ] = (model as any)[primaryKeyInfo.propertyKey];
+          }
+        }
+      }
 
       // Update the `isSaved` status and save the original values
       setSaved(model, true);
-    });
+    }
 
     return models;
   }
