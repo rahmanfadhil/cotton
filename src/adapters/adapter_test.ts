@@ -1,8 +1,75 @@
 import { testDB } from "../testutils.ts";
-import { assertEquals, assert } from "../../testdeps.ts";
+import {
+  assertThrowsAsync,
+  assertEquals,
+  assert,
+  spy,
+} from "../../testdeps.ts";
 import { QueryBuilder } from "../querybuilder.ts";
 import { formatDate } from "../utils/date.ts";
 import { Manager } from "../manager.ts";
+import { Adapter } from "./adapter.ts";
+
+Deno.test("Adapter.transaction() -> should commit transaction", async () => {
+  for (const dialect of ["sqlite", "postgres", "mysql"]) {
+    const query = spy();
+    const adapter: Adapter = Object.assign(
+      Object.create(Adapter.prototype),
+      { query, dialect },
+    );
+
+    await adapter.transaction(async () => {
+      await adapter.query("SELECT * FROM users;");
+    });
+
+    assertEquals(query.calls, [{
+      self: adapter,
+      args: [
+        dialect === "sqlite" ? "BEGIN TRANSACTION;" : "START TRANSACTION;",
+      ],
+    }, {
+      self: adapter,
+      args: ["SELECT * FROM users;"],
+    }, {
+      self: adapter,
+      args: ["COMMIT;"],
+    }]);
+  }
+});
+
+Deno.test("Adapter.transaction() -> should rollback transaction", async () => {
+  for (const dialect of ["sqlite", "postgres", "mysql"]) {
+    const query = spy();
+    const adapter: Adapter = Object.assign(
+      Object.create(Adapter.prototype),
+      { query, dialect },
+    );
+
+    await assertThrowsAsync(
+      async () => {
+        await adapter.transaction(async () => {
+          await adapter.query("SELECT * FROM users;");
+          throw new Error("My error!");
+        });
+      },
+      Error,
+      "My error!",
+    );
+
+    assertEquals(query.calls, [{
+      self: adapter,
+      args: [
+        dialect === "sqlite" ? "BEGIN TRANSACTION;" : "START TRANSACTION;",
+      ],
+    }, {
+      self: adapter,
+      args: ["SELECT * FROM users;"],
+    }, {
+      self: adapter,
+      args: ["ROLLBACK;"],
+    }]);
+  }
+});
 
 testDB(
   "Adapter: table() -> should contains actual query builder",

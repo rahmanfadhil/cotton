@@ -64,4 +64,22 @@ export abstract class Adapter {
   public getManager() {
     return new Manager(this);
   }
+
+  /**
+   * Start a database transaction.
+   */
+  async transaction(fn: () => Promise<void>): Promise<void> {
+    const query = this.dialect === "sqlite"
+      ? "BEGIN TRANSACTION;"
+      : "START TRANSACTION;";
+    await this.query(query);
+
+    try {
+      await fn();
+      await this.query("COMMIT;");
+    } catch (err) {
+      await this.query("ROLLBACK;");
+      throw err;
+    }
+  }
 }

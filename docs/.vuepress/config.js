@@ -12,6 +12,7 @@ module.exports = {
       "/guide/": [
         "connection",
         "query-builder",
+        "transactions",
         "model",
         "migrations",
         "schema",
