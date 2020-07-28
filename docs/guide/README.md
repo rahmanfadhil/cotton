@@ -30,4 +30,4 @@ You can learn more about Cotton through these links. Have fun! 😃
 - [Creating a connection](connection)
 - [Query builder](query-builder.md)
 - [Object-relational mapper](model.md)
-- [Database migrations](migration.md)
+- [Database migrations](migrations.md)
