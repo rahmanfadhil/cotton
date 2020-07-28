@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Transactions | Cotton</title>
+    <meta name="generator" content="VuePress 1.5.2">
+    
+    <meta name="description" content="SQL Database Toolkit for Deno">
+    <link rel="preload" href="/cotton/assets/css/0.styles.35ecbcaa.css" as="style"><link rel="preload" href="/cotton/assets/js/app.1990b0d2.js" as="script"><link rel="preload" href="/cotton/assets/js/2.740c52c7.js" as="script"><link rel="preload" href="/cotton/assets/js/12.aa99ab6c.js" as="script"><link rel="prefetch" href="/cotton/assets/js/10.f54d865f.js"><link rel="prefetch" href="/cotton/assets/js/11.16500673.js"><link rel="prefetch" href="/cotton/assets/js/3.676ec8f5.js"><link rel="prefetch" href="/cotton/assets/js/4.3cc0a610.js"><link rel="prefetch" href="/cotton/assets/js/5.a8079beb.js"><link rel="prefetch" href="/cotton/assets/js/6.078d51ed.js"><link rel="prefetch" href="/cotton/assets/js/7.2b35a34b.js"><link rel="prefetch" href="/cotton/assets/js/8.a416481d.js"><link rel="prefetch" href="/cotton/assets/js/9.78f56d2b.js">
+    <link rel="stylesheet" href="/cotton/assets/css/0.styles.35ecbcaa.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/cotton/" class="home-link router-link-active"><!----> <span class="site-name">Cotton</span></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <nav class="nav-links can-hide"><div class="nav-item"><a href="/cotton/" class="nav-link">
+  Home
+</a></div><div class="nav-item"><a href="/cotton/guide/" class="nav-link router-link-active">
+  Guides
+</a></div><div class="nav-item"><a href="https://github.com/rahmanfadhil/cotton" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  GitHub
+  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></div> <!----></nav></div></header> <div class="sidebar-mask"></div> <aside class="sidebar"><nav class="nav-links"><div class="nav-item"><a href="/cotton/" class="nav-link">
+  Home
+</a></div><div class="nav-item"><a href="/cotton/guide/" class="nav-link router-link-active">
+  Guides
+</a></div><div class="nav-item"><a href="https://github.com/rahmanfadhil/cotton" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  GitHub
+  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></div> <!----></nav>  <ul class="sidebar-links"><li><a href="/cotton/guide/connection.html" class="sidebar-link">Connection</a></li><li><a href="/cotton/guide/query-builder.html" class="sidebar-link">Query Builder</a></li><li><a href="/cotton/guide/transactions.html" aria-current="page" class="active sidebar-link">Transactions</a></li><li><a href="/cotton/guide/model.html" class="sidebar-link">Models</a></li><li><a href="/cotton/guide/migrations.html" class="sidebar-link">Migrations</a></li><li><a href="/cotton/guide/schema.html" class="sidebar-link">Schema</a></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h1 id="transactions"><a href="#transactions" class="header-anchor">#</a> Transactions</h1> <p>You can perform transactions directly from your connection instance.</p> <div class="language-ts extra-class"><pre class="language-ts"><code><span class="token keyword">const</span> db <span class="token operator">=</span> <span class="token keyword">await</span> <span class="token function">connect</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+  <span class="token keyword">type</span><span class="token operator">:</span> <span class="token string">&quot;sqlite&quot;</span><span class="token punctuation">,</span>
+  <span class="token comment">// other configs...</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">await</span> db<span class="token punctuation">.</span><span class="token function">transaction</span><span class="token punctuation">(</span><span class="token keyword">async</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+  <span class="token keyword">await</span> db<span class="token punctuation">.</span><span class="token function">table</span><span class="token punctuation">(</span><span class="token string">&quot;users&quot;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span><span class="token punctuation">{</span> email<span class="token operator">:</span> <span class="token string">&quot;a@b.com&quot;</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token comment">// other queries...</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre></div><p>If an error is thrown within the transaction callback, the transaction will automatically be rolled back. If the callback executes successfully, the transaction will automatically be committed. That way, you don't need to worry about manually rolling back or committing those transactions.</p></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="prev">
+      ←
+      <a href="/cotton/guide/query-builder.html" class="prev">
+        Query Builder
+      </a></span> <span class="next"><a href="/cotton/guide/model.html">
+        Models
+      </a>
+      →
+    </span></p></div> </main></div><div class="global-ui"></div></div>
+    <script src="/cotton/assets/js/app.1990b0d2.js" defer></script><script src="/cotton/assets/js/2.740c52c7.js" defer></script><script src="/cotton/assets/js/12.aa99ab6c.js" defer></script>
+  </body>
+</html>
