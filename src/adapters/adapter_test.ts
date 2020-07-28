@@ -1,4 +1,4 @@
-import { testDB } from "../testutils.ts";
+import { testDB, assertDateEquals } from "../testutils.ts";
 import {
   assertThrowsAsync,
   assertEquals,
@@ -117,15 +117,18 @@ testDB("Adapter: query() -> bind values", async (client) => {
     `SELECT id, first_name, last_name, age, created_at, is_active FROM users;`,
   );
 
+  console.log(result);
+
   assertEquals(Array.isArray(result), true);
   assertEquals(result.length, 1);
   assertEquals(result[0].id, 1);
   assertEquals(result[0].first_name, "John");
   assertEquals(result[0].last_name, "Doe");
   assertEquals(result[0].age, 16);
-  assertEquals(
-    result[0].created_at,
-    client.dialect === "sqlite" ? formatDate(date) : date,
-  );
+  if (client.dialect === "sqlite") {
+    assertEquals(result[0].created_at, formatDate(date));
+  } else {
+    assertDateEquals(result[0].created_at as Date, date);
+  }
   assertEquals(result[0].is_active, client.dialect === "postgres" ? true : 1);
 });

@@ -1,4 +1,4 @@
-import { testDB, User, Product } from "./testutils.ts";
+import { testDB, User, Product, assertDateEquals } from "./testutils.ts";
 import { ModelQuery } from "./modelquery.ts";
 import { assertEquals, assert, stub } from "../testdeps.ts";
 
@@ -116,7 +116,7 @@ testDB("ModelQuery.all() -> should return all records", async (client) => {
   assertEquals(users[0].lastName, data.last_name);
   assertEquals(users[0].age, data.age);
   assertEquals(users[0].password, data.password);
-  assertEquals(users[0].createdAt, data.created_at);
+  assertDateEquals(users[0].createdAt, data.created_at);
   assertEquals(users[0].isActive, data.is_active);
   assertEquals(users[0].products, undefined);
 });
@@ -258,7 +258,7 @@ testDB("ModelQuery.first() -> should get a single record", async (client) => {
   assertEquals(user.age, data.age);
   assertEquals(user.password, data.password);
   assertEquals(user.isActive, data.is_active);
-  assertEquals(user.createdAt, data.created_at);
+  assertDateEquals(user.createdAt, data.created_at);
 });
 
 testDB(

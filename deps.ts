@@ -9,6 +9,6 @@ export {
 } from "https://deno.land/x/sqlite@v2.2.1/mod.ts";
 
 // CLI
-export * as Colors from "https://deno.land/std@v0.61.0/fmt/colors.ts";
-export { parse as parseFlags } from "https://deno.land/std@v0.61.0/flags/mod.ts";
-export { join as joinPath } from "https://deno.land/std@v0.61.0/path/mod.ts";
+export * as Colors from "https://deno.land/std@v0.62.0/fmt/colors.ts";
+export { parse as parseFlags } from "https://deno.land/std@v0.62.0/flags/mod.ts";
+export { join as joinPath } from "https://deno.land/std@v0.62.0/path/mod.ts";

@@ -4,6 +4,8 @@ import { QueryBuilder, QueryDescription, QueryType } from "./querybuilder.ts";
 import { assertEquals } from "../testdeps.ts";
 import { QueryCompiler } from "./querycompiler.ts";
 import { Model, Primary, Column, BelongsTo, HasMany } from "./model.ts";
+import { Colors } from "../deps.ts";
+import { formatDate } from "./utils/date.ts";
 
 /**
  * Postgres connection options
@@ -210,6 +212,29 @@ export async function testDB(
       await db.disconnect();
     },
   });
+}
+
+/**
+ * Check if two dates are equal.
+ * 
+ * @param actual the actual date
+ * @param expected the expected date
+ */
+export function assertDateEquals(actual: Date, expected: Date) {
+  const result = actual.getFullYear() === expected.getFullYear() &&
+    actual.getMonth() === expected.getMonth() &&
+    actual.getDate() === expected.getDate() &&
+    actual.getHours() === expected.getHours() &&
+    actual.getMinutes() === expected.getMinutes() &&
+    actual.getSeconds() === expected.getSeconds();
+
+  if (!result) {
+    const expectedDate = Colors.green(formatDate(expected));
+    const actualDate = Colors.red(formatDate(actual));
+    throw new Error(
+      `Dates are not equal!\n\n  expected: ${expectedDate}\n  actual:   ${actualDate}\n`,
+    );
+  }
 }
 
 /**
