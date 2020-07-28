@@ -43,7 +43,7 @@ for (const user of users) {
 
 You can learn more about Cotton through these links. Have fun! 😃
 
-- [Creating a connection](connection)
-- [Query builder](query-builder.md)
-- [Object-relational mapper](model.md)
-- [Database migrations](migration.md)
+- [Creating a connection](docs/guide/connection.md)
+- [Query builder](docs/guide/query-builder.md)
+- [Object-relational mapper](docs/guide/model.md)
+- [Database migrations](docs/guide/migrations.md)
