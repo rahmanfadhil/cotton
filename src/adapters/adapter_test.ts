@@ -117,8 +117,6 @@ testDB("Adapter: query() -> bind values", async (client) => {
     `SELECT id, first_name, last_name, age, created_at, is_active FROM users;`,
   );
 
-  console.log(result);
-
   assertEquals(Array.isArray(result), true);
   assertEquals(result.length, 1);
   assertEquals(result[0].id, 1);

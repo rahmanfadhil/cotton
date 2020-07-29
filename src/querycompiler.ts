@@ -18,8 +18,7 @@ export class QueryCompiler {
   constructor(
     private description: QueryDescription,
     private dialect: DatabaseDialect,
-  ) {
-  }
+  ) {}
 
   /**
    * Generate executable SQL statement
@@ -194,14 +193,28 @@ export class QueryCompiler {
 
     const tableName = quote(this.description.tableName, this.dialect);
 
-    // Select table columns
-    if (this.description.columns.length > 0) {
+    if (this.description.counts.length >= 1) {
+      // Append COUNT statements.
+      const counts = this.description.counts
+        .map((column) => {
+          const name = this.getColumnName(column.column);
+          const count = column.distinct
+            ? `COUNT(DISTINCT(${name}))`
+            : `COUNT(${name})`;
+          return column.as
+            ? count + " AS " + quote(column.as, this.dialect)
+            : count;
+        })
+        .join(", ");
+      query.push(counts);
+    } else if (this.description.columns.length > 0) {
+      // Add all selected table columns.
       const columns = this.description.columns
         .map((column) => this.getColumnName(column))
         .join(", ");
-
-      query.push(`${columns}`);
+      query.push(columns);
     } else {
+      // If none of those above are defined, get all columns from the table.
       query.push(`${tableName}.*`);
     }
 

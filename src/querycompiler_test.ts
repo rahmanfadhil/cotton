@@ -166,6 +166,7 @@ Deno.test("QueryCompiler: select columns with alias must have two values", () =>
         returning: [],
         joins: [],
         tableName: "`users`",
+        counts: [],
       }, "" as any).compile();
     },
     Error,
@@ -185,6 +186,7 @@ Deno.test("QueryCompiler: select columns with alias must have two values", () =>
         returning: [],
         joins: [],
         tableName: "`users`",
+        counts: [],
       }, "" as any).compile();
     },
     Error,
@@ -201,6 +203,7 @@ Deno.test("QueryCompiler: select columns with alias must have two values", () =>
         returning: [],
         joins: [],
         tableName: "`users`",
+        counts: [],
       }, "" as any).compile();
     },
     Error,
@@ -314,6 +317,7 @@ Deno.test("QueryCompiler: BETWEEN must have two values", () => {
         returning: [],
         joins: [],
         tableName: "`users`",
+        counts: [],
       }, "" as any).compile();
     },
     Error,
@@ -335,6 +339,7 @@ Deno.test("QueryCompiler: BETWEEN must have two values", () => {
         returning: [],
         joins: [],
         tableName: "`users`",
+        counts: [],
       }, "" as any).compile();
     },
     Error,
@@ -356,6 +361,7 @@ Deno.test("QueryCompiler: BETWEEN must have two values", () => {
         returning: [],
         joins: [],
         tableName: "`users`",
+        counts: [],
       }, "" as any).compile();
     },
     Error,
@@ -472,6 +478,33 @@ testQueryCompiler("`where` and not", {
     text:
       'SELECT "users".* FROM "users" WHERE "users"."name" = $1 AND NOT "users"."email" = $2;',
     values: ["john", "a@b.com"],
+  },
+});
+
+testQueryCompiler("`count` should add COUNT statement", {
+  counts: [{
+    column: "name",
+    distinct: false,
+  }, {
+    column: "id",
+    distinct: true,
+    as: "count",
+  }],
+}, {
+  mysql: {
+    text:
+      "SELECT COUNT(`users`.`name`), COUNT(DISTINCT(`users`.`id`)) AS `count` FROM `users`;",
+    values: [],
+  },
+  sqlite: {
+    text:
+      "SELECT COUNT(`users`.`name`), COUNT(DISTINCT(`users`.`id`)) AS `count` FROM `users`;",
+    values: [],
+  },
+  postgres: {
+    text:
+      'SELECT COUNT("users"."name"), COUNT(DISTINCT("users"."id")) AS "count" FROM "users";',
+    values: [],
   },
 });
 
@@ -598,6 +631,7 @@ Deno.test("QueryCompiler: cannot perform `delete` without any constraints", () =
         returning: [],
         joins: [],
         tableName: "`users`",
+        counts: [],
       }, "" as any).compile();
     },
     Error,

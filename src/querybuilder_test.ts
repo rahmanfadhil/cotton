@@ -154,43 +154,56 @@ testQueryBuilder(
   },
 );
 
+// Count
+
+testQueryBuilder(
+  "`count` should count records with given conditions",
+  (query) => query.count("name"),
+  { counts: [{ column: "name", distinct: false }] },
+);
+
+testQueryBuilder(
+  "`count` should count with alias",
+  (query) => query.count("name", { as: "count" }),
+  { counts: [{ column: "name", as: "count", distinct: false }] },
+);
+
+testQueryBuilder(
+  "`count` should count with distinct",
+  (query) => query.count("name", { distinct: true }),
+  { counts: [{ column: "name", distinct: true }] },
+);
+
+testQueryBuilder(
+  "`count` should count with distinct and alias",
+  (query) => query.count("name", { as: "count", distinct: true }),
+  { counts: [{ column: "name", as: "count", distinct: true }] },
+);
+
 // Pagination
 
 testQueryBuilder(
   "`limit` should set the record limit",
   (query) => query.limit(10),
-  {
-    wheres: [],
-    limit: 10,
-  },
+  { limit: 10 },
 );
 
 testQueryBuilder(
   "`offset` should set the number of records to skip",
   (query) => query.offset(5),
-  {
-    wheres: [],
-    offset: 5,
-  },
+  { offset: 5 },
 );
 
 testQueryBuilder(
   "`limit` and `offset`",
   (query) => query.limit(7).offset(14),
-  {
-    wheres: [],
-    limit: 7,
-    offset: 14,
-  },
+  { limit: 7, offset: 14 },
 );
 
 testQueryBuilder(
   "`first` should be the shortcut for limit(1)",
   (query) => query.first(),
-  {
-    wheres: [],
-    limit: 1,
-  },
+  { limit: 1 },
 );
 
 // Select
@@ -198,37 +211,25 @@ testQueryBuilder(
 testQueryBuilder(
   "`select` should add the list of all selected columns",
   (query) => query.select("email"),
-  {
-    wheres: [],
-    columns: ["email"],
-  },
+  { columns: ["email"] },
 );
 
 testQueryBuilder(
   "`select` multiple columns",
   (query) => query.select("email").select("age").select("is_active"),
-  {
-    wheres: [],
-    columns: ["email", "age", "is_active"],
-  },
+  { columns: ["email", "age", "is_active"] },
 );
 
 testQueryBuilder(
   "`select` multiple columns with a single method",
   (query) => query.select("email", "age", "is_active"),
-  {
-    wheres: [],
-    columns: ["email", "age", "is_active"],
-  },
+  { columns: ["email", "age", "is_active"] },
 );
 
 testQueryBuilder(
   "`select` multiple columns with aliases",
   (query) => query.select(["email", "my_email"], ["age", "my_age"]),
-  {
-    wheres: [],
-    columns: [["email", "my_email"], ["age", "my_age"]],
-  },
+  { columns: [["email", "my_email"], ["age", "my_age"]] },
 );
 
 // Joins
@@ -290,26 +291,19 @@ testQueryBuilder(
 testQueryBuilder(
   "`order` should order the result",
   (query) => query.order("age"),
-  {
-    wheres: [],
-    orders: [{ column: "age", order: "ASC" }],
-  },
+  { orders: [{ column: "age", order: "ASC" }] },
 );
 
 testQueryBuilder(
   "`order` should order the result with custom direction",
   (query) => query.order("age", "DESC"),
-  {
-    wheres: [],
-    orders: [{ column: "age", order: "DESC" }],
-  },
+  { orders: [{ column: "age", order: "DESC" }] },
 );
 
 testQueryBuilder(
   "multiple `order`",
   (query) => query.order("age", "DESC").order("created_at"),
   {
-    wheres: [],
     orders: [{
       column: "age",
       order: "DESC",

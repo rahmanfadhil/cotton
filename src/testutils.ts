@@ -262,6 +262,7 @@ export function testQueryBuilder(
       orders: [],
       returning: [],
       joins: [],
+      counts: [],
     }, description);
     const actual = (query as any).description;
     assertEquals(actual, expected);
@@ -303,6 +304,7 @@ export function testQueryCompiler(
           orders: [],
           returning: [],
           joins: [],
+          counts: [],
         }, description),
         dialect as any,
       );

@@ -72,6 +72,12 @@ interface JoinBinding {
   columnB: string;
 }
 
+export interface CountBinding {
+  column: string;
+  as?: string;
+  distinct: boolean;
+}
+
 /**
  * Query values for INSERT and UPDATE
  */
@@ -112,6 +118,9 @@ export interface QueryDescription {
 
   /** Tables to be joined */
   joins: JoinBinding[];
+
+  /** Count records with given conditions */
+  counts: CountBinding[];
 }
 
 /**
@@ -138,6 +147,7 @@ export class QueryBuilder {
       orders: [],
       returning: [],
       joins: [],
+      counts: [],
     };
   }
 
@@ -331,6 +341,23 @@ export class QueryBuilder {
     // Set the query values
     this.description.values = data;
 
+    return this;
+  }
+
+  /**
+   * Count records with given conditions
+   * 
+   * @param column the column you want to count
+   * @param options count with options
+   */
+  public count(
+    column: string,
+    options?: { as?: string; distinct?: boolean },
+  ): QueryBuilder {
+    this.description.counts.push(Object.assign({}, {
+      column,
+      distinct: false,
+    }, options));
     return this;
   }
 
