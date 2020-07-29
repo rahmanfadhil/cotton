@@ -172,6 +172,18 @@ export class ModelQuery<T> {
   // --------------------------------------------------------------------------------
 
   /**
+   * Count models with given conditions.
+   */
+  public async count(): Promise<number> {
+    const primaryKeyInfo = getPrimaryKeyInfo(this.modelClass);
+    const result = await this.builder.count(primaryKeyInfo.name, {
+      as: "count",
+      distinct: true,
+    }).execute();
+    return Number(result[0].count) as number || 0;
+  }
+
+  /**
    * Find a single record that match given conditions. If multiple
    * found, it will return the first one. 
    */

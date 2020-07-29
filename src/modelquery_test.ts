@@ -1,6 +1,7 @@
 import { testDB, User, Product, assertDateEquals } from "./testutils.ts";
 import { ModelQuery } from "./modelquery.ts";
 import { assertEquals, assert, stub } from "../testdeps.ts";
+import { Adapter } from "./adapters/adapter.ts";
 
 Deno.test("ModelQuery.where() -> should call `where` to query builder", () => {
   const query1 = new ModelQuery(User, {} as any);
@@ -94,69 +95,90 @@ Deno.test("ModelQuery.offset() -> should call `offset` to query builder", () => 
   assertEquals(action1.calls[0].args, [5]);
 });
 
-testDB("ModelQuery.all() -> should return all records", async (client) => {
-  assertEquals(await new ModelQuery(User, client).all(), []);
-
-  const data = {
+async function populateDatabase(client: Adapter) {
+  const users = [{
+    id: 1,
+    email: "a@b.com",
     first_name: "John",
     last_name: "Doe",
     age: 16,
     created_at: new Date(),
     is_active: false,
     password: "12345",
-  };
-  await client.table("users").insert(data).execute();
-
-  const users = await new ModelQuery(User, client).all();
-  assert(Array.isArray(users));
-  assertEquals(users.length, 1);
-  assert(users[0] instanceof User);
-  assertEquals(users[0].id, 1);
-  assertEquals(users[0].firstName, data.first_name);
-  assertEquals(users[0].lastName, data.last_name);
-  assertEquals(users[0].age, data.age);
-  assertEquals(users[0].password, data.password);
-  assertDateEquals(users[0].createdAt, data.created_at);
-  assertEquals(users[0].isActive, data.is_active);
-  assertEquals(users[0].products, undefined);
-});
-
-testDB("ModelQuery.all() -> should query with constraints", async (client) => {
-  const data = [{
-    id: 1,
-    first_name: "John",
-    last_name: "Doe",
-    age: 16,
-    created_at: new Date(),
-    is_active: false,
   }, {
     id: 2,
+    email: "a@b.com",
     first_name: "Jane",
     last_name: "Doe",
     age: 17,
     created_at: new Date(),
     is_active: true,
+    password: "12345",
   }, {
     id: 3,
+    email: "a@b.com",
     first_name: "Tom",
     last_name: "Cruise",
     age: 18,
     created_at: new Date(),
     is_active: true,
+    password: "12345",
   }];
-  await client.table("users").insert(data).execute();
+  const products = [
+    { product_id: 1, title: "Spoon", user_id: 1 },
+    { product_id: 2, title: "Table", user_id: 1 },
+  ];
+
+  await client.table("users").insert(users).execute();
+  await client.table("product").insert(products).execute();
+
+  return { users, products };
+}
+
+testDB("ModelQuery.count() -> should count models", async (client) => {
+  assertEquals(await new ModelQuery(User, client).count(), 0);
+  await populateDatabase(client);
+  assertEquals(await new ModelQuery(User, client).count(), 3);
+  assertEquals(
+    await new ModelQuery(User, client).where("isActive", true).count(),
+    2,
+  );
+});
+
+testDB("ModelQuery.all() -> should return all records", async (client) => {
+  assertEquals(await new ModelQuery(User, client).all(), []);
+
+  const data = await populateDatabase(client);
+
+  const users = await new ModelQuery(User, client).all();
+  assert(Array.isArray(users));
+  assertEquals(users.length, 3);
+
+  for (let i = 0; i < users.length; i++) {
+    const user = data.users[i];
+    assert(users[i] instanceof User);
+    assertEquals(users[i].id, i + 1);
+    assertEquals(users[i].email, user.email);
+    assertEquals(users[i].firstName, user.first_name);
+    assertEquals(users[i].lastName, user.last_name);
+    assertEquals(users[i].age, user.age);
+    assertEquals(users[i].password, user.password);
+    assertDateEquals(users[i].createdAt, user.created_at);
+    assertEquals(users[i].isActive, user.is_active);
+    assertEquals(users[i].products, undefined);
+  }
+});
+
+testDB("ModelQuery.all() -> should query with constraints", async (client) => {
+  await populateDatabase(client);
 
   let users = await new ModelQuery(User, client).where("lastName", "Doe").all();
   assertEquals(users.length, 2);
-  assert(users[0] instanceof User);
-  assert(users[1] instanceof User);
   assertEquals(users[0].id, 1);
   assertEquals(users[1].id, 2);
 
   users = await new ModelQuery(User, client).where("isActive", true).all();
   assertEquals(users.length, 2);
-  assert(users[0] instanceof User);
-  assert(users[1] instanceof User);
   assertEquals(users[0].id, 2);
   assertEquals(users[1].id, 3);
 
@@ -165,128 +187,66 @@ testDB("ModelQuery.all() -> should query with constraints", async (client) => {
     .where("isActive", true)
     .all();
   assertEquals(users.length, 1);
-  assert(users[0] instanceof User);
   assertEquals(users[0].id, 2);
 });
 
 testDB(
   "ModelQuery.all() -> should have no relation properties by default",
   async (client) => {
-    await client.table("users").insert({
-      first_name: "John",
-      last_name: "Doe",
-      age: 16,
-      created_at: new Date(),
-      is_active: false,
-    }).execute();
+    await populateDatabase(client);
 
-    await client.table("product").insert({
-      title: "Spoon",
-      user_id: 1,
-    }).execute();
+    for (const user of await new ModelQuery(User, client).all()) {
+      assertEquals(user.products, undefined);
+    }
 
-    const users = await new ModelQuery(User, client).all();
-    assertEquals(users[0].products, undefined);
-
-    const products = await new ModelQuery(Product, client).all();
-    assertEquals(products[0].user, undefined);
+    for (const products of await new ModelQuery(Product, client).all()) {
+      assertEquals(products.user, undefined);
+    }
   },
 );
 
 testDB("ModelQuery.all() -> should fetch the relations", async (client) => {
-  await client.table("users").insert([{
-    id: 1,
-    first_name: "John",
-    last_name: "Doe",
-    age: 16,
-    created_at: new Date(),
-    is_active: false,
-  }, {
-    id: 2,
-    first_name: "Jane",
-    last_name: "Doe",
-    age: 17,
-    created_at: new Date(),
-    is_active: false,
-  }]).execute();
-
-  await client.table("product").insert([
-    { product_id: 1, title: "Spoon", user_id: 1 },
-    { product_id: 2, title: "Table", user_id: 1 },
-  ]).execute();
+  await populateDatabase(client);
 
   const users = await new ModelQuery(User, client).include("products").all();
-  assertEquals(users.length, 2);
+  for (const user of users) {
+    assert(Array.isArray(user.products));
+  }
 
-  assert(Array.isArray(users[0].products));
   assertEquals(users[0].products.length, 2);
   assert(users[0].products[0] instanceof Product);
   assertEquals(users[0].products[0].title, "Spoon");
   assert(users[0].products[1] instanceof Product);
   assertEquals(users[0].products[1].title, "Table");
 
-  assertEquals(users[1].products, []);
-
   const products = await new ModelQuery(Product, client).include("user").all();
-  assertEquals(products.length, 2);
-  for (let i = 0; i < products.length; i++) {
-    assert(products[i].user instanceof User);
-    assertEquals(products[i].user.id, 1);
-    assertEquals(products[i].user.firstName, "John");
+  for (const product of products) {
+    assert(product.user instanceof User);
+    assertEquals(product.user.id, 1);
+    assertEquals(product.user.firstName, "John");
   }
 });
 
 testDB("ModelQuery.first() -> should get a single record", async (client) => {
-  let user = await new ModelQuery(User, client).first();
-  assertEquals(user, null);
+  assertEquals(await new ModelQuery(User, client).first(), null);
 
-  const data = {
-    first_name: "John",
-    last_name: "Doe",
-    age: 16,
-    created_at: new Date(),
-    is_active: false,
-    password: "12345",
-  };
-  await client.table("users").insert(data).execute();
+  const { users } = await populateDatabase(client);
 
-  user = await new ModelQuery(User, client).first();
+  const user = await new ModelQuery(User, client).first();
   assert(user instanceof User);
   assertEquals(user.id, 1);
-  assertEquals(user.firstName, data.first_name);
-  assertEquals(user.lastName, data.last_name);
-  assertEquals(user.age, data.age);
-  assertEquals(user.password, data.password);
-  assertEquals(user.isActive, data.is_active);
-  assertDateEquals(user.createdAt, data.created_at);
+  assertEquals(user.firstName, users[0].first_name);
+  assertEquals(user.lastName, users[0].last_name);
+  assertEquals(user.age, users[0].age);
+  assertEquals(user.password, users[0].password);
+  assertEquals(user.isActive, users[0].is_active);
+  assertDateEquals(user.createdAt, users[0].created_at);
 });
 
 testDB(
   "ModelQuery.first() -> should query with constraints",
   async (client) => {
-    const data = [{
-      id: 1,
-      first_name: "John",
-      last_name: "Doe",
-      age: 16,
-      created_at: new Date(),
-      is_active: false,
-    }, {
-      id: 2,
-      first_name: "Jane",
-      last_name: "Doe",
-      age: 17,
-      created_at: new Date(),
-      is_active: true,
-    }, {
-      id: 3,
-      first_name: "Tom",
-      last_name: "Cruise",
-      age: 18,
-      created_at: new Date(),
-      is_active: true,
-    }];
-    await client.table("users").insert(data).execute();
+    await populateDatabase(client);
 
     let user = await new ModelQuery(User, client)
       .where("lastName", "Doe")
@@ -305,24 +265,18 @@ testDB(
       .first();
     assert(user instanceof User);
     assertEquals(user.id, 3);
+
+    user = await new ModelQuery(User, client)
+      .where("id", 5)
+      .first();
+    assertEquals(user, null);
   },
 );
 
 testDB(
   "ModelQuery.first() -> should have no relation properties by default",
   async (client) => {
-    await client.table("users").insert({
-      first_name: "John",
-      last_name: "Doe",
-      age: 16,
-      created_at: new Date(),
-      is_active: false,
-    }).execute();
-
-    await client.table("product").insert({
-      title: "Spoon",
-      user_id: 1,
-    }).execute();
+    await populateDatabase(client);
 
     const user = await new ModelQuery(User, client).first();
     assertEquals(user!.products, undefined);
@@ -333,28 +287,9 @@ testDB(
 );
 
 testDB("ModelQuery.first() -> should fetch the relations", async (client) => {
-  await client.table("users").insert([{
-    id: 1,
-    first_name: "John",
-    last_name: "Doe",
-    age: 16,
-    created_at: new Date(),
-    is_active: false,
-  }, {
-    id: 2,
-    first_name: "Jane",
-    last_name: "Doe",
-    age: 17,
-    created_at: new Date(),
-    is_active: false,
-  }]).execute();
+  await populateDatabase(client);
 
-  await client.table("product").insert([
-    { product_id: 1, title: "Spoon", user_id: 1 },
-    { product_id: 2, title: "Table", user_id: 1 },
-  ]).execute();
-
-  const user = await new ModelQuery(User, client).include("products").first();
+  let user = await new ModelQuery(User, client).include("products").first();
   assert(Array.isArray(user!.products));
   assertEquals(user!.products.length, 2);
   assert(user!.products[0] instanceof Product);
@@ -362,16 +297,12 @@ testDB("ModelQuery.first() -> should fetch the relations", async (client) => {
   assert(user!.products[1] instanceof Product);
   assertEquals(user!.products[1].title, "Table");
 
-  const user1 = await new ModelQuery(User, client)
-    .where("firstName", "John")
+  user = await new ModelQuery(User, client)
+    .where("id", 2)
     .include("products")
     .first();
-  assert(Array.isArray(user1!.products));
-  assertEquals(user1!.products.length, 2);
-  assert(user1!.products[0] instanceof Product);
-  assertEquals(user1!.products[0].title, "Spoon");
-  assert(user1!.products[1] instanceof Product);
-  assertEquals(user1!.products[1].title, "Table");
+  assert(Array.isArray(user!.products));
+  assertEquals(user!.products.length, 0);
 
   const product = await new ModelQuery(Product, client).include("user").first();
   assert(product!.user instanceof User);
