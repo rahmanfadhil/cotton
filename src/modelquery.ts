@@ -13,6 +13,7 @@ import {
 } from "./utils/models.ts";
 import { RelationType } from "./model.ts";
 import { quote } from "./utils/dialect.ts";
+import { DeepPartial } from "./manager.ts";
 
 /**
  * Perform query to a model.
@@ -181,6 +182,22 @@ export class ModelQuery<T> {
       distinct: true,
     }).execute();
     return Number(result[0].count) as number || 0;
+  }
+
+  /**
+   * Update models with given conditions.
+   * 
+   * @param data the new data you want to update
+   */
+  public async update(data: DeepPartial<T>): Promise<void> {
+    await this.builder.update(data as any).execute();
+  }
+
+  /**
+   * Delete models with given conditions.
+   */
+  public async delete(): Promise<void> {
+    await this.builder.delete().execute();
   }
 
   /**

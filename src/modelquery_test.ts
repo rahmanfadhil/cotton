@@ -145,6 +145,32 @@ testDB("ModelQuery.count() -> should count models", async (client) => {
   );
 });
 
+testDB("ModelQuery.update() -> should update models", async (client) => {
+  await populateDatabase(client);
+  await new ModelQuery(User, client).where("isActive", true).update({
+    email: "b@c.com",
+    password: "secret",
+  });
+
+  const users = await new ModelQuery(User, client)
+    .where("isActive", true)
+    .all();
+  for (const user of users) {
+    assertEquals(user.email, "b@c.com");
+    assertEquals(user.password, "secret");
+  }
+});
+
+testDB("ModelQuery.delete() -> should delete models", async (client) => {
+  await populateDatabase(client);
+  await new ModelQuery(User, client).where("isActive", true).delete();
+
+  const users = await new ModelQuery(User, client)
+    .where("isActive", true)
+    .all();
+  assertEquals(users.length, 0);
+});
+
 testDB("ModelQuery.all() -> should return all records", async (client) => {
   assertEquals(await new ModelQuery(User, client).all(), []);
 
