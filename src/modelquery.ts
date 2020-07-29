@@ -10,6 +10,7 @@ import {
   mapSingleQueryResult,
   createModel,
   findColumn,
+  mapValueProperties,
 } from "./utils/models.ts";
 import { RelationType } from "./model.ts";
 import { quote } from "./utils/dialect.ts";
@@ -190,7 +191,8 @@ export class ModelQuery<T> {
    * @param data the new data you want to update
    */
   public async update(data: DeepPartial<T>): Promise<void> {
-    await this.builder.update(data as any).execute();
+    const values = mapValueProperties(this.modelClass, data as any, "name");
+    await this.builder.update(values).execute();
   }
 
   /**

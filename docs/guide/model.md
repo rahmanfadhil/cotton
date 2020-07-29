@@ -83,14 +83,32 @@ user.createdAt = new Date();
 await manager.save(user);
 ```
 
-Alternatively, you can create a new item by using `insert`.
+To update an existing model, you can perform `save` again. Cotton is smart enough to decide whether the model needs to be inserted or updated.
 
 ```ts
-const user = await manager.insert(User, {
-  email: "a@b.com",
-  age: 16,
-  createdAt: new Date(),
-});
+user.email = "b@c.com";
+await manager.save(user);
+```
+
+You can also perform insert and update multiple models using `save` by passing an array as the argument.
+
+```ts
+const user1 = new User();
+user1.email = "a@b.com";
+await manager.save(user1);
+user1.email = "b@c.com";
+
+const user2 = new User();
+user2.email = "a@b.com";
+
+const post1 = new Post();
+post1.title = "Spoon";
+
+await manager.save([
+  user1, // Since it's already saved, it will perform update.
+  user2, // This record will inserted.
+  post1, // You can also save a totally different model at once!
+]);
 ```
 
 ### Querying models
@@ -117,6 +135,30 @@ To fetch a single record, you can use `first` instead of `all`.
 const user = await manager.query(User).where("email", "a@b.com").first();
 
 console.log(user); // User { email: 'a@b.com', age: 16, ... }
+```
+
+## Counting models
+
+You can count how many models match given conditions using `count` method.
+
+```ts
+const count = await manager.query(User).where("isActive", true).count();
+```
+
+## Updating models
+
+To update multiple models at once, you can use the `update` method and pass the data. This will not return the updated models, use `save` instead.
+
+```ts
+await manager.query(User).where("isActive", true).update({ isActive: false });
+```
+
+## Deleting models
+
+To delete models that match given conditions, you can end your model query with `delete` method.
+
+```ts
+await manager.delete(User).where("isActive", false).delete();
 ```
 
 ### Relations

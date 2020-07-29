@@ -149,7 +149,8 @@ testDB("ModelQuery.update() -> should update models", async (client) => {
   await populateDatabase(client);
   await new ModelQuery(User, client).where("isActive", true).update({
     email: "b@c.com",
-    password: "secret",
+    firstName: "Kevin",
+    lastName: "Armstrong",
   });
 
   const users = await new ModelQuery(User, client)
@@ -157,7 +158,8 @@ testDB("ModelQuery.update() -> should update models", async (client) => {
     .all();
   for (const user of users) {
     assertEquals(user.email, "b@c.com");
-    assertEquals(user.password, "secret");
+    assertEquals(user.firstName, "Kevin");
+    assertEquals(user.lastName, "Armstrong");
   }
 });
 
