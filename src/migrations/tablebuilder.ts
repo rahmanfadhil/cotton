@@ -201,7 +201,7 @@ export class TableBuilder {
    *
    * @param name the column name
    */
-  public foreignId(name: string, tableName: string, options: {
+  public foreignId(name: string, tableName: string, options?: {
     constraint?: string;
     onDelete?: ForeignActions;
     onUpdate?: ForeignActions;

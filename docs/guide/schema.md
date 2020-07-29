@@ -102,20 +102,20 @@ if (await schema.hasTable("users", "name")) {
 
 These are the available column types you can use to build your tables.
 
-| Syntax                   | Description                                                                          |
-| ------------------------ | ------------------------------------------------------------------------------------ |
-| `id()`                   | Shortcut for `bigIncrements('id')`.                                                  |
-| `increments('id')`       | Auto incremental column (`SERIAL` in PostgreSQL).                                    |
-| `bigIncrements('id')`    | Big auto incremental column.                                                         |
-| `smallIncrements('id')`  | Small auto incremental column.                                                       |
-| `varchar('name', 100)`   | VARCHAR (text) column with a length (default `255`).                                 |
-| `text('content')`        | A large TEXT column (`LONGTEXT` in MySQL).                                           |
-| `boolean('is_active')`   | A boolean compatible column. Tiny int in MySQL & SQLite and `BOOLEAN` in PostgreSQL. |
-| `integer('votes')`       | Basic INTEGER (number) column.                                                       |
-| `bigInteger('price')`    | BIGINT equivalent column.                                                            |
-| `smallInteger('votes')`  | SMALLINT equivalent column.                                                          |
-| `datetime('created_at')` | Date and time column (`TIMESTAMP` in PostgreSQL).                                    |
-| `date('created_at')`     | DATE equvalient column.                                                              |
-| `timestamps()`           | Creates two `datetime` columns called `created_at` and `updated_at`.                 |
-| `custom('age INTEGER')`  | Add column by yoursel using SQL query.                                               |
-| `foreignId('user_id')`   | Add a foreign key to other table's primary key.                                      |
+| Syntax                          | Description                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------ |
+| `id()`                          | Shortcut for `bigIncrements('id')`.                                                  |
+| `increments('id')`              | Auto incremental column (`SERIAL` in PostgreSQL).                                    |
+| `bigIncrements('id')`           | Big auto incremental column.                                                         |
+| `smallIncrements('id')`         | Small auto incremental column.                                                       |
+| `varchar('name', 100)`          | VARCHAR (text) column with a length (default `255`).                                 |
+| `text('content')`               | A large TEXT column (`LONGTEXT` in MySQL).                                           |
+| `boolean('is_active')`          | A boolean compatible column. Tiny int in MySQL & SQLite and `BOOLEAN` in PostgreSQL. |
+| `integer('votes')`              | Basic INTEGER (number) column.                                                       |
+| `bigInteger('price')`           | BIGINT equivalent column.                                                            |
+| `smallInteger('votes')`         | SMALLINT equivalent column.                                                          |
+| `datetime('created_at')`        | Date and time column (`TIMESTAMP` in PostgreSQL).                                    |
+| `date('created_at')`            | DATE equvalient column.                                                              |
+| `timestamps()`                  | Creates two `datetime` columns called `created_at` and `updated_at`.                 |
+| `custom('age INTEGER')`         | Add column by yoursel using SQL query.                                               |
+| `foreignId('user_id', 'users')` | Add a foreign key to other table's primary key.                                      |
