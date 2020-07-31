@@ -6,13 +6,11 @@ import {
   getValues,
   setSaved,
   mapValueProperties,
-  createModels,
-  createModel,
   getRelationValues,
 } from "./utils/models.ts";
 import { Adapter } from "./adapters/adapter.ts";
 import { range } from "./utils/number.ts";
-import { RelationType, Model } from "./model.ts";
+import { RelationType } from "./model.ts";
 import { ModelQuery } from "./modelquery.ts";
 
 /**
@@ -80,21 +78,19 @@ export class Manager {
    * @param model the model you want to save
    */
   public async save<T extends Object>(model: T | T[]): Promise<T | T[]> {
+    // If an Array of models is passed, perform INSERT in bulk.
+    // Otherwise, check if the model is already saved to the
+    // database or not. If it is, perform update instead of
     if (Array.isArray(model)) {
-      const groupedModels = model.reduce((prev, next, index) => {
-        const previousModels = prev.get(next.constructor);
-        const data = { model: next, index, isSaved: isSaved(next) };
-        prev.set(
-          next.constructor,
-          previousModels ? previousModels.concat(data) : [data],
-        );
-        return prev;
-      }, new Map<Function, { model: T; index: number; isSaved: boolean }[]>());
-
+      // We wrap everything in transaction, this will undo every
+      // changes in the database if one of the queries fail.
       await this.adapter.transaction(async () => {
-        for (const [key, value] of groupedModels) {
+        // We need to group the models by it's constructor first
+        // in order to perform bulk insert.
+        for (const [key, value] of this.groupModels(model)) {
           const insert: T[] = [];
 
+          // If one of the models is already saved, perform UPDATE.
           for (const data of value) {
             !data.isSaved
               ? insert.push(data.model)
@@ -104,41 +100,93 @@ export class Manager {
           await this.bulkInsert(key, insert);
         }
       });
-
-      return model;
-    }
-
-    // If the record is saved, we assume that the user want to update the record.
-    // Otherwise, create a new record to the database.
-    if (isSaved(model)) {
-      await this.update(model);
     } else {
-      await this.bulkInsert(model.constructor, [model]);
+      // If the record is saved, we assume that the user want to update the record.
+      // Otherwise, create a new record to the database.
+      isSaved(model)
+        ? await this.update(model)
+        : await this.bulkInsert(model.constructor, [model]);
     }
 
     return model;
   }
 
   /**
+   * Remove given model instance from the database.
+   * 
+   * @param model the model you want to remove.
+   */
+  public async remove<T extends Object>(model: T): Promise<T>;
+
+  /**
+   * Remove given model instaces from the database.
+   * 
+   * @param model the model you want to remove.
+   */
+  public async remove<T extends Object>(model: T[]): Promise<T[]>;
+
+  /**
    * Remove given model from the database.
    * 
    * @param model the model you want to remove.
    */
-  public async remove<T extends Object>(model: T): Promise<T> {
-    const tableName = getTableName(model.constructor);
-    const primaryKeyInfo = getPrimaryKeyInfo(model.constructor);
+  public async remove<T extends Object>(model: T | T[]): Promise<T | T[]> {
+    if (Array.isArray(model)) {
+      // Just like save, wrap everything in transaction. This will undo
+      // every changes in the database if one of the queries fail.
+      await this.adapter.transaction(async () => {
+        for (const [key, value] of this.groupModels(model).entries()) {
+          const tableName = getTableName(key);
+          const primaryKeyInfo = getPrimaryKeyInfo(key);
 
-    // Only remove model if it's already saved
-    if (isSaved(model)) {
-      const id = (model as any)[primaryKeyInfo.propertyKey];
-      await this.adapter
-        .table(tableName)
-        .where(primaryKeyInfo.name, id)
-        .delete()
-        .execute();
+          // Holds the primary keys of the models to delete.
+          const ids: number[] = [];
 
-      // Remove the primary key
-      delete (model as any)[primaryKeyInfo.propertyKey];
+          // Holds the model instances to clear it's original values.
+          const models: T[] = [];
+
+          // Only delete saved models.
+          for (const item of value) {
+            if (item.isSaved) {
+              ids.push((item.model as any)[primaryKeyInfo.propertyKey]);
+              models.push(item.model);
+            }
+          }
+
+          // Perform bulk delete.
+          await this.adapter
+            .table(tableName)
+            .where(primaryKeyInfo.name, "in", ids)
+            .delete()
+            .execute();
+
+          // Set the `isSaved` value to be false on each models
+          // and remove their original values.
+          for (const item of models) {
+            delete (item as any)[primaryKeyInfo.propertyKey];
+            setSaved(item, false);
+          }
+        }
+      });
+    } else {
+      const tableName = getTableName(model.constructor);
+      const primaryKeyInfo = getPrimaryKeyInfo(model.constructor);
+
+      // Only remove model if it's already saved
+      if (isSaved(model)) {
+        const id = (model as any)[primaryKeyInfo.propertyKey];
+        await this.adapter
+          .table(tableName)
+          .where(primaryKeyInfo.name, id)
+          .delete()
+          .execute();
+
+        // Remove the primary key
+        delete (model as any)[primaryKeyInfo.propertyKey];
+
+        // Set the `isSaved` value to be false and remove the original values
+        setSaved(model, false);
+      }
     }
 
     return model;
@@ -169,6 +217,21 @@ export class Manager {
     }
 
     return model;
+  }
+
+  /**
+   * Group models by its constructor.
+   */
+  private groupModels<T extends Object>(models: T[]) {
+    return models.reduce((prev, next, index) => {
+      const previousModels = prev.get(next.constructor);
+      const data = { model: next, index, isSaved: isSaved(next) };
+      prev.set(
+        next.constructor,
+        previousModels ? previousModels.concat(data) : [data],
+      );
+      return prev;
+    }, new Map<Function, { model: T; index: number; isSaved: boolean }[]>());
   }
 
   /**

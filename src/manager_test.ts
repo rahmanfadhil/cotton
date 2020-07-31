@@ -55,7 +55,7 @@ testDB(
 );
 
 testDB(
-  "Manager.save() -> throw an error if the object is not a validmodel",
+  "Manager.save() -> throw an error if the object is not a valid model",
   async (client) => {
     const manager = new Manager(client);
     class Article {}
@@ -202,20 +202,44 @@ testDB("Manager.save() -> should save multiple models", async (client) => {
 testDB(
   "Manager.remove() -> should remove a model from the database",
   async (client) => {
-    await client.table("users").insert({
-      email: "a@b.com",
-      first_name: "John",
-      last_name: "Doe",
-      age: 16,
-      created_at: new Date(),
-      is_active: false,
-    }).execute();
+    await client.table("product").insert({ title: "Spoon" }).execute();
 
     const manager = new Manager(client);
-    const user = await manager.query(User).first();
-    await manager.remove(user!);
-    assertEquals(user!.id, undefined);
+    const product = await manager.query(Product).first();
+    assertEquals(await manager.remove(product!), product);
+    assertEquals(product!.productId, undefined);
+    assertEquals(isSaved(product!), false);
+    assertEquals(await manager.query(Product).first(), null);
+  },
+);
 
-    assertEquals(await manager.query(User).first(), null);
+testDB(
+  "Manager.remove() -> should remove multiple models from the database",
+  async (client) => {
+    await client.table("product").insert([
+      { title: "Spoon" },
+      { title: "Table" },
+      { title: "Fork" },
+    ]).execute();
+    await client.table("users").insert([
+      { email: "a@b.com" },
+      { email: "b@c.com" },
+      { email: "c@d.com" },
+    ]).execute();
+
+    const manager = new Manager(client);
+    const users = await manager.query(User).all();
+    const products = await manager.query(Product).all();
+    const removes = [...users, ...products];
+
+    assertEquals(await manager.remove(removes), removes);
+
+    for (const item of products) {
+      assertEquals(item instanceof User ? item.id : item.productId, undefined);
+      assert(!isSaved(item));
+    }
+
+    assertEquals(await manager.query(User).all(), []);
+    assertEquals(await manager.query(Product).all(), []);
   },
 );
