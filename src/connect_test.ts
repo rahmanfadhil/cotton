@@ -1,6 +1,9 @@
-import { assertEquals, assertThrowsAsync, assert } from "../testdeps.ts";
-import { joinPath } from "../testdeps.ts";
-
+import {
+  assertEquals,
+  assertThrowsAsync,
+  assert,
+  joinPath,
+} from "../testdeps.ts";
 import { connect } from "./connect.ts";
 import { SqliteAdapter } from "./adapters/sqlite.ts";
 import { PostgresAdapter } from "./adapters/postgres.ts";
