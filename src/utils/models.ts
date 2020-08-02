@@ -373,7 +373,6 @@ export function getDataType(type: any): DataType | null {
 export function getNormalizedValue(
   type: DataType,
   original: DatabaseValues,
-  throws: boolean = false,
 ): DatabaseValues {
   // If the original value is either null or undefined, return null.
   if (typeof original === "undefined" || original === null) {
@@ -386,27 +385,23 @@ export function getNormalizedValue(
     type === DataType.Date &&
     (typeof original === "string" || typeof original === "number")
   ) {
-    if (throws) {
-      throw typeof original;
-    }
-
     return new Date(original);
   }
 
   // If the expected type is String, and the original value doesn't,
   // convert it to String.
   if (type === DataType.String && typeof original !== "string") {
-    if (throws) {
-      throw typeof original;
-    }
-
     return String(original);
   }
 
   // Do the same thing for numbers.
   if (type === DataType.Number && typeof original !== "number") {
-    if (throws) {
-      throw typeof original;
+    const num = Number(original);
+
+    if (isNaN(num)) {
+      throw new Error(
+        `Found NaN when converting '${typeof original}' to number!`,
+      );
     }
 
     return Number(original);
@@ -416,10 +411,6 @@ export function getNormalizedValue(
   // convert it to either true if it's truthy (like 1) and false if
   // it's falsy (like 0).
   if (type === DataType.Boolean && typeof original !== "boolean") {
-    if (throws) {
-      throw typeof original;
-    }
-
     return Boolean(original);
   }
 
