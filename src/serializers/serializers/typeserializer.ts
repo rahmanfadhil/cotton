@@ -10,7 +10,7 @@ export class TypeSerializer implements ISerialize {
       if (typeof value === "string" || typeof value === "number") {
         const date = new Date(value);
 
-        if (isValidDate(date)) {
+        if (!isValidDate(date)) {
           throw new Error("invalid date!");
         }
 

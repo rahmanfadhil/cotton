@@ -21,7 +21,23 @@ export class Serializer<T> {
   }
 
   /** Transform model instance to JSON compatible object. */
-  public toJSON(model: T): { [key: string]: JsonType } {
+  public toJSON(model: T): { [key: string]: JsonType };
+
+  /** Transform model instance to JSON compatible object. */
+  public toJSON(model: T[]): { [key: string]: JsonType }[];
+
+  /** Transform model instance to JSON compatible object. */
+  public toJSON(
+    model: T | T[],
+  ): { [key: string]: JsonType } | { [key: string]: JsonType }[] {
+    if (Array.isArray(model)) {
+      return model.map((item) => this._toJSON(item));
+    } else {
+      return this._toJSON(model);
+    }
+  }
+
+  private _toJSON(model: T): { [key: string]: JsonType } {
     const data: { [key: string]: JsonType } = {};
     const errors: ISerializationError[] = [];
 

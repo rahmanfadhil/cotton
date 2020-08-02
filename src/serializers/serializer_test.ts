@@ -71,6 +71,20 @@ Deno.test("Serializer.toJSON() -> should serialize model to JSON compatible obje
   });
 });
 
+Deno.test("Serializer.toJSON() -> should serialize multiple models", () => {
+  const serializer = new Serializer(Product);
+
+  const product1 = new Product();
+  product1.title = "Spoon";
+  const product2 = new Product();
+  product2.title = "Table";
+
+  assertEquals(serializer.toJSON([product1, product2]), [
+    { product_id: null, title: "Spoon" },
+    { product_id: null, title: "Table" },
+  ]);
+});
+
 Deno.test("Serializer.toJSON() -> should error if non nullable property is null", () => {
   const product = new Product();
   product.productId = 1;
