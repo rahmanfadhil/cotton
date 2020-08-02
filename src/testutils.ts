@@ -394,9 +394,11 @@ export class User {
 @Model()
 export class Product {
   @Primary({ name: "product_id" })
+  @Serializable({ name: "product_id", isModifiable: false })
   productId!: number;
 
   @Column()
+  @Serializable({ isNullable: false })
   title!: string;
 
   @BelongsTo(toUser, "user_id")

@@ -1,5 +1,5 @@
 import { getProperties } from "../utils/serializers.ts";
-import { SerializableDescription } from "./decorators/serializer.ts";
+import { SerializableDescription, JsonType } from "./decorators/serializer.ts";
 
 export interface ISerializationError {
   target: string;
@@ -7,8 +7,8 @@ export interface ISerializationError {
 }
 
 export class SerializationError extends Error {
-  constructor(public errors: ISerializationError[]) {
-    super();
+  constructor(public errors: ISerializationError[], modelName: string) {
+    super(`Failed to serialize '${modelName}' model!`);
   }
 }
 
@@ -18,6 +18,48 @@ export class Serializer<T> {
 
   constructor(private modelClass: { new (): T }) {
     this.properties = getProperties(modelClass);
+  }
+
+  /** Transform model instance to JSON compatible object. */
+  public toJSON(model: T): { [key: string]: JsonType } {
+    const data: { [key: string]: JsonType } = {};
+    const errors: ISerializationError[] = [];
+
+    for (const property of this.properties) {
+      if (!property.isHidden) {
+        let value = (model as any)[property.propertyKey];
+
+        if (value === null || typeof value === "undefined") {
+          if (property.isNullable) {
+            data[property.name] = null;
+          } else {
+            errors.push({
+              target: property.propertyKey,
+              message: "value cannot be empty!",
+            });
+          }
+        } else {
+          if (property.serialize) {
+            try {
+              value = property.serialize.down(value);
+            } catch (err) {
+              errors.push({
+                target: property.propertyKey,
+                message: err.message,
+              });
+            }
+          }
+
+          data[property.name] = value;
+        }
+      }
+    }
+
+    if (errors.length >= 1) {
+      throw new SerializationError(errors, this.modelClass.name);
+    }
+
+    return data;
   }
 
   /** Transform plain object into a model instance. */
@@ -42,7 +84,7 @@ export class Serializer<T> {
         } else {
           errors.push({
             target: property.name,
-            message: "value cannot be null!",
+            message: "value cannot be empty!",
           });
         }
       } else {
@@ -66,7 +108,7 @@ export class Serializer<T> {
 
     // If there's an error, throw it.
     if (errors.length >= 1) {
-      throw new SerializationError(errors);
+      throw new SerializationError(errors, this.modelClass.name);
     }
 
     // Otherwise, populate the model with serialized values and return it.
