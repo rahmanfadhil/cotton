@@ -6,6 +6,7 @@ import { QueryCompiler } from "./querycompiler.ts";
 import { Model, Primary, Column, BelongsTo, HasMany } from "./model.ts";
 import { Colors } from "../deps.ts";
 import { formatDate } from "./utils/date.ts";
+import { Serializable } from "./serializers/decorators/serializer.ts";
 
 /**
  * Postgres connection options
@@ -328,48 +329,56 @@ export class User {
    * Represents a primary key column
    */
   @Primary()
+  @Serializable()
   id!: number;
 
   /**
    * Represents column with validation
    */
   @Column()
+  @Serializable({ isNullable: false })
   email!: string;
 
   /**
    * Represents a string column with custom table column name
    */
   @Column({ name: "first_name" })
+  @Serializable({ name: "first_name" })
   firstName!: string;
 
   /**
    * Represents a string column with custom table column name
    */
   @Column({ name: "last_name" })
+  @Serializable({ name: "last_name" })
   lastName!: string;
 
   /**
    * Represents a number column
    */
   @Column()
+  @Serializable()
   age!: number;
 
   /**
    * Represents a hidden column
    */
   @Column()
+  @Serializable({ isHidden: true, isModifiable: false })
   password!: string;
 
   /**
    * Represents a date column with lazy default value
    */
   @Column({ name: "created_at", default: getCreationDate })
+  @Serializable({ name: "created_at", isModifiable: false })
   createdAt!: Date;
 
   /**
    * Represents a boolean column with standard default value
    */
   @Column({ name: "is_active", default: false })
+  @Serializable({ name: "is_active" })
   isActive!: boolean;
 
   /**

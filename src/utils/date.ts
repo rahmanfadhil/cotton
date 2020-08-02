@@ -43,3 +43,10 @@ function formatZerolessValue(value: number): string {
 
   return String(value);
 }
+
+/**
+ * Check if the given date is valid.
+ */
+export function isValidDate(date: Date): boolean {
+  return date.constructor === Date && !isNaN(date.getTime());
+}

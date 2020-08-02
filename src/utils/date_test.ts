@@ -1,5 +1,5 @@
-import { assertEquals } from "../../testdeps.ts";
-import { formatDate, createMigrationTimestamp } from "./date.ts";
+import { assert, assertEquals } from "../../testdeps.ts";
+import { formatDate, createMigrationTimestamp, isValidDate } from "./date.ts";
 
 Deno.test("formatDate: should format date properly", () => {
   const date = new Date("07 December 2020");
@@ -14,4 +14,15 @@ Deno.test("formatDate: should format date and time properly", () => {
 Deno.test("createMigrationTimestamp: should be different everytime it gets invoked", async () => {
   const timestamp = createMigrationTimestamp();
   assertEquals(timestamp.length, 14);
+});
+
+Deno.test("isValidDate() -> check if a date is valid", () => {
+  assert(isValidDate(new Date()));
+  assert(isValidDate(new Date(formatDate(new Date()))));
+  assert(isValidDate(new Date("August 2, 2020")));
+  assert(isValidDate(new Date(Date.now())));
+});
+
+Deno.test("isValidDate() -> check if a date is invalid", () => {
+  assertEquals(isValidDate(new Date("askdfladjf")), false);
 });
