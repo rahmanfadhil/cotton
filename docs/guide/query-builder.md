@@ -76,7 +76,7 @@ query
 Sometimes you want to exclude or some records that match given conditions. For that, you can use `not`.
 
 ```ts
-query.table("users").not("is_active");
+query.table("users").not("is_active", true);
 ```
 
 Or, if you want to find records if one of the conditions are true, use `or`.
