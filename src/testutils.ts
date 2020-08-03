@@ -80,17 +80,8 @@ export async function testDB(
         );
       `);
 
-      // Run the actual test
-      await fn(db);
-
-      // Drop dummy table `product`
-      await db.query("DROP TABLE product;");
-
-      // Drop dummy table `users`
-      await db.query("DROP TABLE users;");
-
-      // Disconnect to database
-      await db.disconnect();
+      // Run the test
+      await runTestAndClean(fn, db);
     },
   });
 
@@ -127,30 +118,8 @@ export async function testDB(
         );
       `);
 
-      // Run the actual test
-      try {
-        await fn(db);
-      } catch (err) {
-        // Drop dummy table `product`
-        await db.query("DROP TABLE product;");
-
-        // Drop dummy table `users`
-        await db.query("DROP TABLE users;");
-
-        // Disconnect to database
-        await db.disconnect();
-
-        throw err;
-      }
-
-      // Drop dummy table `product`
-      await db.query("DROP TABLE product;");
-
-      // Drop dummy table `users`
-      await db.query("DROP TABLE users;");
-
-      // Disconnect to database
-      await db.disconnect();
+      // Run the test
+      await runTestAndClean(fn, db);
     },
   });
 
@@ -187,32 +156,46 @@ export async function testDB(
         );
       `);
 
-      // Run the actual test
-      try {
-        await fn(db);
-      } catch (err) {
-        // Drop dummy table `product`
-        await db.query("DROP TABLE product;");
-
-        // Drop dummy table `users`
-        await db.query("DROP TABLE users;");
-
-        // Disconnect to database
-        await db.disconnect();
-
-        throw err;
-      }
-
-      // Drop dummy table `products`
-      await db.query("DROP TABLE product;");
-
-      // Drop dummy table `users`
-      await db.query("DROP TABLE users;");
-
-      // Disconnect to database
-      await db.disconnect();
+      // Run the test
+      await runTestAndClean(fn, db);
     },
   });
+}
+
+/**
+ * Run the actual test and drop the database tables.
+ *
+ * @param fn the actual test function.
+ * @param db the database adapter to peform query.
+ */
+async function runTestAndClean(
+  fn: (db: Adapter) => void | Promise<void>,
+  db: Adapter,
+) {
+  // Run the actual test
+  try {
+    await fn(db);
+  } catch (err) {
+    // Drop dummy table `product`
+    await db.query("DROP TABLE product;");
+
+    // Drop dummy table `users`
+    await db.query("DROP TABLE users;");
+
+    // Disconnect to database
+    await db.disconnect();
+
+    throw err;
+  }
+
+  // Drop dummy table `products`
+  await db.query("DROP TABLE product;");
+
+  // Drop dummy table `users`
+  await db.query("DROP TABLE users;");
+
+  // Disconnect to database
+  await db.disconnect();
 }
 
 /**

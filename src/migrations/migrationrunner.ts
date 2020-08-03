@@ -24,6 +24,8 @@ export class MigrationRunner {
     private migrationDir: string,
     /** The database adapter to perform queries */
     private adapter: Adapter,
+    /** The version of currently used Cotton */
+    private version: string,
   ) {}
 
   /**
@@ -50,7 +52,7 @@ export class MigrationRunner {
     // Write the file
     await Deno.writeTextFile(
       fileName,
-      `import { Schema } from "https://deno.land/x/cotton/mod.ts";\n\nexport async function up(schema: Schema) {\n  // Do something...\n}\n\nexport async function down(schema: Schema) {\n  // Do something...\n}\n`,
+      `import { Schema } from "https://deno.land/x/cotton@${this.version}/mod.ts";\n\nexport async function up(schema: Schema) {\n  // Do something...\n}\n\nexport async function down(schema: Schema) {\n  // Do something...\n}\n`,
     );
 
     console.log(`${Colors.green("Created:")} ${fileName}`);

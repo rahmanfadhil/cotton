@@ -2,7 +2,8 @@ import { parseFlags, Colors, joinPath } from "./deps.ts";
 
 import { connect, MigrationRunner } from "./mod.ts";
 
-const CLI_VERSION = "v0.1.0";
+const CLI_VERSION = "v0.1.1";
+const COTTON_VERSION = "v0.6.3";
 
 const parsedArgs = parseFlags(Deno.args);
 
@@ -133,34 +134,29 @@ if (parsedArgs._.length >= 1) {
       const runner = new MigrationRunner(
         joinPath(Deno.cwd(), "./migrations"),
         adapter,
+        COTTON_VERSION,
       );
 
-      switch (command) {
-        case "migration:create":
-          const name = parsedArgs.n || parsedArgs.name;
-          if (typeof name === "string") {
-            await runner.createMigrationFile(name);
-          } else {
-            error(`Migration must have a name!`);
-          }
-
-          break;
-        case "migration:up":
-          await runner.applyMigrations();
-          break;
-        case "migration:down":
-          if (typeof parsedArgs.steps === "number" && parsedArgs.steps >= 1) {
-            await runner.revertMigrations(parsedArgs.steps as number);
-          } else {
-            await runner.revertMigrations();
-          }
-          break;
-        case "migration:info":
-          await getMigrationsInfo(runner);
-          break;
-        default:
-          error(`Command "${command}" is not available!`);
-          break;
+      // Do something with the command
+      if (command === "migration:create") {
+        const name = parsedArgs.n || parsedArgs.name;
+        if (typeof name === "string") {
+          await runner.createMigrationFile(name);
+        } else {
+          error(`Migration must have a name!`);
+        }
+      } else if (command === "migration:up") {
+        await runner.applyMigrations();
+      } else if (command === "migrations:down") {
+        if (typeof parsedArgs.steps === "number" && parsedArgs.steps >= 1) {
+          await runner.revertMigrations(parsedArgs.steps as number);
+        } else {
+          await runner.revertMigrations();
+        }
+      } else if (command === "migration:info") {
+        await getMigrationsInfo(runner);
+      } else {
+        error(`Command "${command}" is not available!`);
       }
     } catch (err) {
       if (err instanceof Deno.errors.NotFound) {
