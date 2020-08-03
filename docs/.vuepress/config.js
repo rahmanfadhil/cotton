@@ -16,7 +16,13 @@ module.exports = {
         "model",
         "migrations",
         "schema",
+        "serializer",
       ],
     },
+    docsRepo: "rahmanfadhil/cotton",
+    docsDir: "docs",
+    docsBranch: "master",
+    editLinks: true,
+    editLinkText: "Help us improve this page!",
   },
 };

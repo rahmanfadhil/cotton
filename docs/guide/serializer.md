@@ -7,14 +7,15 @@ Serializing is a technique in programming where you transform a class instance i
 To get started, you can decorate your model properties with `@Serializable` decorator.
 
 ```ts
-class User {
+@Model()
+class User extends BaseModel {
   @Column()
   @Serializable({ isRequired: true }) // make the property required.
   email: string;
 
   @Column()
   @Serializable() // default serializable property.
-  age: string;
+  age: number;
 
   @Column()
   @Serializable({ isHidden: true }) // hide property in serialization by default.
@@ -22,7 +23,7 @@ class User {
 
   @Column()
   @Serializable({ isReadonly: true }) // prevent property value to be changed.
-  createdAt: boolean;
+  createdAt: Date;
 }
 ```
 
@@ -46,4 +47,21 @@ You can also load multiple models using `loadMany`.
 
 ```ts
 const serializer = new Serializer();
+```
+
+## Serializing model instances "dumping"
+
+Once you get your model instances, you can serialize them into a JSON compatible objects by using `dump`.
+
+```ts
+const user = await User.query().find();
+
+serializer.dump(user); // { email: 'a@b.com', age: 16, created_at: '2020-08-04 00:00:00' }
+```
+
+The `dump` method also accept an array if you want to serialize multiple models.
+
+```ts
+const users = await User.query().all();
+serialize.dump(users); // [{ email: 'a@b.com', ... }, ...]
 ```
