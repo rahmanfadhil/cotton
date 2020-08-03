@@ -5,12 +5,18 @@ import { formatDate } from "../utils/date.ts";
 
 Deno.test("Serializer.load() -> should load a model", () => {
   const serializer = new Serializer(User);
-  const model = serializer.load({ email: "a@b.com", first_name: "John" });
+  const model = serializer.load({
+    email: "a@b.com",
+    first_name: "John",
+    password: "12345",
+  });
   assert(model instanceof User);
-  assertEquals(model.id, null);
+  assertEquals(model.id, undefined);
   assertEquals(model.email, "a@b.com");
   assertEquals(model.firstName, "John");
   assertEquals(model.lastName, null);
+  assertEquals(model.password, undefined);
+  assertEquals(model.createdAt, undefined);
 });
 
 Deno.test("Serializer.loadMany() -> should load multiple models", () => {
@@ -23,14 +29,14 @@ Deno.test("Serializer.loadMany() -> should load multiple models", () => {
   assertEquals(models.length, 2);
 
   for (const [index, model] of models.entries()) {
-    assertEquals(model.productId, null);
+    assertEquals(model.productId, undefined);
     assertEquals(model.title, index ? "Table" : "Spoon");
   }
 });
 
 Deno.test("Serializer.load() -> should error if non nullable property is null", () => {
   const product = {
-    productId: 1,
+    product_id: 1,
   };
 
   const serializer = new Serializer(Product);
@@ -46,24 +52,24 @@ Deno.test("Serializer.load() -> should error if non nullable property is null", 
 });
 
 Deno.test("Serializer.load() -> should error if failed to serialize data", () => {
-  const product = {
-    product_id: "asdfasdf" as any,
-    title: "Spoon",
+  const user = {
+    email: "a@b.com",
+    age: "adsf",
   };
 
-  const serializer = new Serializer(Product);
+  const serializer = new Serializer(User);
   const error = assertThrows(
-    () => serializer.load(product),
+    () => serializer.load(user),
     SerializationError,
-    "Failed to serialize 'Product' model!",
+    "Failed to serialize 'User' model!",
   ) as SerializationError;
   assertEquals(error.errors, [{
-    target: "product_id",
+    target: "age",
     message: "invalid number!",
   }]);
 });
 
-Deno.test("Serializer.toJSON() -> should serialize model to JSON compatible object", () => {
+Deno.test("Serializer.dump() -> should serialize model to JSON compatible object", () => {
   const user = new User();
   user.email = "a@b.com";
   user.firstName = "John";
@@ -75,7 +81,7 @@ Deno.test("Serializer.toJSON() -> should serialize model to JSON compatible obje
 
   const serializer = new Serializer(User);
 
-  assertEquals(serializer.toJSON(user), {
+  assertEquals(serializer.dump(user), {
     id: null,
     email: "a@b.com",
     first_name: "John",
@@ -86,7 +92,7 @@ Deno.test("Serializer.toJSON() -> should serialize model to JSON compatible obje
   });
 });
 
-Deno.test("Serializer.toJSON() -> should serialize multiple models", () => {
+Deno.test("Serializer.dump() -> should serialize multiple models", () => {
   const serializer = new Serializer(Product);
 
   const product1 = new Product();
@@ -94,19 +100,19 @@ Deno.test("Serializer.toJSON() -> should serialize multiple models", () => {
   const product2 = new Product();
   product2.title = "Table";
 
-  assertEquals(serializer.toJSON([product1, product2]), [
+  assertEquals(serializer.dump([product1, product2]), [
     { product_id: null, title: "Spoon" },
     { product_id: null, title: "Table" },
   ]);
 });
 
-Deno.test("Serializer.toJSON() -> should error if non nullable property is null", () => {
+Deno.test("Serializer.dump() -> should error if non nullable property is null", () => {
   const product = new Product();
   product.productId = 1;
 
   const serializer = new Serializer(Product);
   const error = assertThrows(
-    () => serializer.toJSON(product),
+    () => serializer.dump(product),
     SerializationError,
     "Failed to serialize 'Product' model!",
   ) as SerializationError;
@@ -116,14 +122,14 @@ Deno.test("Serializer.toJSON() -> should error if non nullable property is null"
   }]);
 });
 
-Deno.test("Serializer.toJSON() -> should error if failed to serialize data", () => {
+Deno.test("Serializer.dump() -> should error if failed to serialize data", () => {
   const product = new Product();
   product.productId = "asdfasdf" as any;
   product.title = "Spoon";
 
   const serializer = new Serializer(Product);
   const error = assertThrows(
-    () => serializer.toJSON(product),
+    () => serializer.dump(product),
     SerializationError,
     "Failed to serialize 'Product' model!",
   ) as SerializationError;

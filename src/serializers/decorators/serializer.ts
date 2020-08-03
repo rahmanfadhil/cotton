@@ -8,14 +8,14 @@ export interface SerializableOptions {
   /** Override property name when serializing to JSON. */
   name: string;
 
-  /** Allow the property to be `null` or `undefined`. */
-  isNullable: boolean;
+  /** Prevent the property to be `null` or `undefined`. */
+  isRequired: boolean;
 
   /** Hide property by default. */
   isHidden: boolean;
 
-  /** Allow property to be modified. */
-  isModifiable: boolean;
+  /** Prevent property to be modified. */
+  isReadonly: boolean;
 }
 
 /** Valid JSON types. */
@@ -69,8 +69,8 @@ export function Serializable(
       name: propertyKey,
       propertyKey,
       isHidden: false,
-      isModifiable: true,
-      isNullable: true,
+      isReadonly: false,
+      isRequired: false,
       serialize: serialize
         ? serialize
         : type !== null

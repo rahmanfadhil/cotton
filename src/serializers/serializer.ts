@@ -1,33 +1,40 @@
 import { getProperties } from "../utils/serializers.ts";
 import { SerializableDescription, JsonType } from "./decorators/serializer.ts";
 
+/** An serialization error of a single class property. */
 export interface ISerializationError {
+  /** The property name where the error occurs. */
   target: string;
+
+  /** The error message. */
   message: string;
 }
 
+/** A error which occurs when model serialization or deserialization failed. */
 export class SerializationError extends Error {
   constructor(public errors: ISerializationError[], modelName: string) {
     super(`Failed to serialize '${modelName}' model!`);
   }
 }
 
+/** A tool for serializing and deserializing model instances. */
 export class Serializer<T> {
   /** All serializable propertis of the model. */
   private properties: SerializableDescription[];
 
+  /** Create a new serializer for a model. */
   constructor(private modelClass: { new (): T }) {
     this.properties = getProperties(modelClass);
   }
 
   /** Transform model instance to JSON compatible object. */
-  public toJSON(model: T): { [key: string]: JsonType };
+  public dump(model: T): { [key: string]: JsonType };
 
   /** Transform model instances to JSON compatible array. */
-  public toJSON(model: T[]): { [key: string]: JsonType }[];
+  public dump(model: T[]): { [key: string]: JsonType }[];
 
   /** Transform model instance to JSON compatible object. */
-  public toJSON(
+  public dump(
     model: T | T[],
   ): { [key: string]: JsonType } | { [key: string]: JsonType }[] {
     return Array.isArray(model)
@@ -48,17 +55,21 @@ export class Serializer<T> {
     for (const property of this.properties) {
       const value = data[property.name];
 
+      if (property.isReadonly) {
+        continue;
+      }
+
       // If the value is `null` or `undefined`, check if the
       // property is nullable. If it doesn't, append error to the
       // error list. Otherwise, return set value to null.
       if (value === undefined || value === null) {
-        if (property.isNullable) {
-          values[property.propertyKey] = null;
-        } else {
+        if (property.isRequired) {
           errors.push({
             target: property.name,
             message: "value cannot be empty!",
           });
+        } else {
+          values[property.propertyKey] = null;
         }
       } else {
         let serialized = value;
@@ -106,13 +117,13 @@ export class Serializer<T> {
         let value = (model as any)[property.propertyKey];
 
         if (value === null || typeof value === "undefined") {
-          if (property.isNullable) {
-            data[property.name] = null;
-          } else {
+          if (property.isRequired) {
             errors.push({
               target: property.propertyKey,
               message: "value cannot be empty!",
             });
+          } else {
+            data[property.name] = null;
           }
         } else {
           if (property.serialize) {

@@ -329,14 +329,14 @@ export class User {
    * Represents a primary key column
    */
   @Primary()
-  @Serializable()
+  @Serializable({ isReadonly: true })
   id!: number;
 
   /**
    * Represents column with validation
    */
   @Column()
-  @Serializable({ isNullable: false })
+  @Serializable({ isRequired: true })
   email!: string;
 
   /**
@@ -364,14 +364,14 @@ export class User {
    * Represents a hidden column
    */
   @Column()
-  @Serializable({ isHidden: true, isModifiable: false })
+  @Serializable({ isHidden: true, isReadonly: true })
   password!: string;
 
   /**
    * Represents a date column with lazy default value
    */
   @Column({ name: "created_at", default: getCreationDate })
-  @Serializable({ name: "created_at", isModifiable: false })
+  @Serializable({ name: "created_at", isReadonly: true })
   createdAt!: Date;
 
   /**
@@ -394,11 +394,11 @@ export class User {
 @Model()
 export class Product {
   @Primary({ name: "product_id" })
-  @Serializable({ name: "product_id", isModifiable: false })
+  @Serializable({ name: "product_id", isReadonly: true })
   productId!: number;
 
   @Column()
-  @Serializable({ isNullable: false })
+  @Serializable({ isRequired: true })
   title!: string;
 
   @BelongsTo(toUser, "user_id")

@@ -12,8 +12,8 @@ Deno.test("getProperties() -> should get all serializables properties", () => {
 
   assertEquals(getProperties(User), [{
     isHidden: false,
-    isModifiable: true,
-    isNullable: true,
+    isReadonly: false,
+    isRequired: false,
     name: "is_active",
     propertyKey: "isActive",
     serialize: new TypeSerializer(DataType.Boolean),
