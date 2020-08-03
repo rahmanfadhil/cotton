@@ -13,6 +13,21 @@ Deno.test("Serializer.load() -> should load a model", () => {
   assertEquals(model.lastName, null);
 });
 
+Deno.test("Serializer.loadMany() -> should load multiple models", () => {
+  const serializer = new Serializer(Product);
+  const models = serializer.loadMany([
+    { title: "Spoon" },
+    { title: "Table" },
+  ]);
+  assert(Array.isArray(models));
+  assertEquals(models.length, 2);
+
+  for (const [index, model] of models.entries()) {
+    assertEquals(model.productId, null);
+    assertEquals(model.title, index ? "Table" : "Spoon");
+  }
+});
+
 Deno.test("Serializer.load() -> should error if non nullable property is null", () => {
   const product = {
     productId: 1,
