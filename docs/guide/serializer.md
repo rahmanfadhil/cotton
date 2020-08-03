@@ -1,6 +1,6 @@
 # Serializer
 
-Serializing is a technique in programming where you transform a class instance into plain object and vice versa. Since the [Model](model.md) API doesn't have any validation or serialization feature, Cotton provide a seperate set of tools for you to do such things.
+Serializing is a technique in programming where you transform a class instance into plain object and vice versa. Since the [Model](model.md) API doesn't come with validation or serialization feature, Cotton provide a seperate set of tools for you to do such things.
 
 ## Getting started
 
