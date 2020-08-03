@@ -80,7 +80,7 @@ export async function testDB(
       `);
 
       // Run the test
-      runTestAndClean(fn, db);
+      await runTestAndClean(fn, db);
     },
   });
 
@@ -118,7 +118,7 @@ export async function testDB(
       `);
 
       // Run the test
-      runTestAndClean(fn, db);
+      await runTestAndClean(fn, db);
     },
   });
 
@@ -156,7 +156,7 @@ export async function testDB(
       `);
 
       // Run the test
-      runTestAndClean(fn, db);
+      await runTestAndClean(fn, db);
     },
   });
 }
