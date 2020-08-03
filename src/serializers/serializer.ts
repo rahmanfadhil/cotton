@@ -44,17 +44,15 @@ export class Serializer<T> {
 
   /** Transform a plain object into a model instance. */
   public load(data: any): T {
-    // Create the model instance.
-    const model = Object.create(this.modelClass.prototype);
-
     // Serialization values and errors.
     const values: { [key: string]: any } = {};
     const errors: ISerializationError[] = [];
 
     // Loop through defined properties.
     for (const property of this.properties) {
-      const value = data[property.name];
+      let value = data[property.name];
 
+      // Skip read-only properties
       if (property.isReadonly) {
         continue;
       }
@@ -71,23 +69,24 @@ export class Serializer<T> {
         } else {
           values[property.propertyKey] = null;
         }
-      } else {
-        let serialized = value;
 
-        // If a serializer is defined, serialize the value.
-        if (property.serialize) {
-          try {
-            serialized = property.serialize.up(serialized);
-          } catch (err) {
-            errors.push({
-              target: property.name,
-              message: err.message,
-            });
-          }
-        }
-
-        values[property.propertyKey] = serialized;
+        continue;
       }
+
+      // If a serializer is defined, serialize the value.
+      if (property.serialize) {
+        try {
+          value = property.serialize.up(value);
+        } catch (err) {
+          errors.push({
+            target: property.name,
+            message: err.message,
+          });
+        }
+      }
+
+      // Set the property of the model.
+      values[property.propertyKey] = value;
     }
 
     // If there's an error, throw it.
@@ -95,8 +94,8 @@ export class Serializer<T> {
       throw new SerializationError(errors, this.modelClass.name);
     }
 
-    // Otherwise, populate the model with serialized values and return it.
-    return Object.assign(model, values);
+    // Create the model instance and populate with the serialized values.
+    return Object.assign(Object.create(this.modelClass.prototype), values);
   }
 
   /** Transform an array of plain objects into a model instance. */
