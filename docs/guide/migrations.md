@@ -17,7 +17,7 @@ The cool thing about this feature is not only you can **apply** new migrations, 
 The first thing you need to do is install the Cotton CLI.
 
 ```
-$ deno install --allow-net --allow-read --allow-write -n cotton https://deno.land/x/cotton@v0.6.3/cli.ts
+$ deno install --allow-net --allow-read --allow-write -n cotton https://deno.land/x/cotton@v0.6.4/cli.ts
 ```
 
 Once the installation is finished, you can type `cotton` in your terminal to verify your installation.
