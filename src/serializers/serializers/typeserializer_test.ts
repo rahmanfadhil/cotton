@@ -51,7 +51,7 @@ Deno.test("TypeSerializer.up() -> should deserialize a boolean", () => {
 Deno.test("TypeSerializer.down() -> should serialize a date", () => {
   const serializer = new TypeSerializer(DataType.Date);
   const date = new Date();
-  assertEquals(serializer.down(date), formatDate(date));
+  assertEquals(serializer.down(date), date.toISOString());
 
   assertThrows(() => serializer.down(""), Error, "value must be a date!");
   assertThrows(() => serializer.down(1), Error, "value must be a date!");

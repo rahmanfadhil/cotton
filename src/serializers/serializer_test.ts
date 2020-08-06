@@ -87,7 +87,7 @@ Deno.test("Serializer.dump() -> should serialize model to JSON compatible object
     first_name: "John",
     last_name: "Doe",
     age: 16,
-    created_at: formatDate(user.createdAt),
+    created_at: user.createdAt.toISOString(),
     is_active: true,
   });
 });

@@ -49,7 +49,7 @@ export class TypeSerializer implements ISerialize {
         throw new Error("invalid date!");
       }
 
-      return formatDate(value);
+      return value.toISOString();
     } else if (this.type === DataType.String && typeof value !== "string") {
       return String(value);
     } else if (this.type === DataType.Number && typeof value !== "number") {
