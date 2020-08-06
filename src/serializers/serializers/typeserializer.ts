@@ -2,6 +2,10 @@ import { DataType } from "../../model.ts";
 import { formatDate, isValidDate } from "../../utils/date.ts";
 import { ISerialize, JsonType } from "../decorators/serializer.ts";
 
+/**
+ * A property serializer to make sure the value is compatible with
+ * given type in the decorator metadata.
+ */
 export class TypeSerializer implements ISerialize {
   constructor(private type: DataType) {}
 
