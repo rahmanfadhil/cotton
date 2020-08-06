@@ -27,10 +27,10 @@ export class Serializer<T> {
     this.properties = getProperties(modelClass);
   }
 
-  /** Transform model instance to JSON compatible object. */
+  /** Transform a single model instance to JSON compatible object. */
   public dump(model: T): { [key: string]: JsonType };
 
-  /** Transform model instances to JSON compatible array. */
+  /** Transform multiple model instances to JSON compatible array. */
   public dump(model: T[]): { [key: string]: JsonType }[];
 
   /** Transform model instance to JSON compatible object. */
@@ -38,8 +38,8 @@ export class Serializer<T> {
     model: T | T[],
   ): { [key: string]: JsonType } | { [key: string]: JsonType }[] {
     return Array.isArray(model)
-      ? model.map((item) => this._toJSON(item))
-      : this._toJSON(model);
+      ? model.map((item) => this._dump(item))
+      : this._dump(model);
   }
 
   /** Transform a plain object into a model instance. */
@@ -107,7 +107,13 @@ export class Serializer<T> {
   // PRIVATE HELPERS
   // --------------------------------------------------------------------------------
 
-  private _toJSON(model: T): { [key: string]: JsonType } {
+  /**
+   * Serialize a single model instance into a JSON compatible object.
+   * Used in `dump` method.
+   * 
+   * @param model the model to serialize
+   */
+  private _dump(model: T): { [key: string]: JsonType } {
     const data: { [key: string]: JsonType } = {};
     const errors: ISerializationError[] = [];
 
