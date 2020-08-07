@@ -19,7 +19,7 @@
 Here's an example of a Deno project that uses Cotton.
 
 ```ts
-import { connect } from "https://deno.land/x/cotton@v0.6.5/mod.ts";
+import { connect } from "https://deno.land/x/cotton@v0.6.6/mod.ts";
 
 const db = await connect({
   type: "sqlite",
