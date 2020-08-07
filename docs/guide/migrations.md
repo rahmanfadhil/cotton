@@ -45,8 +45,6 @@ Commands:
   migration:info    Get the status of all migrations
 ```
 
-> We're not going to dive deeper into Cotton CLI in this section, but you can read more about it [here](/guide/cli).
-
 As you can see, we have a bunch of commands which we can use to manage our migrations. Let's start by creating a new migration file.
 
 ## Creating a migration
