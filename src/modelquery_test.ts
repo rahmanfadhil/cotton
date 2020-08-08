@@ -2,6 +2,7 @@ import { testDB, User, Product, assertDateEquals } from "./testutils.ts";
 import { ModelQuery } from "./modelquery.ts";
 import { assertEquals, assert, stub } from "../testdeps.ts";
 import { Adapter } from "./adapters/adapter.ts";
+import { Q } from "./q.ts";
 
 Deno.test("ModelQuery.where() -> should call `where` to query builder", () => {
   const query1 = new ModelQuery(User, {} as any);
@@ -10,15 +11,15 @@ Deno.test("ModelQuery.where() -> should call `where` to query builder", () => {
   const where1 = query1.where("id", 1);
   assertEquals(where1, query1);
   assertEquals(action1.calls.length, 1);
-  assertEquals(action1.calls[0].args, ["id", 1, undefined]);
+  assertEquals(action1.calls[0].args, ["id", 1]);
 
   const query2 = new ModelQuery(User, {} as any);
   const action2 = stub((query2 as any).builder, "where");
 
-  const where2 = query2.where("id", "=", 1);
+  const where2 = query2.where("id", Q.eq(1));
   assertEquals(where2, query2);
   assertEquals(action2.calls.length, 1);
-  assertEquals(action2.calls[0].args, ["id", "=", 1]);
+  assertEquals(action2.calls[0].args, ["id", Q.eq(1)]);
 });
 
 Deno.test("ModelQuery.or() -> should call `or` to query builder", () => {
@@ -28,15 +29,15 @@ Deno.test("ModelQuery.or() -> should call `or` to query builder", () => {
   const or1 = query1.or("id", 1);
   assertEquals(or1, query1);
   assertEquals(action1.calls.length, 1);
-  assertEquals(action1.calls[0].args, ["id", 1, undefined]);
+  assertEquals(action1.calls[0].args, ["id", 1]);
 
   const query2 = new ModelQuery(User, {} as any);
   const action2 = stub((query2 as any).builder, "or");
 
-  const or2 = query2.or("id", "=", 1);
+  const or2 = query2.or("id", Q.eq(1));
   assertEquals(or2, query2);
   assertEquals(action2.calls.length, 1);
-  assertEquals(action2.calls[0].args, ["id", "=", 1]);
+  assertEquals(action2.calls[0].args, ["id", Q.eq(1)]);
 });
 
 Deno.test("ModelQuery.not() -> should call `not` to query builder", () => {
@@ -46,15 +47,15 @@ Deno.test("ModelQuery.not() -> should call `not` to query builder", () => {
   const not1 = query1.not("id", 1);
   assertEquals(not1, query1);
   assertEquals(action1.calls.length, 1);
-  assertEquals(action1.calls[0].args, ["id", 1, undefined]);
+  assertEquals(action1.calls[0].args, ["id", 1]);
 
   const query2 = new ModelQuery(User, {} as any);
   const action2 = stub((query2 as any).builder, "not");
 
-  const not2 = query2.not("id", "=", 1);
+  const not2 = query2.not("id", Q.eq(1));
   assertEquals(not2, query2);
   assertEquals(action2.calls.length, 1);
-  assertEquals(action2.calls[0].args, ["id", "=", 1]);
+  assertEquals(action2.calls[0].args, ["id", Q.eq(1)]);
 });
 
 Deno.test("ModelQuery.order() -> should call `order` to query builder", () => {

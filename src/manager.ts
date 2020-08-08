@@ -12,6 +12,7 @@ import { Adapter } from "./adapters/adapter.ts";
 import { range } from "./utils/number.ts";
 import { RelationType } from "./model.ts";
 import { ModelQuery } from "./modelquery.ts";
+import { Q } from "./q.ts";
 
 /**
  * Same as Partial<T> but goes deeper and makes Partial<T> all its properties and sub-properties.
@@ -156,7 +157,7 @@ export class Manager {
           // Perform bulk delete.
           await this.adapter
             .table(tableName)
-            .where(primaryKeyInfo.name, "in", ids)
+            .where(primaryKeyInfo.name, Q.in(ids))
             .delete()
             .execute();
 
@@ -312,7 +313,7 @@ export class Manager {
               [relation.description.targetColumn]:
                 (model as any)[primaryKeyInfo.propertyKey],
             })
-            .where(relationPkInfo.name, "in", ids)
+            .where(relationPkInfo.name, Q.in(ids))
             .execute();
 
           for (let i = 0; i < ids.length; i++) {

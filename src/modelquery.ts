@@ -1,5 +1,5 @@
-import { QueryBuilder, WhereOperator, OrderDirection } from "./querybuilder.ts";
-import { Adapter, DatabaseResult } from "./adapters/adapter.ts";
+import { QueryBuilder, OrderDirection } from "./querybuilder.ts";
+import { Adapter, DatabaseResult, DatabaseValues } from "./adapters/adapter.ts";
 import {
   getTableName,
   getRelations,
@@ -15,6 +15,7 @@ import {
 import { RelationType } from "./model.ts";
 import { quote } from "./utils/dialect.ts";
 import { DeepPartial } from "./manager.ts";
+import { QueryExpression, Q } from "./q.ts";
 
 /**
  * Perform query to a model.
@@ -47,55 +48,79 @@ export class ModelQuery<T> {
 
   /**
    * Add basic WHERE clause to query.
+   * 
+   * @param column the table column name
+   * @param value the expected value
    */
-  public where(column: Extract<keyof T, string>, value: any): this;
+  public where(column: string, value: DatabaseValues): this;
+
+  /**
+   * Add basic WHERE clause to query with custom query expression.
+   * 
+   * @param column the table column name
+   * @param expresion a custom SQL expression to filter the records
+   */
+  public where(column: string, expression: QueryExpression): this;
+
+  /** Add basic WHERE clause to query */
   public where(
-    column: Extract<keyof T, string>,
-    operator: WhereOperator,
-    value: any,
-  ): this;
-  public where(
-    column: Extract<keyof T, string>,
-    operator: WhereOperator,
-    value?: any,
+    column: string,
+    expression: DatabaseValues | QueryExpression,
   ): this {
-    this.builder.where(this.getColumnName(column), operator, value);
+    this.builder.where(
+      this.getColumnName(column),
+      expression as DatabaseValues,
+    );
     return this;
   }
 
   /**
    * Add WHERE NOT clause to query.
+   * 
+   * @param column the table column name
+   * @param value the expected value
    */
-  public not(column: Extract<keyof T, string>, value: any): this;
+  public not(column: string, value: DatabaseValues): this;
+
+  /**
+   * Add WHERE NOT clause to query with custom query expression.
+   * 
+   * @param column the table column name
+   * @param expresion a custom SQL expression to filter the records
+   */
+  public not(column: string, expression: QueryExpression): this;
+
+  /** Add WHERE NOT clause to query. */
   public not(
-    column: Extract<keyof T, string>,
-    operator: WhereOperator,
-    value: any,
-  ): this;
-  public not(
-    column: Extract<keyof T, string>,
-    operator: WhereOperator,
-    value?: any,
+    column: string,
+    expression: DatabaseValues | QueryExpression,
   ): this {
-    this.builder.not(this.getColumnName(column), operator, value);
+    this.builder.not(this.getColumnName(column), expression as DatabaseValues);
     return this;
   }
 
   /**
    * Add WHERE ... OR clause to query.
+   * 
+   * @param column the table column name
+   * @param value the expected value
    */
-  public or(column: Extract<keyof T, string>, value: any): this;
+  public or(column: string, value: DatabaseValues): this;
+
+  /**
+   * Add WHERE ... OR clause to query with custom query expression.
+   * 
+   * @param column the table column name
+   * @param expresion a custom SQL expression to filter the records
+   */
+  public or(column: string, expression: QueryExpression): this;
+
+  /** Add WHERE ... OR clause to query. */
   public or(
-    column: Extract<keyof T, string>,
-    operator: WhereOperator,
-    value: any,
-  ): this;
-  public or(
-    column: Extract<keyof T, string>,
-    operator: WhereOperator,
-    value?: any,
+    column: string,
+    expression: DatabaseValues | QueryExpression,
   ): this {
-    this.builder.or(this.getColumnName(column), operator, value);
+    this.builder.or(this.getColumnName(column), expression as DatabaseValues);
     return this;
   }
 
@@ -242,7 +267,7 @@ export class ModelQuery<T> {
       if (recordIds.length === 1) {
         const id = recordIds[0][tableName + "__" + primaryKeyInfo.name];
         result = await this.builder
-          .where(primaryKeyInfo.name, id)
+          .where(primaryKeyInfo.name, Q.eq(id))
           .execute();
       } else {
         return null;

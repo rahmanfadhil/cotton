@@ -8,6 +8,7 @@ import { DatabaseDialect } from "./connect.ts";
 import { formatDate } from "./utils/date.ts";
 import { quote } from "./utils/dialect.ts";
 import { DatabaseValues } from "./adapters/adapter.ts";
+import { QueryOperator } from "./q.ts";
 
 /**
  * Transform QueryDescription to an executable SQL query string
@@ -300,7 +301,7 @@ export class QueryCompiler {
     // Add where clauses if exists
     if (this.description.wheres.length > 0) {
       for (let index = 0; index < this.description.wheres.length; index++) {
-        const { type, operator, value, column } =
+        const { type, expression: { operator, value }, column } =
           this.description.wheres[index];
 
         // Get the table name, column name, and the operator.
@@ -311,14 +312,14 @@ export class QueryCompiler {
 
         // Add the value to the WHERE clause, if the operator is BETWEEN,
         // use AND keyword to seperate both values.
-        if (operator === "between") {
+        if (operator === QueryOperator.Between) {
           if (!Array.isArray(value) || value.length !== 2) {
             throw new Error("BETWEEN must have two values!");
           }
 
           const a = this.bindValue(value[0]);
           const b = this.bindValue(value[1]);
-          expression += ` ${a} and ${b}`;
+          expression += ` ${a} AND ${b}`;
         } else {
           expression += ` ${this.bindValue(value)}`;
         }
@@ -377,7 +378,7 @@ export class QueryCompiler {
    * 
    * @param value The value to be sanitized
    */
-  private bindValue(value: DatabaseValues): string {
+  private bindValue(value: DatabaseValues | DatabaseValues[]): string {
     if (Array.isArray(value)) {
       const values = value
         .map((item) => this.bindValue(item))

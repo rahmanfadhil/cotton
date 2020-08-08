@@ -1,5 +1,6 @@
 import { WhereType, QueryType, JoinType } from "./querybuilder.ts";
 import { testQueryBuilder } from "./testutils.ts";
+import { Q, QueryOperator, QueryExpression } from "./q.ts";
 
 // Where
 
@@ -8,36 +9,21 @@ testQueryBuilder(
   (query) => query.where("email", "a@b.com"),
   {
     wheres: [{
-      column: "email",
-      operator: "=",
-      value: "a@b.com",
       type: WhereType.Default,
+      column: "email",
+      expression: Q.eq("a@b.com"),
     }],
   },
 );
 
 testQueryBuilder(
-  "`where` with custom operator",
-  (query) => query.where("age", ">", 16),
+  "`where` with custom expression",
+  (query) => query.where("age", Q.gt(16)),
   {
     wheres: [{
       type: WhereType.Default,
       column: "age",
-      operator: ">",
-      value: 16,
-    }],
-  },
-);
-
-testQueryBuilder(
-  "`where` with multiple values",
-  (query) => query.where("id", "in", [1, 2, 3]),
-  {
-    wheres: [{
-      type: WhereType.Default,
-      column: "id",
-      operator: "in",
-      value: [1, 2, 3],
+      expression: Q.gt(16),
     }],
   },
 );
@@ -46,83 +32,54 @@ testQueryBuilder(
   "multiple `where` clauses",
   (query) =>
     query
-      .where("email", "a@b.com")
-      .where("age", ">", 16)
-      .where("is_active", true)
-      .where("birthday", new Date("7 July, 2020")),
+      .where("email", Q.eq("a@b.com"))
+      .where("age", Q.gt(16))
+      .where("is_active", Q.eq(true))
+      .where("birthday", Q.eq(new Date("7 July, 2020"))),
   {
     wheres: [{
       type: WhereType.Default,
-      operator: "=",
       column: "email",
-      value: "a@b.com",
+      expression: Q.eq("a@b.com"),
     }, {
       type: WhereType.Default,
-      operator: ">",
       column: "age",
-      value: 16,
+      expression: Q.gt(16),
     }, {
       type: WhereType.Default,
-      operator: "=",
       column: "is_active",
-      value: true,
+      expression: Q.eq(true),
     }, {
       type: WhereType.Default,
-      operator: "=",
       column: "birthday",
-      value: new Date("7 July, 2020"),
+      expression: {
+        operator: QueryOperator.Equal,
+        value: new Date("7 July, 2020"),
+      },
     }],
   },
 );
 
 testQueryBuilder(
   "`or`",
-  (query) => query.or("email", "a@b.com"),
+  (query) => query.or("email", Q.eq("a@b.com")),
   {
     wheres: [{
       type: WhereType.Or,
       column: "email",
-      operator: "=",
-      value: "a@b.com",
-    }],
-  },
-);
-
-testQueryBuilder(
-  "`or` with custom operator",
-  (query) => query.or("age", ">", 16),
-  {
-    wheres: [{
-      type: WhereType.Or,
-      column: "age",
-      operator: ">",
-      value: 16,
+      expression: Q.eq("a@b.com"),
     }],
   },
 );
 
 testQueryBuilder(
   "`not`",
-  (query) => query.not("email", "a@b.com"),
+  (query) => query.not("email", Q.eq("a@b.com")),
   {
     wheres: [{
       type: WhereType.Not,
       column: "email",
-      operator: "=",
-      value: "a@b.com",
-    }],
-  },
-);
-
-testQueryBuilder(
-  "`not` with custom operator",
-  (query) => query.not("age", ">", 16),
-  {
-    wheres: [{
-      type: WhereType.Not,
-      column: "age",
-      operator: ">",
-      value: 16,
+      expression: Q.eq("a@b.com"),
     }],
   },
 );
@@ -131,25 +88,22 @@ testQueryBuilder(
   "`or` and `not`",
   (query) =>
     query
-      .where("email", "a@b.com")
-      .or("name", "like", "%john%")
-      .not("age", ">", 16),
+      .where("email", Q.eq("a@b.com"))
+      .or("name", Q.like("%john%"))
+      .not("age", Q.gt(16)),
   {
     wheres: [{
       type: WhereType.Default,
       column: "email",
-      operator: "=",
-      value: "a@b.com",
+      expression: Q.eq("a@b.com"),
     }, {
       type: WhereType.Or,
       column: "name",
-      operator: "like",
-      value: "%john%",
+      expression: Q.like("%john%"),
     }, {
       type: WhereType.Not,
       column: "age",
-      operator: ">",
-      value: 16,
+      expression: Q.gt(16),
     }],
   },
 );
@@ -318,13 +272,12 @@ testQueryBuilder(
 
 testQueryBuilder(
   "basic `delete`",
-  (query) => query.where("email", "a@b.com").delete(),
+  (query) => query.where("email", Q.eq("a@b.com")).delete(),
   {
     wheres: [{
       type: WhereType.Default,
       column: "email",
-      operator: "=",
-      value: "a@b.com",
+      expression: Q.eq("a@b.com"),
     }],
     type: QueryType.Delete,
   },
@@ -339,7 +292,7 @@ testQueryBuilder(
   "basic `update`",
   (query) =>
     query
-      .where("email", "a@b.com")
+      .where("email", Q.eq("a@b.com"))
       .update({
         name: "John",
         age: 16,
@@ -350,8 +303,7 @@ testQueryBuilder(
     wheres: [{
       type: WhereType.Default,
       column: "email",
-      operator: "=",
-      value: "a@b.com",
+      expression: Q.eq("a@b.com"),
     }],
     values: {
       name: "John",
