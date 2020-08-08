@@ -54,24 +54,24 @@ db.table("users").where("id", Q.between([1, 5])); // SELECT * FROM `users` WHERE
 
 These are the valid expressions you can access through `Q` utility.
 
-| Syntax           | SQL Equivalent | Description                               |
-| ---------------- | -------------- | ----------------------------------------- |
-| `Q.in()`         | `IN`           | The value is one of the given values      |
-| `Q.notIn()`      | `NOT IN`       | The value is not one of the given values  |
-| `Q.between()`    | `BETWEEN`      | The value (number) is between two numbers |
-| `Q.notBetween()` | `NOT BETWEEN`  | The value (number) is between two numbers |
-| `Q.like()`       | `LIKE`         | LIKE operator                             |
-| `Q.notLike()`    | `NOT LIKE`     | NOT LIKE operator                         |
-| `Q.ilike()`      | `ILIKE`        | ILIKE (case-insensitive) operator         |
-| `Q.notIlike()`   | `NOT ILIKE`    | NOT ILIKE (case-insensitive) operator     |
-| `Q.eq()`         | `=`            | Is equal to                               |
-| `Q.neq()`        | `!=`           | Is not equal to                           |
-| `Q.gt()`         | `>`            | Greater than                              |
-| `Q.gte()`        | `>=`           | Greater than equal                        |
-| `Q.lt()`         | `<`            | Lower than                                |
-| `Q.lte()`        | `<=`           | Lower than equal                          |
-| `Q.null()`       | `IS NULL`      | Is the value null                         |
-| `Q.notNull()`    | `IS NOT NULL`  | Is the value not null                     |
+| Syntax                 | SQL Equivalent | Description                               |
+| ---------------------- | -------------- | ----------------------------------------- |
+| `Q.in([1, 2, 3])`      | `IN`           | The value is one of the given values      |
+| `Q.notIn([1, 2, 3])`   | `NOT IN`       | The value is not one of the given values  |
+| `Q.between(5, 10)`     | `BETWEEN`      | The value (number) is between two numbers |
+| `Q.notBetween(5, 10)`  | `NOT BETWEEN`  | The value (number) is between two numbers |
+| `Q.like('%john%')`     | `LIKE`         | LIKE operator                             |
+| `Q.notLike('%john%')`  | `NOT LIKE`     | NOT LIKE operator                         |
+| `Q.ilike('%john%')`    | `ILIKE`        | ILIKE (case-insensitive) operator         |
+| `Q.notIlike('%john%')` | `NOT ILIKE`    | NOT ILIKE (case-insensitive) operator     |
+| `Q.eq('a@b.com')`      | `=`            | Is equal to                               |
+| `Q.neq('a@b.com')`     | `!=`           | Is not equal to                           |
+| `Q.gt(7)`              | `>`            | Greater than                              |
+| `Q.gte(7)`             | `>=`           | Greater than equal                        |
+| `Q.lt(7)`              | `<`            | Lower than                                |
+| `Q.lte(7)`             | `<=`           | Lower than equal                          |
+| `Q.null()`             | `IS NULL`      | Is the value null                         |
+| `Q.notNull()`          | `IS NOT NULL`  | Is the value not null                     |
 
 Currently, the valid values are `boolean`, `string`, `null`, `number`, and `Date`.
 
