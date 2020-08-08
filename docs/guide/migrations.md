@@ -17,7 +17,7 @@ The cool thing about this feature is not only you can **apply** new migrations, 
 The first thing you need to do is install the Cotton CLI.
 
 ```
-$ deno install --allow-net --allow-read --allow-write -n cotton https://deno.land/x/cotton@v0.7.0/cli.ts
+$ deno install --allow-net --allow-read --allow-write -n cotton https://deno.land/x/cotton@v0.6.6/cli.ts
 ```
 
 Once the installation is finished, you can type `cotton` in your terminal to verify your installation.
@@ -44,8 +44,6 @@ Commands:
   migration:down    Revert the last "batch" migrations
   migration:info    Get the status of all migrations
 ```
-
-> We're not going to dive deeper into Cotton CLI in this section, but you can read more about it [here](/guide/cli).
 
 As you can see, we have a bunch of commands which we can use to manage our migrations. Let's start by creating a new migration file.
 

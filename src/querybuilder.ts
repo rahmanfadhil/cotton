@@ -1,19 +1,6 @@
 import { Adapter, DatabaseResult, DatabaseValues } from "./adapters/adapter.ts";
 import { QueryCompiler } from "./querycompiler.ts";
-
-/**
- * WHERE operators
- */
-export type WhereOperator =
-  | ">"
-  | ">="
-  | "<"
-  | "<="
-  | "="
-  | "!="
-  | "like"
-  | "in"
-  | "between";
+import { QueryExpression, Q } from "./q.ts";
 
 /**
  * Combine WHERE operators with OR or NOT
@@ -34,8 +21,7 @@ export type OrderDirection = "DESC" | "ASC";
  */
 interface WhereBinding {
   column: string;
-  operator: WhereOperator;
-  value: any;
+  expression: QueryExpression;
   type: WhereType;
 }
 
@@ -191,70 +177,96 @@ export class QueryBuilder {
 
   /**
    * Add basic WHERE clause to query
+   * 
+   * @param column the table column name
+   * @param value the expected value
    */
-  public where(column: string, value: any): QueryBuilder;
+  public where(column: string, value: DatabaseValues): QueryBuilder;
+
+  /**
+   * Add basic WHERE clause to query with custom query expression.
+   * 
+   * @param column the table column name
+   * @param expresion a custom SQL expression to filter the records
+   */
+  public where(column: string, expression: QueryExpression): QueryBuilder;
+
+  /** Add basic WHERE clause to query */
   public where(
     column: string,
-    operator: WhereOperator,
-    value: any,
-  ): QueryBuilder;
-  public where(
-    column: string,
-    operator: WhereOperator,
-    value?: any,
+    expression: DatabaseValues | QueryExpression,
   ): QueryBuilder {
-    // If the third parameter is undefined, we assume the user want to use the
-    // Default operation, which is `=`. Otherwise, it will use the custom
-    // operation defined by the user.
-    if (typeof value === "undefined") {
-      this.addWhereClause({ column, value: operator, type: WhereType.Default });
-    } else {
-      this.addWhereClause({ column, operator, value, type: WhereType.Default });
-    }
+    this.description.wheres.push({
+      column,
+      expression: expression instanceof QueryExpression
+        ? expression
+        : Q.eq(expression),
+      type: WhereType.Default,
+    });
 
     return this;
   }
 
   /**
    * Add WHERE NOT clause to query
+   * 
+   * @param column the table column name
+   * @param value the expected value
    */
-  public not(column: string, value: any): QueryBuilder;
-  public not(column: string, operator: WhereOperator, value: any): QueryBuilder;
+  public not(column: string, value: DatabaseValues): QueryBuilder;
+
+  /**
+   * Add WHERE NOT clause to query with custom query expression.
+   * 
+   * @param column the table column name
+   * @param expresion a custom SQL expression to filter the records
+   */
+  public not(column: string, expression: QueryExpression): QueryBuilder;
+
+  /** Add WHERE NOT clause to query */
   public not(
     column: string,
-    operator: WhereOperator,
-    value?: any,
+    expression: DatabaseValues | QueryExpression,
   ): QueryBuilder {
-    // If the third parameter is undefined, we assume the user want to use the
-    // Default operation, which is `=`. Otherwise, it will use the custom
-    // operation defined by the user.
-    if (typeof value === "undefined") {
-      this.addWhereClause({ column, value: operator, type: WhereType.Not });
-    } else {
-      this.addWhereClause({ column, operator, value, type: WhereType.Not });
-    }
+    this.description.wheres.push({
+      column,
+      expression: expression instanceof QueryExpression
+        ? expression
+        : Q.eq(expression),
+      type: WhereType.Not,
+    });
 
     return this;
   }
 
   /**
    * Add WHERE ... OR clause to query
+   * 
+   * @param column the table column name
+   * @param value the expected value
    */
-  public or(column: string, value: any): QueryBuilder;
-  public or(column: string, operator: WhereOperator, value: any): QueryBuilder;
+  public or(column: string, value: DatabaseValues): QueryBuilder;
+
+  /**
+   * Add WHERE ... OR clause to query with custom query expression.
+   * 
+   * @param column the table column name
+   * @param expresion a custom SQL expression to filter the records
+   */
+  public or(column: string, expression: QueryExpression): QueryBuilder;
+
+  /** Add WHERE ... OR clause to query */
   public or(
     column: string,
-    operator: WhereOperator,
-    value?: any,
+    expression: DatabaseValues | QueryExpression,
   ): QueryBuilder {
-    // If the third parameter is undefined, we assume the user want to use the
-    // Default operation, which is `=`. Otherwise, it will use the custom
-    // operation defined by the user.
-    if (typeof value === "undefined") {
-      this.addWhereClause({ column, value: operator, type: WhereType.Or });
-    } else {
-      this.addWhereClause({ column, operator, value, type: WhereType.Or });
-    }
+    this.description.wheres.push({
+      column,
+      expression: expression instanceof QueryExpression
+        ? expression
+        : Q.eq(expression),
+      type: WhereType.Or,
+    });
 
     return this;
   }
@@ -297,6 +309,7 @@ export class QueryBuilder {
     if (offset > 0) {
       this.description.offset = offset;
     }
+
     return this;
   }
 
@@ -442,7 +455,6 @@ export class QueryBuilder {
     }
 
     const { text, values } = this.toSQL();
-
     return currentAdapter.query(text, values);
   }
 
@@ -456,32 +468,5 @@ export class QueryBuilder {
       this.adapter.dialect,
     ).compile();
     return { text, values };
-  }
-
-  // --------------------------------------------------------------------------------
-  // PRIVATE HELPER METHODS
-  // --------------------------------------------------------------------------------
-
-  /**
-   * Add new where clause to query
-   */
-  private addWhereClause(
-    options: {
-      column: string;
-      operator?: WhereOperator;
-      value: any;
-      type: WhereType;
-    },
-  ) {
-    // Populate options with default values
-    const clause: WhereBinding = {
-      type: options.type,
-      column: options.column,
-      operator: options.operator || "=",
-      value: options.value,
-    };
-
-    // Push to `wheres` description
-    this.description.wheres.push(clause);
   }
 }

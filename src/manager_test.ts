@@ -3,6 +3,7 @@ import { Manager } from "./manager.ts";
 import { assert, assertEquals, assertThrowsAsync } from "../testdeps.ts";
 import { ModelQuery } from "./modelquery.ts";
 import { isSaved } from "./utils/models.ts";
+import { Q } from "./q.ts";
 
 Deno.test("Manager.query() -> should return a ModelQuery", () => {
   const adapter = Symbol();
@@ -193,7 +194,7 @@ testDB("Manager.save() -> should save multiple models", async (client) => {
   assertEquals(userInsert.last_name, user1.lastName);
   const productInsert = await client
     .table("product")
-    .where("product_id", "in", [product1.productId, product3.productId])
+    .where("product_id", Q.in([product1.productId, product3.productId]))
     .execute();
   assertEquals(productInsert[0].title, product1.title);
   assertEquals(productInsert[1].title, product3.title);

@@ -26,3 +26,4 @@ import "./src/serializers/serializer_test.ts";
 import "./src/serializers/decorators/serializer_test.ts";
 import "./src/serializers/serializers/typeserializer_test.ts";
 import "./src/utils/serializers_test.ts";
+import "./src/q_test.ts";

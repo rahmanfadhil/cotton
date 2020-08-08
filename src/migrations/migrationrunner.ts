@@ -73,7 +73,7 @@ export class MigrationRunner {
 
         try {
           const fileContent = await import(
-            joinPath(this.migrationDir, file.name)
+            "file://" + joinPath(this.migrationDir, file.name)
           );
 
           if (
@@ -85,7 +85,7 @@ export class MigrationRunner {
 
           migration = { up: fileContent.up, down: fileContent.down };
         } catch {
-          throw new Error(`Failed to load '${file.name}' migration class!`);
+          throw new Error(`Failed to load '${file.name}' migration file!`);
         }
 
         migrations.push({

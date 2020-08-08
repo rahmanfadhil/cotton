@@ -14,3 +14,4 @@ export {
   BelongsTo,
   Model,
 } from "./src/model.ts";
+export { Q } from "./src/q.ts";

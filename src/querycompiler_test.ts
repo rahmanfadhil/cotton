@@ -3,6 +3,7 @@ import { formatDate } from "./utils/date.ts";
 import { testQueryCompiler } from "./testutils.ts";
 import { assertThrows } from "../testdeps.ts";
 import { QueryCompiler } from "./querycompiler.ts";
+import { QueryOperator, QueryExpression, Q } from "./q.ts";
 
 // --------------------------------------------------------------------------------
 // SELECT
@@ -11,8 +12,7 @@ import { QueryCompiler } from "./querycompiler.ts";
 testQueryCompiler("basic `where`", {
   wheres: [{
     column: "email",
-    value: "a@b.com",
-    operator: "=",
+    expression: Q.eq("a@b.com"),
     type: WhereType.Default,
   }],
 }, {
@@ -33,8 +33,7 @@ testQueryCompiler("basic `where`", {
 testQueryCompiler("`where` with boolean true value", {
   wheres: [{
     column: "is_active",
-    value: true,
-    operator: "=",
+    expression: Q.eq(true),
     type: WhereType.Default,
   }],
 }, {
@@ -55,8 +54,7 @@ testQueryCompiler("`where` with boolean true value", {
 testQueryCompiler("`where` with boolean false value", {
   wheres: [{
     column: "is_active",
-    value: false,
-    operator: "=",
+    expression: Q.eq(false),
     type: WhereType.Default,
   }],
 }, {
@@ -77,21 +75,20 @@ testQueryCompiler("`where` with boolean false value", {
 testQueryCompiler("`where` with number value", {
   wheres: [{
     column: "age",
-    value: 16,
-    operator: "=",
+    expression: Q.gt(16),
     type: WhereType.Default,
   }],
 }, {
   mysql: {
-    text: "SELECT `users`.* FROM `users` WHERE `users`.`age` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`age` > ?;",
     values: [16],
   },
   sqlite: {
-    text: "SELECT `users`.* FROM `users` WHERE `users`.`age` = ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`age` > ?;",
     values: [16],
   },
   postgres: {
-    text: 'SELECT "users".* FROM "users" WHERE "users"."age" = $1;',
+    text: 'SELECT "users".* FROM "users" WHERE "users"."age" > $1;',
     values: [16],
   },
 });
@@ -99,8 +96,7 @@ testQueryCompiler("`where` with number value", {
 testQueryCompiler("`where` with date value", {
   wheres: [{
     column: "birthday",
-    value: new Date("6 July, 2020"),
-    operator: "=",
+    expression: Q.eq(new Date("6 July, 2020")),
     type: WhereType.Default,
   }],
 }, {
@@ -214,21 +210,20 @@ Deno.test("QueryCompiler: select columns with alias must have two values", () =>
 testQueryCompiler("`where` in", {
   wheres: [{
     column: "role",
-    value: ["guest", "author"],
-    operator: "in",
     type: WhereType.Default,
+    expression: Q.in(["guest", "author"]),
   }],
 }, {
   mysql: {
-    text: "SELECT `users`.* FROM `users` WHERE `users`.`role` in (?, ?);",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`role` IN (?, ?);",
     values: ["guest", "author"],
   },
   sqlite: {
-    text: "SELECT `users`.* FROM `users` WHERE `users`.`role` in (?, ?);",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`role` IN (?, ?);",
     values: ["guest", "author"],
   },
   postgres: {
-    text: 'SELECT "users".* FROM "users" WHERE "users"."role" in ($1, $2);',
+    text: 'SELECT "users".* FROM "users" WHERE "users"."role" IN ($1, $2);',
     values: ["guest", "author"],
   },
 });
@@ -236,22 +231,21 @@ testQueryCompiler("`where` in", {
 testQueryCompiler("`where` in number value", {
   wheres: [{
     column: "id",
-    value: [5, 7, 11, 12],
-    operator: "in",
+    expression: new QueryExpression(QueryOperator.In, [5, 7, 11, 12]),
     type: WhereType.Default,
   }],
 }, {
   mysql: {
-    text: "SELECT `users`.* FROM `users` WHERE `users`.`id` in (?, ?, ?, ?);",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`id` IN (?, ?, ?, ?);",
     values: [5, 7, 11, 12],
   },
   sqlite: {
-    text: "SELECT `users`.* FROM `users` WHERE `users`.`id` in (?, ?, ?, ?);",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`id` IN (?, ?, ?, ?);",
     values: [5, 7, 11, 12],
   },
   postgres: {
     text:
-      'SELECT "users".* FROM "users" WHERE "users"."id" in ($1, $2, $3, $4);',
+      'SELECT "users".* FROM "users" WHERE "users"."id" IN ($1, $2, $3, $4);',
     values: [5, 7, 11, 12],
   },
 });
@@ -259,21 +253,20 @@ testQueryCompiler("`where` in number value", {
 testQueryCompiler("`where` like", {
   wheres: [{
     column: "name",
-    value: "%john%",
-    operator: "like",
     type: WhereType.Default,
+    expression: Q.like("%john%"),
   }],
 }, {
   mysql: {
-    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` like ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` LIKE ?;",
     values: ["%john%"],
   },
   sqlite: {
-    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` like ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` LIKE ?;",
     values: ["%john%"],
   },
   postgres: {
-    text: 'SELECT "users".* FROM "users" WHERE "users"."name" like $1;',
+    text: 'SELECT "users".* FROM "users" WHERE "users"."name" LIKE $1;',
     values: ["%john%"],
   },
 });
@@ -281,100 +274,72 @@ testQueryCompiler("`where` like", {
 testQueryCompiler("`where` between", {
   wheres: [{
     column: "age",
-    value: [1, 5],
-    operator: "between",
     type: WhereType.Default,
+    expression: Q.between(1, 5),
   }],
 }, {
   mysql: {
-    text: "SELECT `users`.* FROM `users` WHERE `users`.`age` between ? and ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`age` BETWEEN ? AND ?;",
     values: [1, 5],
   },
   sqlite: {
-    text: "SELECT `users`.* FROM `users` WHERE `users`.`age` between ? and ?;",
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`age` BETWEEN ? AND ?;",
     values: [1, 5],
   },
   postgres: {
     text:
-      'SELECT "users".* FROM "users" WHERE "users"."age" between $1 and $2;',
+      'SELECT "users".* FROM "users" WHERE "users"."age" BETWEEN $1 AND $2;',
     values: [1, 5],
   },
 });
 
-Deno.test("QueryCompiler: BETWEEN must have two values", () => {
-  assertThrows(
-    () => {
-      new QueryCompiler({
-        type: QueryType.Select,
-        wheres: [{
-          type: WhereType.Default,
-          column: "age",
-          operator: "between",
-          value: [1, 2, 5],
-        }],
-        columns: [],
-        orders: [],
-        returning: [],
-        joins: [],
-        tableName: "`users`",
-        counts: [],
-      }, "" as any).compile();
-    },
-    Error,
-    "BETWEEN must have two values!",
-  );
+testQueryCompiler("`where` is null", {
+  wheres: [{
+    column: "name",
+    type: WhereType.Default,
+    expression: Q.null(),
+  }],
+}, {
+  mysql: {
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` IS NULL;",
+    values: [],
+  },
+  sqlite: {
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` IS NULL;",
+    values: [],
+  },
+  postgres: {
+    text: 'SELECT "users".* FROM "users" WHERE "users"."name" IS NULL;',
+    values: [],
+  },
+});
 
-  assertThrows(
-    () => {
-      new QueryCompiler({
-        type: QueryType.Select,
-        wheres: [{
-          type: WhereType.Default,
-          column: "age",
-          operator: "between",
-          value: [1],
-        }],
-        columns: [],
-        orders: [],
-        returning: [],
-        joins: [],
-        tableName: "`users`",
-        counts: [],
-      }, "" as any).compile();
-    },
-    Error,
-    "BETWEEN must have two values!",
-  );
-
-  assertThrows(
-    () => {
-      new QueryCompiler({
-        type: QueryType.Select,
-        wheres: [{
-          type: WhereType.Default,
-          column: "age",
-          operator: "between",
-          value: "blah",
-        }],
-        columns: [],
-        orders: [],
-        returning: [],
-        joins: [],
-        tableName: "`users`",
-        counts: [],
-      }, "" as any).compile();
-    },
-    Error,
-    "BETWEEN must have two values!",
-  );
+testQueryCompiler("`where` is not null", {
+  wheres: [{
+    column: "name",
+    type: WhereType.Default,
+    expression: Q.notNull(),
+  }],
+}, {
+  mysql: {
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` IS NOT NULL;",
+    values: [],
+  },
+  sqlite: {
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` IS NOT NULL;",
+    values: [],
+  },
+  postgres: {
+    text: 'SELECT "users".* FROM "users" WHERE "users"."name" IS NOT NULL;',
+    values: [],
+  },
 });
 
 testQueryCompiler("`where` not", {
   wheres: [{
     type: WhereType.Not,
     column: "email",
-    operator: "=",
-    value: "a@b.com",
+    expression: Q.eq("a@b.com"),
   }],
 }, {
   mysql: {
@@ -394,13 +359,11 @@ testQueryCompiler("`where` not", {
 testQueryCompiler("`where` and", {
   wheres: [{
     column: "name",
-    operator: "=",
-    value: "john",
+    expression: Q.eq("john"),
     type: WhereType.Default,
   }, {
     column: "email",
-    operator: "=",
-    value: "a@b.com",
+    expression: Q.eq("a@b.com"),
     type: WhereType.Default,
   }],
 }, {
@@ -424,14 +387,12 @@ testQueryCompiler("`where` and", {
 testQueryCompiler("`where` or", {
   wheres: [{
     column: "name",
-    operator: "=",
-    value: "john",
+    expression: Q.eq("john"),
     type: WhereType.Default,
   }, {
     type: WhereType.Or,
     column: "email",
-    operator: "=",
-    value: "a@b.com",
+    expression: Q.eq("a@b.com"),
   }],
 }, {
   mysql: {
@@ -454,14 +415,12 @@ testQueryCompiler("`where` or", {
 testQueryCompiler("`where` and not", {
   wheres: [{
     column: "name",
-    operator: "=",
-    value: "john",
+    expression: Q.eq("john"),
     type: WhereType.Default,
   }, {
     type: WhereType.Not,
     column: "email",
-    operator: "=",
-    value: "a@b.com",
+    expression: Q.eq("a@b.com"),
   }],
 }, {
   mysql: {
@@ -507,6 +466,10 @@ testQueryCompiler("`count` should add COUNT statement", {
     values: [],
   },
 });
+
+// --------------------------------------------------------------------------------
+// JOINS
+// --------------------------------------------------------------------------------
 
 testQueryCompiler("`where` inner join", {
   tableName: "orders",
@@ -643,8 +606,7 @@ testQueryCompiler("`delete` and `where`", {
   type: QueryType.Delete,
   wheres: [{
     column: "email",
-    operator: "=",
-    value: "a@b.com",
+    expression: Q.eq("a@b.com"),
     type: WhereType.Default,
   }],
 }, {
@@ -670,8 +632,7 @@ testQueryCompiler("`insert` should have no respect to where clauses", {
   type: QueryType.Insert,
   wheres: [{
     column: "email",
-    operator: "=",
-    value: "a@b.com",
+    expression: Q.eq("a@b.com"),
     type: WhereType.Default,
   }],
   values: { email: "a@b.com" },
@@ -835,8 +796,7 @@ testQueryCompiler("`replace` should have no respect to where clauses", {
   type: QueryType.Replace,
   wheres: [{
     column: "email",
-    operator: "=",
-    value: "a@b.com",
+    expression: Q.eq("a@b.com"),
     type: WhereType.Default,
   }],
   values: { email: "a@b.com" },
@@ -1000,8 +960,7 @@ testQueryCompiler("basic `update`", {
   type: QueryType.Update,
   wheres: [{
     column: "email",
-    operator: "=",
-    value: "a@b.com",
+    expression: Q.eq("a@b.com"),
     type: WhereType.Default,
   }],
   values: {
