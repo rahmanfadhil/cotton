@@ -321,7 +321,8 @@ export class QueryCompiler {
           const b = this.bindValue(value[1]);
           expression += ` ${a} AND ${b}`;
         } else if (
-          operator !== QueryOperator.Null && operator !== QueryOperator.NotNull
+          operator !== QueryOperator.Null &&
+          operator !== QueryOperator.NotNull
         ) {
           expression += ` ${this.bindValue(value)}`;
         }
