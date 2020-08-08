@@ -4,8 +4,16 @@ There are still a lot of room for improvements. Here are some features that are 
 
 [Query Buider](./src/querybuilder.ts)
 
+Here are some query expressions that haven't implemented yet.
+
 - MIN and MAX
-- COUNT
+- HAVING
+- GROUP BY
+
+We also want to add some features like:
+
+- Add custom SQL query string.
+- Nested queries (combining AND & OR hierarchically).
 
 [Adapter](./src/adapters)
 
@@ -14,60 +22,57 @@ There are still a lot of room for improvements. Here are some features that are 
 [Migrations](./src/migrations)
 
 - Add index in [TableBuilder](./src/migrations/tablebuilder.ts)
-- [TableUpdater](./src/migrations/tableupdater.ts) (to alter a table)
-- [MigrationRunner](./src/migrations/migrationrunner.ts) (to perform migrations)
-- [CLI](./cli.ts) (to generate, run, and revert migrations)
+- Drop table column for SQLite in [TableBuilder](./src/migrations/tablebuilder.ts)
 - Seeder
 - Factory
 
-[Model](./src/migrations)
-
-- Delete a single record with complex query
-- Count records
-- Update records (without querying)
-
-## Roadmap
+## Roadmap to v1.0
 
 - Database Adapters
   - ✅ SQLite3 _(via [sqlite](https://github.com/dyedgreen/deno-sqlite))_
   - ✅ MySQL _(via [deno_mysql](https://manyuanrong/deno_mysql))_
-  - 🚧 MariaDB _(wait for [deno_mysql](https://github.com/manyuanrong/deno_mysql) to support it)_
+  - 🚧 MariaDB _(wait for [deno_mysql](https://github.com/manyuanrong/deno_mysql) to fully support it)_
   - ✅ PostgresQL _(via [postgres](https://github.com/deno-postgres/deno-postgres))_
 - 🚧 Query Builder
-- 🚧 Object-Relational Mapper
+- ✅ Object-Relational Mapper
   - ✅ Model Manager
-  - ❌ Relationship
-  - ❌ Data Validators
+  - ✅ Base Model
+  - 🚧 Relationships (only one-to-many)
   - ❌ Hooks
-- 🚧 Migrations
+- ✅ Command-line tool
+- ✅ Migrations
+- 🚧 Model serializer
+  - ✅ Serializing (dumping)
+  - ✅ Deserializing (loading)
+  - ❌ Validating
+  - ❌ Sanitizing
 
 ## Testing
 
-We need a more tests!
+Please make sure that you are implementing tests for the features that you're working on.
 
-- [src/connect_test.ts](./src/connect_test.ts)
-- [src/querybuilder_test.ts](./src/querybuilder_test.ts)
-- [src/adapters/sqlite_test.ts](./src/adapters/sqlite_test.ts)
-- [src/adapters/postgres_test.ts](./src/adapters/postgres_test.ts)
-- [src/adapters/mysql_test.ts](./src/adapters/mysql_test.ts)
-- [src/utils/date_test.ts](./src/utils/date_test.ts)
-- [src/model_test.ts](./src/model_test.ts)
-- [src/adapters/adapter_test.ts](./src/adapters/adapter_test.ts)
+To run the tests, you need to have [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/) installed on your machine.
 
-Before you get started, you need to have Docker and Docker Compose installed.
-
-To run the tests, execute the following command.
+Then, execute the following command.
 
 ```sh
 ./test.sh
-
-# Or
-
-docker-compose up --build --exit-code-from tests
 ```
+
+This will fire up Docker Compose and initialize 3 services. MySQL and Postgres database, and the test container itself that runs all the test code.
 
 To clean up everything, run:
 
 ```sh
 docker-compose down --volumes
 ```
+
+## Internal organization
+
+TODO: explain the internal code structure.
+
+## Writing tests
+
+There are two types of tests that we should care about, unit test and integration test. You don't have to use both of them all the time because it really depends on the feature that you're working on. If you're working on a utility function that doesn't have to access the database, unit test is the way to go. If the feature is accesing the database through high-level abstraction such as [Model Manager](https://rahmanfadhil.github.io/cotton) and [Query Builder](https://rahmanfadhil.github.io/cotton/guide/query-builder), you can still use unit test and them using `mock` library which served from the `testdeps.ts` file.
+
+However, if you're messing around with low-level APIs like [Adapter](./src/adapter.ts) and [Schema](./src/migrations/schema.ts), you probably want to implement integration tests.
