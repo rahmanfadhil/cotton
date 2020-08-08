@@ -293,6 +293,48 @@ testQueryCompiler("`where` between", {
   },
 });
 
+testQueryCompiler("`where` is null", {
+  wheres: [{
+    column: "name",
+    type: WhereType.Default,
+    expression: Q.null(),
+  }],
+}, {
+  mysql: {
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` IS NULL;",
+    values: [],
+  },
+  sqlite: {
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` IS NULL;",
+    values: [],
+  },
+  postgres: {
+    text: 'SELECT "users".* FROM "users" WHERE "users"."name" IS NULL;',
+    values: [],
+  },
+});
+
+testQueryCompiler("`where` is not null", {
+  wheres: [{
+    column: "name",
+    type: WhereType.Default,
+    expression: Q.notNull(),
+  }],
+}, {
+  mysql: {
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` IS NOT NULL;",
+    values: [],
+  },
+  sqlite: {
+    text: "SELECT `users`.* FROM `users` WHERE `users`.`name` IS NOT NULL;",
+    values: [],
+  },
+  postgres: {
+    text: 'SELECT "users".* FROM "users" WHERE "users"."name" IS NOT NULL;',
+    values: [],
+  },
+});
+
 testQueryCompiler("`where` not", {
   wheres: [{
     type: WhereType.Not,
@@ -424,6 +466,10 @@ testQueryCompiler("`count` should add COUNT statement", {
     values: [],
   },
 });
+
+// --------------------------------------------------------------------------------
+// JOINS
+// --------------------------------------------------------------------------------
 
 testQueryCompiler("`where` inner join", {
   tableName: "orders",
