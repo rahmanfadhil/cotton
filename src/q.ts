@@ -37,6 +37,7 @@ export const Q = {
     return new QueryExpression(QueryOperator.In, values);
   },
 
+  /** The value is not one of the given values */
   notIn(values: DatabaseValues[]): QueryExpression {
     return new QueryExpression(QueryOperator.NotIn, values);
   },
@@ -121,11 +122,3 @@ export const Q = {
     return new QueryExpression(QueryOperator.NotNull, null);
   },
 };
-
-// db.table("users")
-//   .where("email", Q.eq("Fadhil"))
-//   .and((q) => {
-//     q.where("age", Q.gte(17))
-//     q.not("age", Q.notNull());
-//     q.or("age", Q.notNull());
-//   })

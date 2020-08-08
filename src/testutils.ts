@@ -238,7 +238,7 @@ export function testQueryBuilder(
   Deno.test(`QueryBuilder: ${title}`, () => {
     const query = new QueryBuilder("users", {} as any);
     fn(query);
-    const expected = Object.assign({}, {
+    const expected: QueryDescription = {
       tableName: "users",
       type: QueryType.Select,
       columns: [],
@@ -247,7 +247,9 @@ export function testQueryBuilder(
       returning: [],
       joins: [],
       counts: [],
-    }, description);
+      isDistinct: false,
+      ...description,
+    };
     const actual = (query as any).description;
     assertEquals(actual, expected);
   });
@@ -279,19 +281,18 @@ export function testQueryCompiler(
       : "   ";
 
     Deno.test(`[${dialect}]${spaces}QueryCompiler: ${title}`, () => {
-      const compiler = new QueryCompiler(
-        Object.assign({}, {
-          tableName: "users",
-          type: QueryType.Select,
-          columns: [],
-          wheres: [],
-          orders: [],
-          returning: [],
-          joins: [],
-          counts: [],
-        }, description),
-        dialect as any,
-      );
+      const compiler = new QueryCompiler({
+        tableName: "users",
+        type: QueryType.Select,
+        columns: [],
+        wheres: [],
+        orders: [],
+        returning: [],
+        joins: [],
+        counts: [],
+        isDistinct: false,
+        ...description,
+      }, dialect as any);
       const { text, values } = compiler.compile();
       assertEquals(text, (result as any)[dialect].text);
       assertEquals(values, (result as any)[dialect].values);

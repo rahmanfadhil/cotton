@@ -6,9 +6,10 @@ There are still a lot of room for improvements. Here are some features that are 
 
 Here are some query expressions that haven't implemented yet.
 
-- MIN and MAX
+- MIN, MAX, SUM, AVG
 - HAVING
 - GROUP BY
+- INCREMENT & DECREMENT
 
 We also want to add some features like:
 
@@ -75,4 +76,18 @@ TODO: explain the internal code structure.
 
 There are two types of tests that we should care about, unit test and integration test. You don't have to use both of them all the time because it really depends on the feature that you're working on. If you're working on a utility function that doesn't have to access the database, unit test is the way to go. If the feature is accesing the database through high-level abstraction such as [Model Manager](https://rahmanfadhil.github.io/cotton) and [Query Builder](https://rahmanfadhil.github.io/cotton/guide/query-builder), you can still use unit test and them using `mock` library which served from the `testdeps.ts` file.
 
+To make a unit test, you can simply use the `Deno.test` function.
+
+```ts
+Deno.test("Manager.save() -> should save a model", () => {
+  // ...
+});
+```
+
 However, if you're messing around with low-level APIs like [Adapter](./src/adapter.ts) and [Schema](./src/migrations/schema.ts), you probably want to implement integration tests.
+
+```ts
+Deno.test("Adapter.save() -> should save a model", () => {
+  // ...
+});
+```

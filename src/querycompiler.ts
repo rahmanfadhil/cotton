@@ -198,10 +198,12 @@ export class QueryCompiler {
       // Append COUNT statements.
       const counts = this.description.counts
         .map((column) => {
-          const name = this.getColumnName(column.column);
+          const names = column.columns
+            .map((item) => this.getColumnName(item))
+            .join(", ");
           const count = column.distinct
-            ? `COUNT(DISTINCT(${name}))`
-            : `COUNT(${name})`;
+            ? `COUNT(DISTINCT(${names}))`
+            : `COUNT(${names})`;
           return column.as
             ? count + " AS " + quote(column.as, this.dialect)
             : count;
@@ -321,7 +323,8 @@ export class QueryCompiler {
           const b = this.bindValue(value[1]);
           expression += ` ${a} AND ${b}`;
         } else if (
-          operator !== QueryOperator.Null && operator !== QueryOperator.NotNull
+          operator !== QueryOperator.Null &&
+          operator !== QueryOperator.NotNull
         ) {
           expression += ` ${this.bindValue(value)}`;
         }
