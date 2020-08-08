@@ -44,33 +44,44 @@ Filtering records through `WHERE` clause is one of the most common thing people 
 db.table("users").where("id", 1);
 ```
 
-The first parameter is the column name, and the second is the expected value. By default, it will use the `=` operator which will check whether the value is equal. You can change this behaviour by passing three arguments.
+The first parameter is the column name, and the second is the expected value. By default, it will use the `=` operator which will check whether the value is equal. You can customize the query operator by using `Q` helper to customize the SQL expressions.
 
 ```ts
-db.table("users").where("id", ">", 1);
+db.table("users").where("id", Q.gt(1)); // SELECT * FROM `users` WHERE `id` > 1;
+db.table("users").where("id", Q.in([1, 2, 3])); // SELECT * FROM `users` WHERE `id` IN (1, 2, 3);
+db.table("users").where("id", Q.between([1, 5])); // SELECT * FROM `users` WHERE `id` BETWEEN 1 AND 5
 ```
 
-If you want to use in the `IN` operator, you need to pass an array as the value.
+These are the valid expressions you can access through `Q` utility.
 
-```ts
-db.table("users").where("id", "in", [1, 2, 3]);
-```
+| Syntax           | SQL Equivalent | Description                               |
+| ---------------- | -------------- | ----------------------------------------- |
+| `Q.in()`         | `IN`           | The value is one of the given values      |
+| `Q.notIn()`      | `NOT IN`       | The value is not one of the given values  |
+| `Q.between()`    | `BETWEEN`      | The value (number) is between two numbers |
+| `Q.notBetween()` | `NOT BETWEEN`  | The value (number) is between two numbers |
+| `Q.like()`       | `LIKE`         | LIKE operator                             |
+| `Q.notLike()`    | `NOT LIKE`     | NOT LIKE operator                         |
+| `Q.ilike()`      | `ILIKE`        | ILIKE (case-insensitive) operator         |
+| `Q.notIlike()`   | `NOT ILIKE`    | NOT ILIKE (case-insensitive) operator     |
+| `Q.eq()`         | `=`            | Is equal to                               |
+| `Q.neq()`        | `!=`           | Is not equal to                           |
+| `Q.gt()`         | `>`            | Greater than                              |
+| `Q.gte()`        | `>=`           | Greater than equal                        |
+| `Q.lt()`         | `<`            | Lower than                                |
+| `Q.lte()`        | `<=`           | Lower than equal                          |
+| `Q.null()`       | `IS NULL`      | Is the value null                         |
+| `Q.notNull()`    | `IS NOT NULL`  | Is the value not null                     |
 
-For `BETWEEN`, the value is also array but it must contains two parameter. Otherwise, it will throw an exception.
-
-```ts
-db.table("users").where("id", "between", [1, 5]);
-```
-
-The value could be anything.
+Currently, the valid values are `boolean`, `string`, `null`, `number`, and `Date`.
 
 ```ts
 query
   .table("users")
   .where("email", "a@b.com")
-  .where("age", ">", 16)
+  .where("age", Q.gte(16))
   .where("is_active", true)
-  .where("birthday", new Date("7 July, 2020"));
+  .where("birthday", Q.lt(new Date("7 July, 2020")));
 ```
 
 Sometimes you want to exclude or some records that match given conditions. For that, you can use `not`.
@@ -102,6 +113,12 @@ db.table("users").select("email", "age", "is_active");
 db.table("users").select("email").select("age").select("is_active");
 ```
 
+If you want to select only unique values, you can enable distinct select by using `distinct` method.
+
+```ts
+db.table("users").select("email").distinct();
+```
+
 ## Sorting
 
 You can sort a column using `order`.
@@ -120,6 +137,32 @@ To sort multiple column, you can chain this method as many as you want.
 
 ```ts
 db.table("users").order("age", "DESC").order("created_at");
+```
+
+## Count
+
+You can count how many records that match given conditions by using the `count` method.
+
+```ts
+db.table("users").count("is_active");
+```
+
+Count multiple columns by passing an array as the argument.
+
+```ts
+db.table("users").count(["is_active", "is_banned"]);
+```
+
+To specify an alias for the count result, you can pass the second parameter.
+
+```ts
+db.table("users").count("is_active", "a");
+```
+
+Use `countDistinct` to add distinct expression inside your count statement.
+
+```ts
+db.table("users").countDistinct("is_active", "a");
 ```
 
 ## Pagination

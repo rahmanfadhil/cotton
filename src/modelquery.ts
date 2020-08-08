@@ -203,10 +203,9 @@ export class ModelQuery<T> {
    */
   public async count(): Promise<number> {
     const primaryKeyInfo = getPrimaryKeyInfo(this.modelClass);
-    const result = await this.builder.count(primaryKeyInfo.name, {
-      as: "count",
-      distinct: true,
-    }).execute();
+    const result = await this.builder
+      .countDistinct(primaryKeyInfo.name, "count")
+      .execute();
     return Number(result[0].count) as number || 0;
   }
 

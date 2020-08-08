@@ -59,7 +59,7 @@ interface JoinBinding {
 }
 
 export interface CountBinding {
-  column: string;
+  columns: string[];
   as?: string;
   distinct: boolean;
 }
@@ -107,6 +107,9 @@ export interface QueryDescription {
 
   /** Count records with given conditions */
   counts: CountBinding[];
+
+  /** Check if the SELECT statement is using DISTINCT keyword */
+  isDistinct: boolean;
 }
 
 /**
@@ -134,6 +137,7 @@ export class QueryBuilder {
       returning: [],
       joins: [],
       counts: [],
+      isDistinct: false,
     };
   }
 
@@ -278,11 +282,11 @@ export class QueryBuilder {
    */
   public select(...columns: (string | [string, string])[]): QueryBuilder {
     // Merge the `columns` array with `this.description.columns` without any duplicate.
-    columns.forEach((column) => {
+    for (const column of columns) {
       if (!this.description.columns.includes(column)) {
         this.description.columns.push(column);
       }
-    });
+    }
 
     return this;
   }
@@ -360,17 +364,52 @@ export class QueryBuilder {
   /**
    * Count records with given conditions
    * 
-   * @param column the column you want to count
-   * @param options count with options
+   * @param column the column(s) you want to count
+   * @param as the alias for the count result
    */
-  public count(
-    column: string,
-    options?: { as?: string; distinct?: boolean },
-  ): QueryBuilder {
-    this.description.counts.push(Object.assign({}, {
-      column,
+  public count(column: string | string[], as?: string): QueryBuilder {
+    // Initialize the count information
+    const info: CountBinding = {
+      columns: Array.isArray(column) ? column : [column],
       distinct: false,
-    }, options));
+    };
+
+    // If the alias of this clause is defined, add it to `info`
+    if (typeof as === "string" && as.length >= 1) info.as = as;
+
+    // Add information to the query description
+    this.description.counts.push(info);
+
+    return this;
+  }
+
+  /**
+   * Count records with unique values
+   * 
+   * @param columns the unique column(s) you want to count
+   * @param as the alias for the count result
+   */
+  public countDistinct(column: string | string[], as?: string): QueryBuilder {
+    // Initialize the count information
+    const info: CountBinding = {
+      columns: Array.isArray(column) ? column : [column],
+      distinct: true,
+    };
+
+    // If the alias of this clause is defined, add it to `data`
+    if (typeof as === "string" && as.length >= 1) info.as = as;
+
+    // Add information to the query description
+    this.description.counts.push(info);
+
+    return this;
+  }
+
+  /**
+   * Force the query to return distinct (unique) results.
+   */
+  public distinct(): QueryBuilder {
+    this.description.isDistinct = true;
     return this;
   }
 

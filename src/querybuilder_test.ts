@@ -108,30 +108,36 @@ testQueryBuilder(
   },
 );
 
+testQueryBuilder(
+  "`distinct` should enable distinct select",
+  (query) => query.distinct(),
+  { isDistinct: true },
+);
+
 // Count
 
 testQueryBuilder(
   "`count` should count records with given conditions",
   (query) => query.count("name"),
-  { counts: [{ column: "name", distinct: false }] },
+  { counts: [{ columns: ["name"], distinct: false }] },
 );
 
 testQueryBuilder(
   "`count` should count with alias",
-  (query) => query.count("name", { as: "count" }),
-  { counts: [{ column: "name", as: "count", distinct: false }] },
+  (query) => query.count("name", "count"),
+  { counts: [{ columns: ["name"], as: "count", distinct: false }] },
 );
 
 testQueryBuilder(
-  "`count` should count with distinct",
-  (query) => query.count("name", { distinct: true }),
-  { counts: [{ column: "name", distinct: true }] },
+  "`countDistinct` should count with distinct",
+  (query) => query.countDistinct("name"),
+  { counts: [{ columns: ["name"], distinct: true }] },
 );
 
 testQueryBuilder(
-  "`count` should count with distinct and alias",
-  (query) => query.count("name", { as: "count", distinct: true }),
-  { counts: [{ column: "name", as: "count", distinct: true }] },
+  "`countDistinct` should count with distinct and alias",
+  (query) => query.countDistinct("name", "count"),
+  { counts: [{ columns: ["name"], as: "count", distinct: true }] },
 );
 
 // Pagination
