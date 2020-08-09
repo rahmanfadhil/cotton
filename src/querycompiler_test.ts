@@ -164,6 +164,8 @@ Deno.test("QueryCompiler: select columns with alias must have two values", () =>
         tableName: "`users`",
         counts: [],
         isDistinct: false,
+        groupBy: [],
+        havings: [],
       }, "" as any).compile();
     },
     Error,
@@ -185,6 +187,8 @@ Deno.test("QueryCompiler: select columns with alias must have two values", () =>
         tableName: "`users`",
         counts: [],
         isDistinct: false,
+        groupBy: [],
+        havings: [],
       }, "" as any).compile();
     },
     Error,
@@ -203,6 +207,8 @@ Deno.test("QueryCompiler: select columns with alias must have two values", () =>
         tableName: "`users`",
         counts: [],
         isDistinct: false,
+        groupBy: [],
+        havings: [],
       }, "" as any).compile();
     },
     Error,
@@ -498,6 +504,43 @@ testQueryCompiler("`count` should add COUNT DISTINCT statement", {
 });
 
 // --------------------------------------------------------------------------------
+// HAVINGS & GROUP BY
+// --------------------------------------------------------------------------------
+
+testQueryCompiler("`havings`", {
+  groupBy: ["email", "age"],
+  havings: [{
+    type: WhereType.Default,
+    column: "email",
+    expression: Q.eq("a@b.com"),
+  }, {
+    type: WhereType.Default,
+    column: "age",
+    expression: Q.gt(16),
+  }, {
+    type: WhereType.Not,
+    column: "is_active",
+    expression: Q.eq(true),
+  }],
+}, {
+  mysql: {
+    text:
+      "SELECT `users`.* FROM `users` GROUP BY `users`.`email`, `users`.`age` HAVING `users`.`email` = ? AND `users`.`age` > ? AND NOT `users`.`is_active` = 1;",
+    values: ["a@b.com", 16],
+  },
+  sqlite: {
+    text:
+      "SELECT `users`.* FROM `users` GROUP BY `users`.`email`, `users`.`age` HAVING `users`.`email` = ? AND `users`.`age` > ? AND NOT `users`.`is_active` = 1;",
+    values: ["a@b.com", 16],
+  },
+  postgres: {
+    text:
+      'SELECT "users".* FROM "users" GROUP BY "users"."email", "users"."age" HAVING "users"."email" = $1 AND "users"."age" > $2 AND NOT "users"."is_active" = TRUE;',
+    values: ["a@b.com", 16],
+  },
+});
+
+// --------------------------------------------------------------------------------
 // JOINS
 // --------------------------------------------------------------------------------
 
@@ -626,6 +669,8 @@ Deno.test("QueryCompiler: cannot perform `delete` without any constraints", () =
         tableName: "`users`",
         counts: [],
         isDistinct: false,
+        groupBy: [],
+        havings: [],
       }, "" as any).compile();
     },
     Error,

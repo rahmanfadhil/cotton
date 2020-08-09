@@ -1,6 +1,6 @@
 import { WhereType, QueryType, JoinType } from "./querybuilder.ts";
 import { testQueryBuilder } from "./testutils.ts";
-import { Q, QueryOperator, QueryExpression } from "./q.ts";
+import { Q, QueryOperator } from "./q.ts";
 
 // Where
 
@@ -176,13 +176,18 @@ testQueryBuilder(
 
 testQueryBuilder(
   "`select` multiple columns",
-  (query) => query.select("email").select("age").select("is_active"),
+  (query) =>
+    query
+      .select("email")
+      .select("age")
+      .select("is_active")
+      .select("age"),
   { columns: ["email", "age", "is_active"] },
 );
 
 testQueryBuilder(
   "`select` multiple columns with a single method",
-  (query) => query.select("email", "age", "is_active"),
+  (query) => query.select("email", "age", "is_active", "age"),
   { columns: ["email", "age", "is_active"] },
 );
 
@@ -190,6 +195,86 @@ testQueryBuilder(
   "`select` multiple columns with aliases",
   (query) => query.select(["email", "my_email"], ["age", "my_age"]),
   { columns: [["email", "my_email"], ["age", "my_age"]] },
+);
+
+// Group by
+
+testQueryBuilder(
+  "`groupBy` should add the list of all grouped columns",
+  (query) => query.groupBy("email"),
+  { groupBy: ["email"] },
+);
+
+testQueryBuilder(
+  "`groupBy` multiple columns",
+  (query) =>
+    query
+      .groupBy("email")
+      .groupBy("age")
+      .groupBy("is_active")
+      .groupBy("age"),
+  { groupBy: ["email", "age", "is_active"] },
+);
+
+testQueryBuilder(
+  "`groupBy` multiple columns with a single method",
+  (query) => query.groupBy("email", "age", "is_active", "age"),
+  { groupBy: ["email", "age", "is_active"] },
+);
+
+// Having
+
+testQueryBuilder(
+  "basic `having`",
+  (query) => query.having("email", "a@b.com"),
+  {
+    havings: [{
+      column: "email",
+      expression: Q.eq("a@b.com"),
+      type: WhereType.Default,
+    }],
+  },
+);
+
+testQueryBuilder(
+  "`having` with custom expression",
+  (query) => query.having("age", Q.gt(16)),
+  {
+    havings: [{
+      column: "age",
+      expression: Q.gt(16),
+      type: WhereType.Default,
+    }],
+  },
+);
+
+testQueryBuilder(
+  "multiple `having` clauses",
+  (query) =>
+    query
+      .having("email", Q.eq("a@b.com"))
+      .having("age", Q.gt(16))
+      .having("is_active", Q.eq(true))
+      .having("birthday", Q.eq(new Date("7 July, 2020"))),
+  {
+    havings: [{
+      column: "email",
+      expression: Q.eq("a@b.com"),
+      type: WhereType.Default,
+    }, {
+      column: "age",
+      expression: Q.gt(16),
+      type: WhereType.Default,
+    }, {
+      column: "is_active",
+      expression: Q.eq(true),
+      type: WhereType.Default,
+    }, {
+      column: "birthday",
+      expression: Q.eq(new Date("7 July, 2020")),
+      type: WhereType.Default,
+    }],
+  },
 );
 
 // Joins

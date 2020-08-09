@@ -354,15 +354,73 @@ export class QueryCompiler {
       }
     }
 
+    if (this.description.groupBy.length > 0) {
+      const columns = this.description.groupBy
+        .map((item) => this.getColumnName(item))
+        .join(", ");
+      query.push(`GROUP BY ${columns}`);
+    }
+
+    if (this.description.havings.length > 0) {
+      for (let index = 0; index < this.description.havings.length; index++) {
+        const { type, expression: { operator, value }, column } =
+          this.description.havings[index];
+
+        // Get the table name, column name, and the operator.
+        // Example: "`users`.`id` = "
+        let expression = `${tableName}.${
+          quote(column, this.dialect)
+        } ${operator}`;
+
+        // Add the value to the WHERE clause, if the operator is BETWEEN,
+        // use AND keyword to seperate both values.
+        if (operator === QueryOperator.Between) {
+          if (!Array.isArray(value) || value.length !== 2) {
+            throw new Error("BETWEEN must have two values!");
+          }
+
+          const a = this.bindValue(value[0]);
+          const b = this.bindValue(value[1]);
+          expression += ` ${a} AND ${b}`;
+        } else if (
+          operator !== QueryOperator.Null &&
+          operator !== QueryOperator.NotNull
+        ) {
+          expression += ` ${this.bindValue(value)}`;
+        }
+
+        if (index === 0) {
+          // The first where clause should have `WHERE` explicitly.
+          if (type === WhereType.Not) {
+            query.push(`HAVING NOT ${expression}`);
+          } else {
+            query.push(`HAVING ${expression}`);
+          }
+        } else {
+          // The rest of them use `AND`
+          switch (type) {
+            case WhereType.Not:
+              query.push(`AND NOT ${expression}`);
+              break;
+            case WhereType.Or:
+              query.push(`OR ${expression}`);
+              break;
+            case WhereType.Default:
+            default:
+              query.push(`AND ${expression}`);
+              break;
+          }
+        }
+      }
+    }
+
     // Add "order by" clauses
     if (this.description.orders.length > 0) {
-      query.push(`ORDER BY`);
+      const orders = this.description.orders
+        .map((order) => `${order.column} ${order.order}`)
+        .join(", ");
 
-      query.push(
-        this.description.orders
-          .map((order) => `${order.column} ${order.order}`)
-          .join(", "),
-      );
+      query.push(`ORDER BY ${orders}`);
     }
 
     // Add query limit if exists

@@ -7,8 +7,7 @@ There are still a lot of room for improvements. Here are some features that are 
 Here are some query expressions that haven't implemented yet.
 
 - MIN, MAX, SUM, AVG
-- HAVING
-- GROUP BY
+- RAW SQL
 - INCREMENT & DECREMENT
 
 We also want to add some features like:
@@ -26,6 +25,12 @@ We also want to add some features like:
 - Drop table column for SQLite in [TableBuilder](./src/migrations/tablebuilder.ts)
 - Seeder
 - Factory
+
+[Manager](./src/manager.ts)
+
+- Hooks
+- JSON field
+- Array field
 
 ## Roadmap to v1.0
 
@@ -80,14 +85,6 @@ To make a unit test, you can simply use the `Deno.test` function.
 
 ```ts
 Deno.test("Manager.save() -> should save a model", () => {
-  // ...
-});
-```
-
-However, if you're messing around with low-level APIs like [Adapter](./src/adapter.ts) and [Schema](./src/migrations/schema.ts), you probably want to implement integration tests.
-
-```ts
-Deno.test("Adapter.save() -> should save a model", () => {
   // ...
 });
 ```

@@ -110,6 +110,12 @@ export interface QueryDescription {
 
   /** Check if the SELECT statement is using DISTINCT keyword */
   isDistinct: boolean;
+
+  /** The having clauses in the query */
+  havings: WhereBinding[];
+
+  /** Group records by column */
+  groupBy: string[];
 }
 
 /**
@@ -137,6 +143,8 @@ export class QueryBuilder {
       returning: [],
       joins: [],
       counts: [],
+      havings: [],
+      groupBy: [],
       isDistinct: false,
     };
   }
@@ -144,40 +152,6 @@ export class QueryBuilder {
   // --------------------------------------------------------------------------------
   // PUBLIC QUERY METHODS
   // --------------------------------------------------------------------------------
-
-  /**
-   * Insert a record to the table
-   * 
-   * @param data A JSON Object representing columnname-value pairs. Example: { firstname: "John", age: 22, ... }
-   */
-  public insert(data: QueryValues | QueryValues[]): QueryBuilder {
-    // Change the query type from `select` (default) to `insert`
-    this.description.type = QueryType.Insert;
-
-    // Set the query values
-    this.description.values = data;
-
-    return this;
-  }
-
-  /**
-   * Perform `REPLACE` query to the table.
-   * 
-   * It will look for `PRIMARY` and `UNIQUE` constraints.
-   * If something matched, it gets removed from the table
-   * and creates a new row with the given values.
-   * 
-   * @param data A JSON Object representing columnname-value pairs. Example: { firstname: "John", age: 22, ... }
-   */
-  public replace(data: QueryValues): QueryBuilder {
-    // Change the query type from `select` (default) to `replace`
-    this.description.type = QueryType.Replace;
-
-    // Set the query values
-    this.description.values = data;
-
-    return this;
-  }
 
   /**
    * Add basic WHERE clause to query
@@ -278,7 +252,7 @@ export class QueryBuilder {
   /**
    * Select table columns
    * 
-   * @param columns Table columns to select
+   * @param columns table columns to select
    */
   public select(...columns: (string | [string, string])[]): QueryBuilder {
     // Merge the `columns` array with `this.description.columns` without any duplicate.
@@ -339,10 +313,104 @@ export class QueryBuilder {
   }
 
   /**
-   * Delete record from the database.
+   * Add SQL HAVING clause to query
+   * 
+   * @param column the table column name
+   * @param value the expected value
    */
-  public delete(): QueryBuilder {
-    this.description.type = QueryType.Delete;
+  public having(column: string, value: DatabaseValues): QueryBuilder;
+
+  /**
+   * Add SQL HAVING clause to query with custom query expression.
+   * 
+   * @param column the table column name
+   * @param expresion a custom SQL expression to filter the records
+   */
+  public having(column: string, expression: QueryExpression): QueryBuilder;
+
+  /** Add SQL HAVING clause to query */
+  public having(
+    column: string,
+    expression: DatabaseValues | QueryExpression,
+  ): QueryBuilder {
+    this.description.havings.push({
+      column,
+      expression: expression instanceof QueryExpression
+        ? expression
+        : Q.eq(expression),
+      type: WhereType.Default,
+    });
+
+    return this;
+  }
+
+  /**
+   * Group records by a column
+   *
+   * @param columns the table columns to group
+   */
+  public groupBy(...columns: string[]) {
+    // Merge the `columns` array with `this.description.groupBy` without any duplicate.
+    for (const column of columns) {
+      if (!this.description.groupBy.includes(column)) {
+        this.description.groupBy.push(column);
+      }
+    }
+
+    return this;
+  }
+
+  /**
+   * Sets the returning value for the query.
+   * 
+   * @param columns Table column name
+   */
+  public returning(...columns: string[]): QueryBuilder {
+    // Merge the `columns` array with `this.description.returning` without any duplicate.
+    for (const column of columns) {
+      if (!this.description.returning.includes(column)) {
+        this.description.returning.push(column);
+      }
+    }
+
+    return this;
+  }
+
+  // --------------------------------------------------------------------------------
+  // CREATE, UPDATE, DELETE
+  // --------------------------------------------------------------------------------
+
+  /**
+   * Insert a record to the table
+   * 
+   * @param data A JSON Object representing columnname-value pairs. Example: { firstname: "John", age: 22, ... }
+   */
+  public insert(data: QueryValues | QueryValues[]): QueryBuilder {
+    // Change the query type from `select` (default) to `insert`
+    this.description.type = QueryType.Insert;
+
+    // Set the query values
+    this.description.values = data;
+
+    return this;
+  }
+
+  /**
+   * Perform `REPLACE` query to the table.
+   * 
+   * It will look for `PRIMARY` and `UNIQUE` constraints.
+   * If something matched, it gets removed from the table
+   * and creates a new row with the given values.
+   * 
+   * @param data A JSON Object representing columnname-value pairs. Example: { firstname: "John", age: 22, ... }
+   */
+  public replace(data: QueryValues): QueryBuilder {
+    // Change the query type from `select` (default) to `replace`
+    this.description.type = QueryType.Replace;
+
+    // Set the query values
+    this.description.values = data;
+
     return this;
   }
 
@@ -360,6 +428,18 @@ export class QueryBuilder {
 
     return this;
   }
+
+  /**
+   * Delete record from the database.
+   */
+  public delete(): QueryBuilder {
+    this.description.type = QueryType.Delete;
+    return this;
+  }
+
+  // --------------------------------------------------------------------------------
+  // AGGREGATE
+  // --------------------------------------------------------------------------------
 
   /**
    * Count records with given conditions
@@ -413,21 +493,9 @@ export class QueryBuilder {
     return this;
   }
 
-  /**
-   * Sets the returning value for the query.
-   * 
-   * @param columns Table column name
-   */
-  public returning(...columns: string[]): QueryBuilder {
-    // Merge the `columns` array with `this.description.returning` without any duplicate.
-    columns.forEach((item) => {
-      if (!this.description.returning.includes(item)) {
-        this.description.returning.push(item);
-      }
-    });
-
-    return this;
-  }
+  // --------------------------------------------------------------------------------
+  // JOINS
+  // --------------------------------------------------------------------------------
 
   /** SQL INNER JOIN */
   public innerJoin(table: string, a: string, b: string): QueryBuilder {
