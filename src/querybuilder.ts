@@ -19,7 +19,7 @@ export type OrderDirection = "DESC" | "ASC";
 /**
  * WHERE clause informations
  */
-interface WhereBinding {
+export interface WhereBinding {
   column: string;
   expression: QueryExpression;
   type: WhereType;

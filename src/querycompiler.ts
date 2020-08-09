@@ -3,6 +3,7 @@ import {
   QueryType,
   WhereType,
   JoinType,
+  WhereBinding,
 } from "./querybuilder.ts";
 import { DatabaseDialect } from "./connect.ts";
 import { formatDate } from "./utils/date.ts";
@@ -302,56 +303,9 @@ export class QueryCompiler {
 
     // Add where clauses if exists
     if (this.description.wheres.length > 0) {
-      for (let index = 0; index < this.description.wheres.length; index++) {
-        const { type, expression: { operator, value }, column } =
-          this.description.wheres[index];
-
-        // Get the table name, column name, and the operator.
-        // Example: "`users`.`id` = "
-        let expression = `${tableName}.${
-          quote(column, this.dialect)
-        } ${operator}`;
-
-        // Add the value to the WHERE clause, if the operator is BETWEEN,
-        // use AND keyword to seperate both values.
-        if (operator === QueryOperator.Between) {
-          if (!Array.isArray(value) || value.length !== 2) {
-            throw new Error("BETWEEN must have two values!");
-          }
-
-          const a = this.bindValue(value[0]);
-          const b = this.bindValue(value[1]);
-          expression += ` ${a} AND ${b}`;
-        } else if (
-          operator !== QueryOperator.Null &&
-          operator !== QueryOperator.NotNull
-        ) {
-          expression += ` ${this.bindValue(value)}`;
-        }
-
-        if (index === 0) {
-          // The first where clause should have `WHERE` explicitly.
-          if (type === WhereType.Not) {
-            query.push(`WHERE NOT ${expression}`);
-          } else {
-            query.push(`WHERE ${expression}`);
-          }
-        } else {
-          // The rest of them use `AND`
-          switch (type) {
-            case WhereType.Not:
-              query.push(`AND NOT ${expression}`);
-              break;
-            case WhereType.Or:
-              query.push(`OR ${expression}`);
-              break;
-            case WhereType.Default:
-            default:
-              query.push(`AND ${expression}`);
-              break;
-          }
-        }
-      }
+      query.push(
+        this.getWhereBindings("WHERE", this.description.wheres),
+      );
     }
 
     if (this.description.groupBy.length > 0) {
@@ -362,56 +316,9 @@ export class QueryCompiler {
     }
 
     if (this.description.havings.length > 0) {
-      for (let index = 0; index < this.description.havings.length; index++) {
-        const { type, expression: { operator, value }, column } =
-          this.description.havings[index];
-
-        // Get the table name, column name, and the operator.
-        // Example: "`users`.`id` = "
-        let expression = `${tableName}.${
-          quote(column, this.dialect)
-        } ${operator}`;
-
-        // Add the value to the WHERE clause, if the operator is BETWEEN,
-        // use AND keyword to seperate both values.
-        if (operator === QueryOperator.Between) {
-          if (!Array.isArray(value) || value.length !== 2) {
-            throw new Error("BETWEEN must have two values!");
-          }
-
-          const a = this.bindValue(value[0]);
-          const b = this.bindValue(value[1]);
-          expression += ` ${a} AND ${b}`;
-        } else if (
-          operator !== QueryOperator.Null &&
-          operator !== QueryOperator.NotNull
-        ) {
-          expression += ` ${this.bindValue(value)}`;
-        }
-
-        if (index === 0) {
-          // The first where clause should have `WHERE` explicitly.
-          if (type === WhereType.Not) {
-            query.push(`HAVING NOT ${expression}`);
-          } else {
-            query.push(`HAVING ${expression}`);
-          }
-        } else {
-          // The rest of them use `AND`
-          switch (type) {
-            case WhereType.Not:
-              query.push(`AND NOT ${expression}`);
-              break;
-            case WhereType.Or:
-              query.push(`OR ${expression}`);
-              break;
-            case WhereType.Default:
-            default:
-              query.push(`AND ${expression}`);
-              break;
-          }
-        }
-      }
+      query.push(
+        this.getWhereBindings("HAVING", this.description.havings),
+      );
     }
 
     // Add "order by" clauses
@@ -510,5 +417,74 @@ export class QueryCompiler {
     } else {
       throw new Error(`'${column}' is an invalid column name!`);
     }
+  }
+
+  /**
+   * Compile where bindings from query description to a string.
+   * 
+   * Example result:
+   * 
+   * ```
+   * WHERE `users`.`email` = ? AND `users`.`age` >= ?
+   * ```
+   * 
+   * @param keyword define whether the it's using WHERE or HAVING
+   * @param bindings bindings from the query description
+   */
+  private getWhereBindings(
+    keyword: "WHERE" | "HAVING",
+    bindings: WhereBinding[],
+  ): string {
+    const query: string[] = [];
+
+    for (let index = 0; index < bindings.length; index++) {
+      const { type, expression: { operator, value }, column } = bindings[index];
+
+      // Get the table name, column name, and the operator.
+      // Example: "`users`.`id` = "
+      let expression = `${this.getColumnName(column)} ${operator}`;
+
+      // Add the value to the WHERE clause, if the operator is BETWEEN,
+      // use AND keyword to seperate both values.
+      if (operator === QueryOperator.Between) {
+        if (!Array.isArray(value) || value.length !== 2) {
+          throw new Error("BETWEEN must have two values!");
+        }
+
+        const a = this.bindValue(value[0]);
+        const b = this.bindValue(value[1]);
+        expression += ` ${a} AND ${b}`;
+      } else if (
+        operator !== QueryOperator.Null &&
+        operator !== QueryOperator.NotNull
+      ) {
+        expression += ` ${this.bindValue(value)}`;
+      }
+
+      if (index === 0) {
+        // The first where clause should have `WHERE` or `HAVING` explicitly.
+        if (type === WhereType.Not) {
+          query.push(`${keyword} NOT ${expression}`);
+        } else {
+          query.push(`${keyword} ${expression}`);
+        }
+      } else {
+        // The rest of them use `AND`
+        switch (type) {
+          case WhereType.Not:
+            query.push(`AND NOT ${expression}`);
+            break;
+          case WhereType.Or:
+            query.push(`OR ${expression}`);
+            break;
+          case WhereType.Default:
+          default:
+            query.push(`AND ${expression}`);
+            break;
+        }
+      }
+    }
+
+    return query.join(" ");
   }
 }
