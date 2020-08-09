@@ -176,18 +176,13 @@ testQueryBuilder(
 
 testQueryBuilder(
   "`select` multiple columns",
-  (query) =>
-    query
-      .select("email")
-      .select("age")
-      .select("is_active")
-      .select("age"),
+  (query) => query.select("email").select("age").select("is_active"),
   { columns: ["email", "age", "is_active"] },
 );
 
 testQueryBuilder(
   "`select` multiple columns with a single method",
-  (query) => query.select("email", "age", "is_active", "age"),
+  (query) => query.select("email", "age", "is_active"),
   { columns: ["email", "age", "is_active"] },
 );
 
@@ -207,18 +202,13 @@ testQueryBuilder(
 
 testQueryBuilder(
   "`groupBy` multiple columns",
-  (query) =>
-    query
-      .groupBy("email")
-      .groupBy("age")
-      .groupBy("is_active")
-      .groupBy("age"),
+  (query) => query.groupBy("email").groupBy("age").groupBy("is_active"),
   { groupBy: ["email", "age", "is_active"] },
 );
 
 testQueryBuilder(
   "`groupBy` multiple columns with a single method",
-  (query) => query.groupBy("email", "age", "is_active", "age"),
+  (query) => query.groupBy("email", "age", "is_active"),
   { groupBy: ["email", "age", "is_active"] },
 );
 

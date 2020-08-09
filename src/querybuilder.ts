@@ -255,13 +255,7 @@ export class QueryBuilder {
    * @param columns table columns to select
    */
   public select(...columns: (string | [string, string])[]): QueryBuilder {
-    // Merge the `columns` array with `this.description.columns` without any duplicate.
-    for (const column of columns) {
-      if (!this.description.columns.includes(column)) {
-        this.description.columns.push(column);
-      }
-    }
-
+    this.description.columns = this.description.columns.concat(columns);
     return this;
   }
 
@@ -350,13 +344,7 @@ export class QueryBuilder {
    * @param columns the table columns to group
    */
   public groupBy(...columns: string[]) {
-    // Merge the `columns` array with `this.description.groupBy` without any duplicate.
-    for (const column of columns) {
-      if (!this.description.groupBy.includes(column)) {
-        this.description.groupBy.push(column);
-      }
-    }
-
+    this.description.groupBy = this.description.groupBy.concat(columns);
     return this;
   }
 
@@ -366,13 +354,7 @@ export class QueryBuilder {
    * @param columns Table column name
    */
   public returning(...columns: string[]): QueryBuilder {
-    // Merge the `columns` array with `this.description.returning` without any duplicate.
-    for (const column of columns) {
-      if (!this.description.returning.includes(column)) {
-        this.description.returning.push(column);
-      }
-    }
-
+    this.description.returning = this.description.returning.concat(columns);
     return this;
   }
 

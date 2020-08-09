@@ -114,7 +114,7 @@ testQueryCompiler("`where` with date value", {
   },
 });
 
-testQueryCompiler("`where` select columns", {
+testQueryCompiler("`columns` select columns", {
   columns: ["id", "email"],
 }, {
   mysql: {
@@ -131,7 +131,7 @@ testQueryCompiler("`where` select columns", {
   },
 });
 
-testQueryCompiler("`where` select columns with alias", {
+testQueryCompiler("`columns` select columns with alias", {
   columns: [["users.id", "users_id"], ["posts.title", "posts_title"]],
 }, {
   mysql: {
@@ -147,6 +147,32 @@ testQueryCompiler("`where` select columns with alias", {
   postgres: {
     text:
       'SELECT "users"."id" AS users_id, "posts"."title" AS posts_title FROM "users";',
+    values: [],
+  },
+});
+
+testQueryCompiler("`where` select columns should exclude duplicates", {
+  columns: [
+    "email",
+    "age",
+    ["is_active", "active"],
+    "email",
+    ["is_deleted", "active"],
+  ],
+}, {
+  mysql: {
+    text:
+      "SELECT `users`.`email`, `users`.`age`, `users`.`is_active` AS active FROM `users`;",
+    values: [],
+  },
+  sqlite: {
+    text:
+      "SELECT `users`.`email`, `users`.`age`, `users`.`is_active` AS active FROM `users`;",
+    values: [],
+  },
+  postgres: {
+    text:
+      'SELECT "users"."email", "users"."age", "users"."is_active" AS active FROM "users";',
     values: [],
   },
 });
@@ -537,6 +563,30 @@ testQueryCompiler("`havings`", {
     text:
       'SELECT "users".* FROM "users" GROUP BY "users"."email", "users"."age" HAVING "users"."email" = $1 AND "users"."age" > $2 AND NOT "users"."is_active" = TRUE;',
     values: ["a@b.com", 16],
+  },
+});
+
+testQueryCompiler("`groupBy` should exclude duplicates", {
+  groupBy: [
+    "email",
+    "age",
+    "email",
+  ],
+}, {
+  mysql: {
+    text:
+      "SELECT `users`.`*` FROM `users` GROUP BY `users`.`email`, `users`.`age`;",
+    values: [],
+  },
+  sqlite: {
+    text:
+      "SELECT `users`.`*` FROM `users` GROUP BY `users`.`email`, `users`.`age`;",
+    values: [],
+  },
+  postgres: {
+    text:
+      'SELECT "users"."*" FROM "users" GROUP BY `users`."email", `users`."age";',
+    values: [],
   },
 });
 

@@ -8,6 +8,7 @@ import {
 import { DatabaseDialect } from "./connect.ts";
 import { formatDate } from "./utils/date.ts";
 import { quote } from "./utils/dialect.ts";
+import { uniqueColumnNames } from "./utils/array.ts";
 import { DatabaseValues } from "./adapters/adapter.ts";
 import { QueryOperator } from "./q.ts";
 
@@ -79,9 +80,11 @@ export class QueryCompiler {
 
     // Add RETURNING statement if exists
     if (this.description.returning.length > 0) {
+      const returnings = uniqueColumnNames(this.description.returning);
+
       query.push(
         "RETURNING",
-        this.description.returning.map((item) => quote(item, this.dialect))
+        returnings.map((item) => quote(item, this.dialect))
           .join(", "),
       );
     }
@@ -211,15 +214,21 @@ export class QueryCompiler {
         })
         .join(", ");
       query.push(counts);
-    } else if (this.description.columns.length > 0) {
-      // Add all selected table columns.
-      const columns = this.description.columns
-        .map((column) => this.getColumnName(column))
-        .join(", ");
-      query.push(columns);
     } else {
-      // If none of those above are defined, get all columns from the table.
-      query.push(`${tableName}.*`);
+      // Remove duplicate column names
+      const columns = uniqueColumnNames(this.description.columns);
+
+      if (columns.length >= 1) {
+        // Add all selected table columns.
+        query.push(
+          columns
+            .map((column) => this.getColumnName(column))
+            .join(", "),
+        );
+      } else {
+        // If none of those above are defined, get all columns from the table.
+        query.push(`${tableName}.*`);
+      }
     }
 
     // Add table name
@@ -256,14 +265,12 @@ export class QueryCompiler {
    * Example result:
    * 
    * ```
-   * ["WHERE email = 'a@b.com'", "LIMIT 1"]
+   * ["WHERE `users`.`email` = ?", "AND `users`.`age` > 16", "LIMIT 1"]
    * ```
    */
   private collectConstraints(): string[] {
     // Query strings (that contain constraints only)
     let query: string[] = [];
-
-    const tableName = quote(this.description.tableName, this.dialect);
 
     // Joins
     if (this.description.joins && this.description.joins.length >= 1) {
@@ -309,7 +316,7 @@ export class QueryCompiler {
     }
 
     if (this.description.groupBy.length > 0) {
-      const columns = this.description.groupBy
+      const columns = uniqueColumnNames(this.description.groupBy)
         .map((item) => this.getColumnName(item))
         .join(", ");
       query.push(`GROUP BY ${columns}`);
