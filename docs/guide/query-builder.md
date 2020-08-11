@@ -34,7 +34,7 @@ console.log(text); // "SELECT * FROM `users` WHERE `id` = ?;"
 console.log(values); // [1]
 ```
 
-## Where clauses
+## WHERE
 
 One of the most common thing people do in SQL query is using `WHERE` clause to filter the result.
 
@@ -96,7 +96,7 @@ Or, if you want to find records if one of the conditions are true, use `or`.
 query.table("users").where("name", "John").or("name", "Jane");
 ```
 
-## Selecting columns
+## SELECT
 
 By default, query builder will select every single columns in the table with `*`. However, you can choose which columsnt to select in a query by calling `select`.
 
@@ -119,11 +119,22 @@ If you want to select only unique values, you can enable distinct select by usin
 db.table("users").select("email").distinct();
 ```
 
-## Grouping
+## GROUP BY & HAVING
 
-In SQL, you can group records using `GROUP BY` syntax.
+Adding a `GROUP BY` query can be done by using `groupBy`.
 
-## Sorting
+```ts
+db.table("users").groupBy("category");
+db.table("users").groupBy("users.category"); // explicit table name
+```
+
+Most of the time, `GROUP BY` expressions are paired with `HAVING` to filter the records, and here is how you can do that:
+
+```ts
+db.table("users").groupBy("category").having("is_active", false);
+```
+
+## ORDER
 
 You can sort a column using `order`.
 
@@ -143,7 +154,7 @@ To sort multiple column, you can chain this method as many as you want.
 db.table("users").order("age", "DESC").order("created_at");
 ```
 
-## Count
+## COUNT
 
 You can count how many records that match given conditions by using the `count` method.
 
@@ -169,7 +180,7 @@ Use `countDistinct` to add distinct expression inside your count statement.
 db.table("users").countDistinct("is_active", "a");
 ```
 
-## Pagination
+## OFFSET & LIMIT
 
 Typically, pagination can be done in SQL by using limit and offset. Limit is the maximum number of record to return, and the offset is the number of records to skip. Here is an example.
 
@@ -177,7 +188,7 @@ Typically, pagination can be done in SQL by using limit and offset. Limit is the
 db.table("users").limit(5).offset(10);
 ```
 
-## Insert / Replace
+## INSERT / REPLACE
 
 To insert a new record, use `insert`.
 
@@ -206,7 +217,7 @@ db.table("users").replace([
 ]);
 ```
 
-## Update
+## UPDATE
 
 To perform update, you need to chain `update` method and pass the values you want to update. The value parameter is a key-value pair which represents the column name and it's value. This method can be chained with other constraints such as `where`, `not`, `or`, `limit`, etc.
 
@@ -214,7 +225,7 @@ To perform update, you need to chain `update` method and pass the values you wan
 db.table("users").where("id", 1).update({ email: "a@b.com" });
 ```
 
-## Delete
+## DELETE
 
 The only thing you need to do to perform DELETE query is by adding `delete` method to the query builder.
 
@@ -222,7 +233,7 @@ The only thing you need to do to perform DELETE query is by adding `delete` meth
 db.table("users").where("id", 1).delete();
 ```
 
-## Returning
+## RETURNING
 
 Returning is a statement that typically used in INSERT or REPLACE query. Note that this feature only works in PostgreSQL. However, you can still build this query in MySQL or SQLite connection.
 
