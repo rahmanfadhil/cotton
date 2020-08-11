@@ -43,10 +43,14 @@ We also want to add some features like:
 - ✅ Object-Relational Mapper
   - ✅ Model Manager
   - ✅ Base Model
+  - ✅ Model query
+  - ✅ Bulk insert
+  - ✅ Bulk remove
   - 🚧 Relationships (only one-to-many)
   - ❌ Hooks
 - ✅ Command-line tool
-- ✅ Migrations
+  - ✅ Migrations
+  - 🚧 Seeder
 - 🚧 Model serializer (only in `serializer` branch)
   - ✅ Serializing "dumping"
   - ✅ Deserializing "loading"

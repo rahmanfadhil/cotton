@@ -155,10 +155,22 @@ await manager.query(User).where("isActive", true).update({ isActive: false });
 
 ## Deleting models
 
+Manager API has `remove` methods which allows you to remove a model you fetched from the database.
+
+```ts
+await manager.remove(user);
+```
+
+You can also remove multiple models by passing an array as the argument. This will remove all models in a single query.
+
+```ts
+await manager.remove([user1, user2, user3]);
+```
+
 To delete models that match given conditions, you can end your model query with `delete` method.
 
 ```ts
-await manager.delete(User).where("isActive", false).delete();
+await manager.query(User).where("isActive", false).delete();
 ```
 
 ### Relations
