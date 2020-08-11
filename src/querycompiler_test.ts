@@ -575,17 +575,17 @@ testQueryCompiler("`groupBy` should exclude duplicates", {
 }, {
   mysql: {
     text:
-      "SELECT `users`.`*` FROM `users` GROUP BY `users`.`email`, `users`.`age`;",
+      "SELECT `users`.* FROM `users` GROUP BY `users`.`email`, `users`.`age`;",
     values: [],
   },
   sqlite: {
     text:
-      "SELECT `users`.`*` FROM `users` GROUP BY `users`.`email`, `users`.`age`;",
+      "SELECT `users`.* FROM `users` GROUP BY `users`.`email`, `users`.`age`;",
     values: [],
   },
   postgres: {
     text:
-      'SELECT "users"."*" FROM "users" GROUP BY `users`."email", `users`."age";',
+      'SELECT "users".* FROM "users" GROUP BY "users"."email", "users"."age";',
     values: [],
   },
 });

@@ -119,6 +119,10 @@ If you want to select only unique values, you can enable distinct select by usin
 db.table("users").select("email").distinct();
 ```
 
+## Grouping
+
+In SQL, you can group records using `GROUP BY` syntax.
+
 ## Sorting
 
 You can sort a column using `order`.
