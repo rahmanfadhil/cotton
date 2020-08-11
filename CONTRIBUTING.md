@@ -47,9 +47,9 @@ We also want to add some features like:
   - ❌ Hooks
 - ✅ Command-line tool
 - ✅ Migrations
-- 🚧 Model serializer
-  - ✅ Serializing (dumping)
-  - ✅ Deserializing (loading)
+- 🚧 Model serializer (only in `serializer` branch)
+  - ✅ Serializing "dumping"
+  - ✅ Deserializing "loading"
   - ❌ Validating
   - ❌ Sanitizing
 
@@ -73,10 +73,6 @@ To clean up everything, run:
 docker-compose down --volumes
 ```
 
-## Internal organization
-
-TODO: explain the internal code structure.
-
 ## Writing tests
 
 There are two types of tests that we should care about, unit test and integration test. You don't have to use both of them all the time because it really depends on the feature that you're working on. If you're working on a utility function that doesn't have to access the database, unit test is the way to go. If the feature is accesing the database through high-level abstraction such as [Model Manager](https://rahmanfadhil.github.io/cotton) and [Query Builder](https://rahmanfadhil.github.io/cotton/guide/query-builder), you can still use unit test and them using `mock` library which served from the `testdeps.ts` file.
@@ -85,6 +81,14 @@ To make a unit test, you can simply use the `Deno.test` function.
 
 ```ts
 Deno.test("Manager.save() -> should save a model", () => {
+  // ...
+});
+```
+
+However, there are some features that need to test end-to-end, such as [model manager](./src/manager.ts) and [migrations](./src/migrations/schema.ts). That's why we've written a utility function to make an integration test called `testDB`. It works exactly like `Deno.test` but you'll get an `Adapter` instance within the parameter and it'll create three tests for PostgreSQL, MySQL, and SQLite.
+
+```ts
+Deno.test("Manager.save() -> should save a model", (client) => {
   // ...
 });
 ```
