@@ -1,5 +1,6 @@
 import { COLUMN_TYPES } from "../constants.ts";
 import { DatabaseDialect } from "../connect.ts";
+import { quote } from "../utils/dialect.ts";
 
 /**
  * Represents a table column for Schema
@@ -83,7 +84,7 @@ export class ColumnBuilder {
     }
 
     // Set the column name and its type (for a specific database dialect)
-    const query = [`${this.getColumnName(dialect)} ${columnType}`];
+    const query = [`${quote(this.name, dialect)} ${columnType}`];
 
     // Add the PRIMARY KEY
     if (this.isPrimaryKey) {
@@ -125,7 +126,9 @@ export class ColumnBuilder {
     return query.join(" ");
   }
 
-  /** Get the default value text of the column */
+  /**
+   * Get the default value text of the column
+   */
   private getDefaultValueSQL(dialect: DatabaseDialect): string | null {
     if (this.defaultValue === null) {
       return "DEFAULT NULL";
@@ -144,17 +147,6 @@ export class ColumnBuilder {
       return `DEFAULT ${value}`;
     } else {
       return null;
-    }
-  }
-
-  private getColumnName(dialect: DatabaseDialect): string {
-    switch (dialect) {
-      case "postgres":
-        return `"${this.name}"`;
-      case "mysql":
-      case "sqlite":
-      default:
-        return `\`${this.name}\``;
     }
   }
 }
