@@ -114,7 +114,7 @@ testQueryCompiler("`where` with date value", {
   },
 });
 
-testQueryCompiler("`where` select columns", {
+testQueryCompiler("`columns` select columns", {
   columns: ["id", "email"],
 }, {
   mysql: {
@@ -131,7 +131,7 @@ testQueryCompiler("`where` select columns", {
   },
 });
 
-testQueryCompiler("`where` select columns with alias", {
+testQueryCompiler("`columns` select columns with alias", {
   columns: [["users.id", "users_id"], ["posts.title", "posts_title"]],
 }, {
   mysql: {
@@ -151,6 +151,32 @@ testQueryCompiler("`where` select columns with alias", {
   },
 });
 
+testQueryCompiler("`where` select columns should exclude duplicates", {
+  columns: [
+    "email",
+    "age",
+    ["is_active", "active"],
+    "email",
+    ["is_deleted", "active"],
+  ],
+}, {
+  mysql: {
+    text:
+      "SELECT `users`.`email`, `users`.`age`, `users`.`is_active` AS active FROM `users`;",
+    values: [],
+  },
+  sqlite: {
+    text:
+      "SELECT `users`.`email`, `users`.`age`, `users`.`is_active` AS active FROM `users`;",
+    values: [],
+  },
+  postgres: {
+    text:
+      'SELECT "users"."email", "users"."age", "users"."is_active" AS active FROM "users";',
+    values: [],
+  },
+});
+
 Deno.test("QueryCompiler: select columns with alias must have two values", () => {
   assertThrows(
     () => {
@@ -164,6 +190,8 @@ Deno.test("QueryCompiler: select columns with alias must have two values", () =>
         tableName: "`users`",
         counts: [],
         isDistinct: false,
+        groupBy: [],
+        havings: [],
       }, "" as any).compile();
     },
     Error,
@@ -185,6 +213,8 @@ Deno.test("QueryCompiler: select columns with alias must have two values", () =>
         tableName: "`users`",
         counts: [],
         isDistinct: false,
+        groupBy: [],
+        havings: [],
       }, "" as any).compile();
     },
     Error,
@@ -203,6 +233,8 @@ Deno.test("QueryCompiler: select columns with alias must have two values", () =>
         tableName: "`users`",
         counts: [],
         isDistinct: false,
+        groupBy: [],
+        havings: [],
       }, "" as any).compile();
     },
     Error,
@@ -498,6 +530,67 @@ testQueryCompiler("`count` should add COUNT DISTINCT statement", {
 });
 
 // --------------------------------------------------------------------------------
+// HAVINGS & GROUP BY
+// --------------------------------------------------------------------------------
+
+testQueryCompiler("`havings`", {
+  groupBy: ["email", "age"],
+  havings: [{
+    type: WhereType.Default,
+    column: "email",
+    expression: Q.eq("a@b.com"),
+  }, {
+    type: WhereType.Default,
+    column: "age",
+    expression: Q.gt(16),
+  }, {
+    type: WhereType.Not,
+    column: "is_active",
+    expression: Q.eq(true),
+  }],
+}, {
+  mysql: {
+    text:
+      "SELECT `users`.* FROM `users` GROUP BY `users`.`email`, `users`.`age` HAVING `users`.`email` = ? AND `users`.`age` > ? AND NOT `users`.`is_active` = 1;",
+    values: ["a@b.com", 16],
+  },
+  sqlite: {
+    text:
+      "SELECT `users`.* FROM `users` GROUP BY `users`.`email`, `users`.`age` HAVING `users`.`email` = ? AND `users`.`age` > ? AND NOT `users`.`is_active` = 1;",
+    values: ["a@b.com", 16],
+  },
+  postgres: {
+    text:
+      'SELECT "users".* FROM "users" GROUP BY "users"."email", "users"."age" HAVING "users"."email" = $1 AND "users"."age" > $2 AND NOT "users"."is_active" = TRUE;',
+    values: ["a@b.com", 16],
+  },
+});
+
+testQueryCompiler("`groupBy` should exclude duplicates", {
+  groupBy: [
+    "email",
+    "age",
+    "email",
+  ],
+}, {
+  mysql: {
+    text:
+      "SELECT `users`.* FROM `users` GROUP BY `users`.`email`, `users`.`age`;",
+    values: [],
+  },
+  sqlite: {
+    text:
+      "SELECT `users`.* FROM `users` GROUP BY `users`.`email`, `users`.`age`;",
+    values: [],
+  },
+  postgres: {
+    text:
+      'SELECT "users".* FROM "users" GROUP BY "users"."email", "users"."age";',
+    values: [],
+  },
+});
+
+// --------------------------------------------------------------------------------
 // JOINS
 // --------------------------------------------------------------------------------
 
@@ -626,6 +719,8 @@ Deno.test("QueryCompiler: cannot perform `delete` without any constraints", () =
         tableName: "`users`",
         counts: [],
         isDistinct: false,
+        groupBy: [],
+        havings: [],
       }, "" as any).compile();
     },
     Error,

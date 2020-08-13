@@ -34,7 +34,7 @@ console.log(text); // "SELECT * FROM `users` WHERE `id` = ?;"
 console.log(values); // [1]
 ```
 
-## Where clauses
+## WHERE
 
 One of the most common thing people do in SQL query is using `WHERE` clause to filter the result.
 
@@ -54,24 +54,24 @@ db.table("users").where("id", Q.between([1, 5])); // SELECT * FROM `users` WHERE
 
 These are the valid expressions you can access through `Q` utility.
 
-| Syntax           | SQL Equivalent | Description                               |
-| ---------------- | -------------- | ----------------------------------------- |
-| `Q.in()`         | `IN`           | The value is one of the given values      |
-| `Q.notIn()`      | `NOT IN`       | The value is not one of the given values  |
-| `Q.between()`    | `BETWEEN`      | The value (number) is between two numbers |
-| `Q.notBetween()` | `NOT BETWEEN`  | The value (number) is between two numbers |
-| `Q.like()`       | `LIKE`         | LIKE operator                             |
-| `Q.notLike()`    | `NOT LIKE`     | NOT LIKE operator                         |
-| `Q.ilike()`      | `ILIKE`        | ILIKE (case-insensitive) operator         |
-| `Q.notIlike()`   | `NOT ILIKE`    | NOT ILIKE (case-insensitive) operator     |
-| `Q.eq()`         | `=`            | Is equal to                               |
-| `Q.neq()`        | `!=`           | Is not equal to                           |
-| `Q.gt()`         | `>`            | Greater than                              |
-| `Q.gte()`        | `>=`           | Greater than equal                        |
-| `Q.lt()`         | `<`            | Lower than                                |
-| `Q.lte()`        | `<=`           | Lower than equal                          |
-| `Q.null()`       | `IS NULL`      | Is the value null                         |
-| `Q.notNull()`    | `IS NOT NULL`  | Is the value not null                     |
+| Syntax                 | SQL Equivalent | Description                               |
+| ---------------------- | -------------- | ----------------------------------------- |
+| `Q.in([1, 2, 3])`      | `IN`           | The value is one of the given values      |
+| `Q.notIn([1, 2, 3])`   | `NOT IN`       | The value is not one of the given values  |
+| `Q.between(5, 10)`     | `BETWEEN`      | The value (number) is between two numbers |
+| `Q.notBetween(5, 10)`  | `NOT BETWEEN`  | The value (number) is between two numbers |
+| `Q.like('%john%')`     | `LIKE`         | LIKE operator                             |
+| `Q.notLike('%john%')`  | `NOT LIKE`     | NOT LIKE operator                         |
+| `Q.ilike('%john%')`    | `ILIKE`        | ILIKE (case-insensitive) operator         |
+| `Q.notIlike('%john%')` | `NOT ILIKE`    | NOT ILIKE (case-insensitive) operator     |
+| `Q.eq('a@b.com')`      | `=`            | Is equal to                               |
+| `Q.neq('a@b.com')`     | `!=`           | Is not equal to                           |
+| `Q.gt(7)`              | `>`            | Greater than                              |
+| `Q.gte(7)`             | `>=`           | Greater than equal                        |
+| `Q.lt(7)`              | `<`            | Lower than                                |
+| `Q.lte(7)`             | `<=`           | Lower than equal                          |
+| `Q.null()`             | `IS NULL`      | Is the value null                         |
+| `Q.notNull()`          | `IS NOT NULL`  | Is the value not null                     |
 
 Currently, the valid values are `boolean`, `string`, `null`, `number`, and `Date`.
 
@@ -96,7 +96,7 @@ Or, if you want to find records if one of the conditions are true, use `or`.
 query.table("users").where("name", "John").or("name", "Jane");
 ```
 
-## Selecting columns
+## SELECT
 
 By default, query builder will select every single columns in the table with `*`. However, you can choose which columsnt to select in a query by calling `select`.
 
@@ -119,7 +119,22 @@ If you want to select only unique values, you can enable distinct select by usin
 db.table("users").select("email").distinct();
 ```
 
-## Sorting
+## GROUP BY & HAVING
+
+Adding a `GROUP BY` query can be done by using `groupBy`.
+
+```ts
+db.table("users").groupBy("category");
+db.table("users").groupBy("users.category"); // explicit table name
+```
+
+Most of the time, `GROUP BY` expressions are paired with `HAVING` to filter the records, and here is how you can do that:
+
+```ts
+db.table("users").groupBy("category").having("is_active", false);
+```
+
+## ORDER
 
 You can sort a column using `order`.
 
@@ -139,7 +154,7 @@ To sort multiple column, you can chain this method as many as you want.
 db.table("users").order("age", "DESC").order("created_at");
 ```
 
-## Count
+## COUNT
 
 You can count how many records that match given conditions by using the `count` method.
 
@@ -165,7 +180,7 @@ Use `countDistinct` to add distinct expression inside your count statement.
 db.table("users").countDistinct("is_active", "a");
 ```
 
-## Pagination
+## OFFSET & LIMIT
 
 Typically, pagination can be done in SQL by using limit and offset. Limit is the maximum number of record to return, and the offset is the number of records to skip. Here is an example.
 
@@ -173,7 +188,7 @@ Typically, pagination can be done in SQL by using limit and offset. Limit is the
 db.table("users").limit(5).offset(10);
 ```
 
-## Insert / Replace
+## INSERT / REPLACE
 
 To insert a new record, use `insert`.
 
@@ -202,7 +217,7 @@ db.table("users").replace([
 ]);
 ```
 
-## Update
+## UPDATE
 
 To perform update, you need to chain `update` method and pass the values you want to update. The value parameter is a key-value pair which represents the column name and it's value. This method can be chained with other constraints such as `where`, `not`, `or`, `limit`, etc.
 
@@ -210,7 +225,7 @@ To perform update, you need to chain `update` method and pass the values you wan
 db.table("users").where("id", 1).update({ email: "a@b.com" });
 ```
 
-## Delete
+## DELETE
 
 The only thing you need to do to perform DELETE query is by adding `delete` method to the query builder.
 
@@ -218,7 +233,7 @@ The only thing you need to do to perform DELETE query is by adding `delete` meth
 db.table("users").where("id", 1).delete();
 ```
 
-## Returning
+## RETURNING
 
 Returning is a statement that typically used in INSERT or REPLACE query. Note that this feature only works in PostgreSQL. However, you can still build this query in MySQL or SQLite connection.
 

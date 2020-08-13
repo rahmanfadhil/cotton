@@ -248,6 +248,8 @@ export function testQueryBuilder(
       joins: [],
       counts: [],
       isDistinct: false,
+      groupBy: [],
+      havings: [],
       ...description,
     };
     const actual = (query as any).description;
@@ -291,6 +293,8 @@ export function testQueryCompiler(
         joins: [],
         counts: [],
         isDistinct: false,
+        groupBy: [],
+        havings: [],
         ...description,
       }, dialect as any);
       const { text, values } = compiler.compile();

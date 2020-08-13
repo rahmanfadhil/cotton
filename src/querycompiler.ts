@@ -3,10 +3,12 @@ import {
   QueryType,
   WhereType,
   JoinType,
+  WhereBinding,
 } from "./querybuilder.ts";
 import { DatabaseDialect } from "./connect.ts";
 import { formatDate } from "./utils/date.ts";
 import { quote } from "./utils/dialect.ts";
+import { uniqueColumnNames } from "./utils/array.ts";
 import { DatabaseValues } from "./adapters/adapter.ts";
 import { QueryOperator } from "./q.ts";
 
@@ -78,9 +80,11 @@ export class QueryCompiler {
 
     // Add RETURNING statement if exists
     if (this.description.returning.length > 0) {
+      const returnings = uniqueColumnNames(this.description.returning);
+
       query.push(
         "RETURNING",
-        this.description.returning.map((item) => quote(item, this.dialect))
+        returnings.map((item) => quote(item, this.dialect))
           .join(", "),
       );
     }
@@ -210,15 +214,21 @@ export class QueryCompiler {
         })
         .join(", ");
       query.push(counts);
-    } else if (this.description.columns.length > 0) {
-      // Add all selected table columns.
-      const columns = this.description.columns
-        .map((column) => this.getColumnName(column))
-        .join(", ");
-      query.push(columns);
     } else {
-      // If none of those above are defined, get all columns from the table.
-      query.push(`${tableName}.*`);
+      // Remove duplicate column names
+      const columns = uniqueColumnNames(this.description.columns);
+
+      if (columns.length >= 1) {
+        // Add all selected table columns.
+        query.push(
+          columns
+            .map((column) => this.getColumnName(column))
+            .join(", "),
+        );
+      } else {
+        // If none of those above are defined, get all columns from the table.
+        query.push(`${tableName}.*`);
+      }
     }
 
     // Add table name
@@ -255,14 +265,12 @@ export class QueryCompiler {
    * Example result:
    * 
    * ```
-   * ["WHERE email = 'a@b.com'", "LIMIT 1"]
+   * ["WHERE `users`.`email` = ?", "AND `users`.`age` > 16", "LIMIT 1"]
    * ```
    */
   private collectConstraints(): string[] {
     // Query strings (that contain constraints only)
     let query: string[] = [];
-
-    const tableName = quote(this.description.tableName, this.dialect);
 
     // Joins
     if (this.description.joins && this.description.joins.length >= 1) {
@@ -302,67 +310,31 @@ export class QueryCompiler {
 
     // Add where clauses if exists
     if (this.description.wheres.length > 0) {
-      for (let index = 0; index < this.description.wheres.length; index++) {
-        const { type, expression: { operator, value }, column } =
-          this.description.wheres[index];
+      query.push(
+        this.getWhereBindings("WHERE", this.description.wheres),
+      );
+    }
 
-        // Get the table name, column name, and the operator.
-        // Example: "`users`.`id` = "
-        let expression = `${tableName}.${
-          quote(column, this.dialect)
-        } ${operator}`;
+    if (this.description.groupBy.length > 0) {
+      const columns = uniqueColumnNames(this.description.groupBy)
+        .map((item) => this.getColumnName(item))
+        .join(", ");
+      query.push(`GROUP BY ${columns}`);
+    }
 
-        // Add the value to the WHERE clause, if the operator is BETWEEN,
-        // use AND keyword to seperate both values.
-        if (operator === QueryOperator.Between) {
-          if (!Array.isArray(value) || value.length !== 2) {
-            throw new Error("BETWEEN must have two values!");
-          }
-
-          const a = this.bindValue(value[0]);
-          const b = this.bindValue(value[1]);
-          expression += ` ${a} AND ${b}`;
-        } else if (
-          operator !== QueryOperator.Null &&
-          operator !== QueryOperator.NotNull
-        ) {
-          expression += ` ${this.bindValue(value)}`;
-        }
-
-        if (index === 0) {
-          // The first where clause should have `WHERE` explicitly.
-          if (type === WhereType.Not) {
-            query.push(`WHERE NOT ${expression}`);
-          } else {
-            query.push(`WHERE ${expression}`);
-          }
-        } else {
-          // The rest of them use `AND`
-          switch (type) {
-            case WhereType.Not:
-              query.push(`AND NOT ${expression}`);
-              break;
-            case WhereType.Or:
-              query.push(`OR ${expression}`);
-              break;
-            case WhereType.Default:
-            default:
-              query.push(`AND ${expression}`);
-              break;
-          }
-        }
-      }
+    if (this.description.havings.length > 0) {
+      query.push(
+        this.getWhereBindings("HAVING", this.description.havings),
+      );
     }
 
     // Add "order by" clauses
     if (this.description.orders.length > 0) {
-      query.push(`ORDER BY`);
+      const orders = this.description.orders
+        .map((order) => `${order.column} ${order.order}`)
+        .join(", ");
 
-      query.push(
-        this.description.orders
-          .map((order) => `${order.column} ${order.order}`)
-          .join(", "),
-      );
+      query.push(`ORDER BY ${orders}`);
     }
 
     // Add query limit if exists
@@ -452,5 +424,74 @@ export class QueryCompiler {
     } else {
       throw new Error(`'${column}' is an invalid column name!`);
     }
+  }
+
+  /**
+   * Compile where bindings from query description to a string.
+   * 
+   * Example result:
+   * 
+   * ```
+   * WHERE `users`.`email` = ? AND `users`.`age` >= ?
+   * ```
+   * 
+   * @param keyword define whether the it's using WHERE or HAVING
+   * @param bindings bindings from the query description
+   */
+  private getWhereBindings(
+    keyword: "WHERE" | "HAVING",
+    bindings: WhereBinding[],
+  ): string {
+    const query: string[] = [];
+
+    for (let index = 0; index < bindings.length; index++) {
+      const { type, expression: { operator, value }, column } = bindings[index];
+
+      // Get the table name, column name, and the operator.
+      // Example: "`users`.`id` = "
+      let expression = `${this.getColumnName(column)} ${operator}`;
+
+      // Add the value to the WHERE clause, if the operator is BETWEEN,
+      // use AND keyword to seperate both values.
+      if (operator === QueryOperator.Between) {
+        if (!Array.isArray(value) || value.length !== 2) {
+          throw new Error("BETWEEN must have two values!");
+        }
+
+        const a = this.bindValue(value[0]);
+        const b = this.bindValue(value[1]);
+        expression += ` ${a} AND ${b}`;
+      } else if (
+        operator !== QueryOperator.Null &&
+        operator !== QueryOperator.NotNull
+      ) {
+        expression += ` ${this.bindValue(value)}`;
+      }
+
+      if (index === 0) {
+        // The first where clause should have `WHERE` or `HAVING` explicitly.
+        if (type === WhereType.Not) {
+          query.push(`${keyword} NOT ${expression}`);
+        } else {
+          query.push(`${keyword} ${expression}`);
+        }
+      } else {
+        // The rest of them use `AND`
+        switch (type) {
+          case WhereType.Not:
+            query.push(`AND NOT ${expression}`);
+            break;
+          case WhereType.Or:
+            query.push(`OR ${expression}`);
+            break;
+          case WhereType.Default:
+          default:
+            query.push(`AND ${expression}`);
+            break;
+        }
+      }
+    }
+
+    return query.join(" ");
   }
 }

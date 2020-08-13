@@ -3,7 +3,7 @@ import { parseFlags, Colors, joinPath } from "./deps.ts";
 import { connect, MigrationRunner } from "./mod.ts";
 
 const CLI_VERSION = "v0.1.2";
-const COTTON_VERSION = "v0.6.6";
+const COTTON_VERSION = "v0.7.0";
 
 const parsedArgs = parseFlags(Deno.args);
 
