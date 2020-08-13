@@ -48,6 +48,7 @@ We also want to add some features like:
   - ✅ Bulk remove
   - 🚧 Relationships (only one-to-many)
   - ❌ Hooks
+  - ❌ Timestamps
 - ✅ Command-line tool
   - ✅ Migrations
   - 🚧 Seeder
