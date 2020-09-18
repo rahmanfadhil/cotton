@@ -3,7 +3,7 @@ import { parseFlags, Colors, joinPath } from "./deps.ts";
 import { connect, MigrationRunner } from "./mod.ts";
 
 const CLI_VERSION = "v0.1.2";
-const COTTON_VERSION = "v0.7.0";
+const COTTON_VERSION = "v0.7.1";
 
 const parsedArgs = parseFlags(Deno.args);
 
@@ -56,13 +56,16 @@ ${Colors.yellow("Usage:")}
 
 /**
  * Print an error to the console
- * 
+ *
  * @param message the error message
  */
 function error(message: string) {
   const errorMessage = `  ${message}  `;
   const redSpaces = Colors.bgRed(
-    errorMessage.split("").map(() => " ").join(""),
+    errorMessage
+      .split("")
+      .map(() => " ")
+      .join("")
   );
   const redMessage = Colors.bgRed(errorMessage);
   console.log("\n" + redSpaces + "\n" + redMessage + "\n" + redSpaces);
@@ -96,8 +99,9 @@ ${Colors.yellow("Commands:")}
 async function getMigrationsInfo(runner: MigrationRunner) {
   const migrations = await runner.getAllMigrations();
 
-  const longestName = migrations.migrations
-    .reduce((a, b) => a.name.length > b.name.length ? a : b).name;
+  const longestName = migrations.migrations.reduce((a, b) =>
+    a.name.length > b.name.length ? a : b
+  ).name;
 
   let migrationNameDashes = "";
 
@@ -124,8 +128,10 @@ if (parsedArgs._.length >= 1) {
     console.log(helps[command]);
   } else {
     try {
-      const configPath = parsedArgs.config as string ||
-        parsedArgs.c as string || "./ormconfig.json";
+      const configPath =
+        (parsedArgs.config as string) ||
+        (parsedArgs.c as string) ||
+        "./ormconfig.json";
 
       // Connect to the database
       const adapter = await connect(configPath);
@@ -134,7 +140,7 @@ if (parsedArgs._.length >= 1) {
       const runner = new MigrationRunner(
         joinPath(Deno.cwd(), "./migrations"),
         adapter,
-        COTTON_VERSION,
+        COTTON_VERSION
       );
 
       // Do something with the command
