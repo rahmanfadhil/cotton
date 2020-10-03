@@ -1112,3 +1112,35 @@ testQueryCompiler("basic `update`", {
     values: ["b@c.com", 16, "2020-07-06 00:00:00", "a@b.com"],
   },
 });
+
+testQueryCompiler("`update` with returning", {
+  type: QueryType.Update,
+  wheres: [{
+    column: "email",
+    expression: Q.eq("a@b.com"),
+    type: WhereType.Default,
+  }],
+  values: {
+    email: "b@c.com",
+    age: 16,
+    is_active: true,
+    birthday: new Date("6 July, 2020"),
+  },
+  returning: ["id", "name"],
+}, {
+  mysql: {
+    text:
+      "UPDATE `users` SET `email` = ?, `age` = ?, `is_active` = 1, `birthday` = ? WHERE `users`.`email` = ? RETURNING `id`, `name`;",
+    values: ["b@c.com", 16, "2020-07-06 00:00:00", "a@b.com"],
+  },
+  sqlite: {
+    text:
+      "UPDATE `users` SET `email` = ?, `age` = ?, `is_active` = 1, `birthday` = ? WHERE `users`.`email` = ? RETURNING `id`, `name`;",
+    values: ["b@c.com", 16, "2020-07-06 00:00:00", "a@b.com"],
+  },
+  postgres: {
+    text:
+      'UPDATE "users" SET "email" = $1, "age" = $2, "is_active" = TRUE, "birthday" = $3 WHERE "users"."email" = $4 RETURNING "id", "name";',
+    values: ["b@c.com", 16, "2020-07-06 00:00:00", "a@b.com"],
+  },
+});
