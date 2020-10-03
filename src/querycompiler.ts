@@ -80,7 +80,7 @@ export class QueryCompiler {
 
     // Add all query constraints
     query = query.concat(this.collectConstraints());
-    
+
     // Add RETURNING statement if exists
     if (this.description.returning.length > 0) {
       const returnings = uniqueColumnNames(this.description.returning);
