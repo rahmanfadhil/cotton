@@ -3,7 +3,7 @@ import { parseFlags, Colors, joinPath } from "./deps.ts";
 import { connect, MigrationRunner } from "./mod.ts";
 
 const CLI_VERSION = "v0.1.2";
-const COTTON_VERSION = "v0.7.1";
+const COTTON_VERSION = "v0.7.2";
 
 const parsedArgs = parseFlags(Deno.args);
 
@@ -65,7 +65,7 @@ function error(message: string) {
     errorMessage
       .split("")
       .map(() => " ")
-      .join(""),
+      .join("")
   );
   const redMessage = Colors.bgRed(errorMessage);
   console.log("\n" + redSpaces + "\n" + redMessage + "\n" + redSpaces);
@@ -99,10 +99,9 @@ ${Colors.yellow("Commands:")}
 async function getMigrationsInfo(runner: MigrationRunner) {
   const migrations = await runner.getAllMigrations();
 
-  const longestName =
-    migrations.migrations.reduce((a, b) =>
-      a.name.length > b.name.length ? a : b
-    ).name;
+  const longestName = migrations.migrations.reduce((a, b) =>
+    a.name.length > b.name.length ? a : b
+  ).name;
 
   let migrationNameDashes = "";
 
@@ -129,7 +128,8 @@ if (parsedArgs._.length >= 1) {
     console.log(helps[command]);
   } else {
     try {
-      const configPath = (parsedArgs.config as string) ||
+      const configPath =
+        (parsedArgs.config as string) ||
         (parsedArgs.c as string) ||
         "./ormconfig.json";
 
@@ -140,7 +140,7 @@ if (parsedArgs._.length >= 1) {
       const runner = new MigrationRunner(
         joinPath(Deno.cwd(), "./migrations"),
         adapter,
-        COTTON_VERSION,
+        COTTON_VERSION
       );
 
       // Do something with the command
