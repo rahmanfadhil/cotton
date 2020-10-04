@@ -78,6 +78,9 @@ export class QueryCompiler {
 
     query.push(values.join(", "));
 
+    // Add all query constraints
+    query = query.concat(this.collectConstraints());
+
     // Add RETURNING statement if exists
     if (this.description.returning.length > 0) {
       const returnings = uniqueColumnNames(this.description.returning);
@@ -88,9 +91,6 @@ export class QueryCompiler {
           .join(", "),
       );
     }
-
-    // Add all query constraints
-    query = query.concat(this.collectConstraints());
 
     return query.join(" ") + ";";
   }
