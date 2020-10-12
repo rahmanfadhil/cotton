@@ -14,7 +14,13 @@ export interface ConnectionOptions {
   applicationName?: string;
 }
 
-export type DatabaseValues = string | number | Date | boolean | null;
+export type DatabaseValues =
+  | string
+  | number
+  | Date
+  | boolean
+  | null
+  | undefined;
 
 export interface DatabaseResult {
   [key: string]: DatabaseValues;
