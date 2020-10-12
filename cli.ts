@@ -153,7 +153,7 @@ if (parsedArgs._.length >= 1) {
         }
       } else if (command === "migration:up") {
         await runner.applyMigrations();
-      } else if (command === "migrations:down") {
+      } else if (command === "migration:down") {
         if (typeof parsedArgs.steps === "number" && parsedArgs.steps >= 1) {
           await runner.revertMigrations(parsedArgs.steps as number);
         } else {
