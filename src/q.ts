@@ -1,4 +1,4 @@
-import { DatabaseValues } from "./adapters/adapter.ts";
+import type { DatabaseValues } from "./adapters/adapter.ts";
 
 export enum QueryOperator {
   In = "IN",

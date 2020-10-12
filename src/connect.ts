@@ -1,4 +1,4 @@
-import { ConnectionOptions, Adapter } from "./adapters/adapter.ts";
+import type { ConnectionOptions, Adapter } from "./adapters/adapter.ts";
 import { joinPath } from "../deps.ts";
 
 import { MysqlAdapter } from "./adapters/mysql.ts";

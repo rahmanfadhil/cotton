@@ -1,4 +1,8 @@
-import { Adapter, DatabaseResult, DatabaseValues } from "./adapters/adapter.ts";
+import type {
+  Adapter,
+  DatabaseResult,
+  DatabaseValues,
+} from "./adapters/adapter.ts";
 import { QueryCompiler } from "./querycompiler.ts";
 import { QueryExpression, Q } from "./q.ts";
 

@@ -5,11 +5,11 @@ import {
   JoinType,
   WhereBinding,
 } from "./querybuilder.ts";
-import { DatabaseDialect } from "./connect.ts";
+import type { DatabaseDialect } from "./connect.ts";
 import { formatDate } from "./utils/date.ts";
 import { quote } from "./utils/dialect.ts";
 import { uniqueColumnNames } from "./utils/array.ts";
-import { DatabaseValues } from "./adapters/adapter.ts";
+import type { DatabaseValues } from "./adapters/adapter.ts";
 import { QueryOperator } from "./q.ts";
 
 /**

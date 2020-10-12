@@ -1,5 +1,5 @@
-import { Manager, DeepPartial } from "./manager.ts";
-import { ModelQuery } from "./modelquery.ts";
+import type { Manager, DeepPartial } from "./manager.ts";
+import type { ModelQuery } from "./modelquery.ts";
 
 export type ObjectType<T> = typeof BaseModel & { new (): T };
 

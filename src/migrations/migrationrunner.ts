@@ -1,4 +1,4 @@
-import { Adapter } from "../adapters/adapter.ts";
+import type { Adapter } from "../adapters/adapter.ts";
 import { Colors, joinPath } from "../../deps.ts";
 import { Schema } from "./schema.ts";
 import { createMigrationTimestamp } from "../utils/date.ts";

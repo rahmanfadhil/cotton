@@ -1,5 +1,5 @@
 import { QueryBuilder } from "../querybuilder.ts";
-import { DatabaseDialect } from "../connect.ts";
+import type { DatabaseDialect } from "../connect.ts";
 import { Manager } from "../manager.ts";
 
 /**

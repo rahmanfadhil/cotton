@@ -1,5 +1,5 @@
 import { ColumnBuilder } from "./columnbuilder.ts";
-import { Adapter } from "../adapters/adapter.ts";
+import type { Adapter } from "../adapters/adapter.ts";
 import { quote } from "../utils/dialect.ts";
 import { ForeignActions, Foreign } from "./foreign.ts";
 

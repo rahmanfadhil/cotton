@@ -1,5 +1,5 @@
 import { COLUMN_TYPES } from "../constants.ts";
-import { DatabaseDialect } from "../connect.ts";
+import type { DatabaseDialect } from "../connect.ts";
 import { quote } from "../utils/dialect.ts";
 
 /**
