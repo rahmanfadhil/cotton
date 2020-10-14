@@ -1,7 +1,7 @@
 import {
+  assert,
   assertEquals,
   assertThrowsAsync,
-  assert,
   joinPath,
 } from "../testdeps.ts";
 import { connect } from "./connect.ts";

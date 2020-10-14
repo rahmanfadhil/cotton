@@ -4,7 +4,7 @@ import type {
   DatabaseValues,
 } from "./adapters/adapter.ts";
 import { QueryCompiler } from "./querycompiler.ts";
-import { QueryExpression, Q } from "./q.ts";
+import { Q, QueryExpression } from "./q.ts";
 
 /**
  * Combine WHERE operators with OR or NOT

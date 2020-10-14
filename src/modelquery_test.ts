@@ -1,6 +1,6 @@
-import { testDB, User, Product, assertDateEquals } from "./testutils.ts";
+import { assertDateEquals, Product, testDB, User } from "./testutils.ts";
 import { ModelQuery } from "./modelquery.ts";
-import { assertEquals, assert, stub } from "../testdeps.ts";
+import { assert, assertEquals, stub } from "../testdeps.ts";
 import { Adapter } from "./adapters/adapter.ts";
 import { Q } from "./q.ts";
 

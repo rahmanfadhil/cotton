@@ -1,4 +1,4 @@
-import { testDB, User, Product } from "./testutils.ts";
+import { Product, testDB, User } from "./testutils.ts";
 import { Manager } from "./manager.ts";
 import { assert, assertEquals, assertThrowsAsync } from "../testdeps.ts";
 import { ModelQuery } from "./modelquery.ts";

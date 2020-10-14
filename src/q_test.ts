@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "../testdeps.ts";
-import { QueryExpression, Q, QueryOperator } from "./q.ts";
+import { Q, QueryExpression, QueryOperator } from "./q.ts";
 
 Deno.test("QueryOperator -> should be a valid SQL syntax", () => {
   assertEquals(QueryOperator.In, "IN");

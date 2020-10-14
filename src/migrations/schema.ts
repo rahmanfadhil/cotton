@@ -1,5 +1,5 @@
 import type { Adapter } from "../adapters/adapter.ts";
-import { TableBuilder, CreateTableOptions } from "./tablebuilder.ts";
+import { CreateTableOptions, TableBuilder } from "./tablebuilder.ts";
 import type { ColumnBuilder } from "./columnbuilder.ts";
 
 /**

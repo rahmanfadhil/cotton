@@ -3,7 +3,7 @@ import { connect } from "./connect.ts";
 import { QueryBuilder, QueryDescription, QueryType } from "./querybuilder.ts";
 import { assertEquals } from "../testdeps.ts";
 import { QueryCompiler } from "./querycompiler.ts";
-import { Model, Primary, Column, BelongsTo, HasMany } from "./model.ts";
+import { BelongsTo, Column, HasMany, Model, Primary } from "./model.ts";
 import { Colors } from "../deps.ts";
 import { formatDate } from "./utils/date.ts";
 

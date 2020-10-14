@@ -1,25 +1,25 @@
-import { QueryBuilder, OrderDirection } from "./querybuilder.ts";
+import { OrderDirection, QueryBuilder } from "./querybuilder.ts";
 import type {
   Adapter,
   DatabaseResult,
   DatabaseValues,
 } from "./adapters/adapter.ts";
 import {
-  getTableName,
-  getRelations,
+  createModel,
+  createModels,
+  findColumn,
   getColumns,
   getPrimaryKeyInfo,
-  createModels,
+  getRelations,
+  getTableName,
   mapQueryResult,
   mapSingleQueryResult,
-  createModel,
-  findColumn,
   mapValueProperties,
 } from "./utils/models.ts";
 import { RelationType } from "./model.ts";
 import { quote } from "./utils/dialect.ts";
 import type { DeepPartial } from "./manager.ts";
-import { QueryExpression, Q } from "./q.ts";
+import { Q, QueryExpression } from "./q.ts";
 
 /**
  * Perform query to a model.

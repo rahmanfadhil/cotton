@@ -1,4 +1,4 @@
-import { parseFlags, Colors, joinPath } from "./deps.ts";
+import { Colors, joinPath, parseFlags } from "./deps.ts";
 
 import { connect, MigrationRunner } from "./mod.ts";
 

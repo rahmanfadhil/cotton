@@ -1,14 +1,14 @@
 import {
+  BelongsTo,
   Column,
   DataType,
-  Model,
-  RelationType,
-  RelationDescription,
   HasMany,
-  BelongsTo,
+  Model,
+  RelationDescription,
+  RelationType,
 } from "./model.ts";
 import { Reflect } from "./utils/reflect.ts";
-import { assertEquals, assertThrows, assert } from "../testdeps.ts";
+import { assert, assertEquals, assertThrows } from "../testdeps.ts";
 import { metadata } from "./constants.ts";
 
 // TODO: if a relation is pointing to itself, throw an error

@@ -1,10 +1,10 @@
-import type { ConnectionOptions, Adapter } from "./adapters/adapter.ts";
+import type { Adapter, ConnectionOptions } from "./adapters/adapter.ts";
 import { joinPath } from "../deps.ts";
 
 import { MysqlAdapter } from "./adapters/mysql.ts";
 import { PostgresAdapter } from "./adapters/postgres.ts";
 import { SqliteAdapter } from "./adapters/sqlite.ts";
-import { ObjectType, BaseModel } from "./basemodel.ts";
+import { BaseModel, ObjectType } from "./basemodel.ts";
 
 export type DatabaseDialect = "mysql" | "postgres" | "sqlite";
 

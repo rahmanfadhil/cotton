@@ -1,8 +1,8 @@
 import {
   ColumnDescription,
+  DataType,
   RelationDescription,
   RelationType,
-  DataType,
 } from "../model.ts";
 import type { DatabaseResult, DatabaseValues } from "../adapters/adapter.ts";
 import { Reflect } from "../utils/reflect.ts";

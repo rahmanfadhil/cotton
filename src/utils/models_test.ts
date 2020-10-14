@@ -1,30 +1,30 @@
 import {
-  getTableName,
-  getColumns,
-  getRelations,
-  getPrimaryKeyInfo,
-  isSaved,
-  setSaved,
-  getOriginal,
   compareWithOriginal,
-  getValues,
-  mapQueryResult,
-  mapSingleQueryResult,
   createModel,
   createModels,
-  mapValueProperties,
-  getRelationValues,
   findColumn,
+  getColumns,
+  getOriginal,
+  getPrimaryKeyInfo,
+  getRelations,
+  getRelationValues,
+  getTableName,
+  getValues,
+  isSaved,
+  mapQueryResult,
+  mapSingleQueryResult,
+  mapValueProperties,
+  setSaved,
 } from "./models.ts";
-import { Model, Column, RelationType, DataType } from "../model.ts";
+import { Column, DataType, Model, RelationType } from "../model.ts";
 import {
-  Product,
-  User,
-  toUser,
-  toProduct,
   getCreationDate,
+  Product,
+  toProduct,
+  toUser,
+  User,
 } from "../testutils.ts";
-import { assertEquals, assertThrows, assert } from "../../testdeps.ts";
+import { assert, assertEquals, assertThrows } from "../../testdeps.ts";
 import { formatDate } from "../utils/date.ts";
 
 Deno.test("getTableName() -> should get the model's custom table name", () => {

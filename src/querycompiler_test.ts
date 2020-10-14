@@ -1,9 +1,9 @@
-import { QueryType, WhereType, JoinType } from "./querybuilder.ts";
+import { JoinType, QueryType, WhereType } from "./querybuilder.ts";
 import { formatDate } from "./utils/date.ts";
 import { testQueryCompiler } from "./testutils.ts";
 import { assertThrows } from "../testdeps.ts";
 import { QueryCompiler } from "./querycompiler.ts";
-import { QueryOperator, QueryExpression, Q } from "./q.ts";
+import { Q, QueryExpression, QueryOperator } from "./q.ts";
 
 // --------------------------------------------------------------------------------
 // SELECT

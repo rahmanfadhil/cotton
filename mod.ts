@@ -9,11 +9,11 @@ export { ColumnBuilder } from "./src/migrations/columnbuilder.ts";
 export { ForeignActions } from "./src/migrations/foreign.ts";
 export { MigrationRunner } from "./src/migrations/migrationrunner.ts";
 export {
-  Primary,
+  BelongsTo,
   Column,
   DataType,
   HasMany,
-  BelongsTo,
   Model,
+  Primary,
 } from "./src/model.ts";
 export { Q } from "./src/q.ts";

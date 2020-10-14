@@ -1,5 +1,5 @@
 import { assertEquals } from "../../testdeps.ts";
-import { formatDate, createMigrationTimestamp } from "./date.ts";
+import { createMigrationTimestamp, formatDate } from "./date.ts";
 
 Deno.test("formatDate: should format date properly", () => {
   const date = new Date("07 December 2020");

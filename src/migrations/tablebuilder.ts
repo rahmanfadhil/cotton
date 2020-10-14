@@ -1,7 +1,7 @@
 import { ColumnBuilder } from "./columnbuilder.ts";
 import type { Adapter } from "../adapters/adapter.ts";
 import { quote } from "../utils/dialect.ts";
-import { ForeignActions, Foreign } from "./foreign.ts";
+import { Foreign, ForeignActions } from "./foreign.ts";
 
 export interface CreateTableOptions {
   createIfNotExists?: boolean;

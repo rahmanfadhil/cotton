@@ -1,9 +1,9 @@
 import {
+  JoinType,
   QueryDescription,
   QueryType,
-  WhereType,
-  JoinType,
   WhereBinding,
+  WhereType,
 } from "./querybuilder.ts";
 import type { DatabaseDialect } from "./connect.ts";
 import { formatDate } from "./utils/date.ts";

@@ -1,4 +1,4 @@
-import { WhereType, QueryType, JoinType } from "./querybuilder.ts";
+import { JoinType, QueryType, WhereType } from "./querybuilder.ts";
 import { testQueryBuilder } from "./testutils.ts";
 import { Q, QueryOperator } from "./q.ts";
 

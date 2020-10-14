@@ -1,8 +1,8 @@
-import { testDB, assertDateEquals } from "../testutils.ts";
+import { assertDateEquals, testDB } from "../testutils.ts";
 import {
-  assertThrowsAsync,
-  assertEquals,
   assert,
+  assertEquals,
+  assertThrowsAsync,
   spy,
 } from "../../testdeps.ts";
 import { QueryBuilder } from "../querybuilder.ts";

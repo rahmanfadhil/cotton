@@ -1,12 +1,12 @@
 import {
-  isSaved,
   compareWithOriginal,
-  getTableName,
   getPrimaryKeyInfo,
-  getValues,
-  setSaved,
-  mapValueProperties,
   getRelationValues,
+  getTableName,
+  getValues,
+  isSaved,
+  mapValueProperties,
+  setSaved,
 } from "./utils/models.ts";
 import type { Adapter } from "./adapters/adapter.ts";
 import { range } from "./utils/number.ts";
