@@ -1,5 +1,5 @@
 import { quote } from "../utils/dialect.ts";
-import { DatabaseDialect } from "../connect.ts";
+import type { DatabaseDialect } from "../connect.ts";
 
 /** Foreign key actions for ON DELETE and ON UPDATE */
 export enum ForeignActions {

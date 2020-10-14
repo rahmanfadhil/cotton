@@ -1,5 +1,9 @@
 import { QueryBuilder, OrderDirection } from "./querybuilder.ts";
-import { Adapter, DatabaseResult, DatabaseValues } from "./adapters/adapter.ts";
+import type {
+  Adapter,
+  DatabaseResult,
+  DatabaseValues,
+} from "./adapters/adapter.ts";
 import {
   getTableName,
   getRelations,
@@ -14,7 +18,7 @@ import {
 } from "./utils/models.ts";
 import { RelationType } from "./model.ts";
 import { quote } from "./utils/dialect.ts";
-import { DeepPartial } from "./manager.ts";
+import type { DeepPartial } from "./manager.ts";
 import { QueryExpression, Q } from "./q.ts";
 
 /**

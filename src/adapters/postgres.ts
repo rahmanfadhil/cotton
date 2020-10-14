@@ -1,6 +1,6 @@
 import { PostgresClient } from "../../deps.ts";
 import { Adapter, ConnectionOptions, DatabaseResult } from "./adapter.ts";
-import { DatabaseDialect } from "../connect.ts";
+import type { DatabaseDialect } from "../connect.ts";
 
 /**
  * PostgreSQL database adapter

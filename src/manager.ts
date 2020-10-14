@@ -8,7 +8,7 @@ import {
   mapValueProperties,
   getRelationValues,
 } from "./utils/models.ts";
-import { Adapter } from "./adapters/adapter.ts";
+import type { Adapter } from "./adapters/adapter.ts";
 import { range } from "./utils/number.ts";
 import { RelationType } from "./model.ts";
 import { ModelQuery } from "./modelquery.ts";

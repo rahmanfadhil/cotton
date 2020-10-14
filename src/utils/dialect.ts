@@ -1,4 +1,4 @@
-import { DatabaseDialect } from "../connect.ts";
+import type { DatabaseDialect } from "../connect.ts";
 
 /**
  * Wrap a table or column name with backticks or

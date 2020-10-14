@@ -1,6 +1,6 @@
-import { Adapter } from "../adapters/adapter.ts";
+import type { Adapter } from "../adapters/adapter.ts";
 import { TableBuilder, CreateTableOptions } from "./tablebuilder.ts";
-import { ColumnBuilder } from "./columnbuilder.ts";
+import type { ColumnBuilder } from "./columnbuilder.ts";
 
 /**
  * Database schema migration helper

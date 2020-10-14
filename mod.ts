@@ -1,6 +1,8 @@
 export { QueryBuilder } from "./src/querybuilder.ts";
-export { connect, DatabaseDialect } from "./src/connect.ts";
-export { Manager, FindOneOptions, FindOptions } from "./src/manager.ts";
+export { connect } from "./src/connect.ts";
+export type { DatabaseDialect } from "./src/connect.ts";
+export { Manager } from "./src/manager.ts";
+export type { FindOneOptions, FindOptions } from "./src/manager.ts";
 export { BaseModel } from "./src/basemodel.ts";
 export { Schema } from "./src/migrations/schema.ts";
 export { ColumnBuilder } from "./src/migrations/columnbuilder.ts";

@@ -1,6 +1,6 @@
 import { Adapter, ConnectionOptions, DatabaseResult } from "./adapter.ts";
 import { SqliteDB } from "../../deps.ts";
-import { DatabaseDialect } from "../connect.ts";
+import type { DatabaseDialect } from "../connect.ts";
 
 /**
  * SQLite database adapter
