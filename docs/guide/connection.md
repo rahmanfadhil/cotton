@@ -52,7 +52,7 @@ const db = await connect({
 
 ```ts
 const db = await connect({
-  type: "mysql",
+  type: "postgres",
   port: 5432,
   database: "mydb",
   hostname: "localhost",
@@ -61,7 +61,7 @@ const db = await connect({
 });
 ```
 
-Typically MySQL and PostgreSQL datababase ask for a username and password. However, if there is no password, you can leave it empty.
+Typically MySQL and PostgreSQL database ask for a username and password. However, if there is no password, you can leave it empty.
 
 ## Disconnect
 
