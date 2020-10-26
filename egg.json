@@ -1,0 +1,10 @@
+{
+                                "name": "cotton",
+                                "description": "SQL Database Toolkit for Deno",
+                                "homepage": "https://github.com/rahmanfadhil/cotton",
+                                "files": [
+                                  "./**/*.ts",
+                                  "README.md"
+                                ],
+                                "entry": "./mod.ts"
+                              }
