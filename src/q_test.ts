@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "../testdeps.ts";
-import { Q, QueryExpression, QueryOperator } from "./q.ts";
+import { Q, QueryOperator } from "./q.ts";
 
 Deno.test("QueryOperator -> should be a valid SQL syntax", () => {
   assertEquals(QueryOperator.In, "IN");
@@ -20,98 +20,98 @@ Deno.test("QueryOperator -> should be a valid SQL syntax", () => {
   assertEquals(QueryOperator.NotNull, "IS NOT NULL");
 });
 
-Deno.test("Q.in() -> should return a QueryExpression", () => {
+Deno.test("Q.in() -> should return a Q", () => {
   const q = Q.in([1, 2, 3]);
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.In);
 });
 
-Deno.test("Q.notIn() -> should return a QueryExpression", () => {
+Deno.test("Q.notIn() -> should return a Q", () => {
   const q = Q.notIn([1, 2, 3]);
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.NotIn);
 });
 
-Deno.test("Q.between() -> should return a QueryExpression", () => {
+Deno.test("Q.between() -> should return a Q", () => {
   const q = Q.between(1, 5);
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.Between);
 });
 
-Deno.test("Q.notBetween() -> should return a QueryExpression", () => {
+Deno.test("Q.notBetween() -> should return a Q", () => {
   const q = Q.notBetween(1, 5);
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.NotBetween);
 });
 
-Deno.test("Q.like() -> should return a QueryExpression", () => {
+Deno.test("Q.like() -> should return a Q", () => {
   const q = Q.like("%john%");
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.Like);
 });
 
-Deno.test("Q.notLike() -> should return a QueryExpression", () => {
+Deno.test("Q.notLike() -> should return a Q", () => {
   const q = Q.notLike("%john%");
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.NotLike);
 });
 
-Deno.test("Q.ilike() -> should return a QueryExpression", () => {
+Deno.test("Q.ilike() -> should return a Q", () => {
   const q = Q.ilike("%john%");
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.Ilike);
 });
 
-Deno.test("Q.notIlike() -> should return a QueryExpression", () => {
+Deno.test("Q.notIlike() -> should return a Q", () => {
   const q = Q.notIlike("%john%");
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.NotIlike);
 });
 
-Deno.test("Q.eq() -> should return a QueryExpression", () => {
+Deno.test("Q.eq() -> should return a Q", () => {
   const q = Q.eq(7);
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.Equal);
 });
 
-Deno.test("Q.neq() -> should return a QueryExpression", () => {
+Deno.test("Q.neq() -> should return a Q", () => {
   const q = Q.neq(7);
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.NotEqual);
 });
 
-Deno.test("Q.gt() -> should return a QueryExpression", () => {
+Deno.test("Q.gt() -> should return a Q", () => {
   const q = Q.gt(7);
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.GreaterThan);
 });
 
-Deno.test("Q.gte() -> should return a QueryExpression", () => {
+Deno.test("Q.gte() -> should return a Q", () => {
   const q = Q.gte(7);
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.GreaterThanEqual);
 });
 
-Deno.test("Q.lt() -> should return a QueryExpression", () => {
+Deno.test("Q.lt() -> should return a Q", () => {
   const q = Q.lt(7);
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.LowerThan);
 });
 
-Deno.test("Q.lte() -> should return a QueryExpression", () => {
+Deno.test("Q.lte() -> should return a Q", () => {
   const q = Q.lte(7);
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.LowerThanEqual);
 });
 
-Deno.test("Q.null() -> should return a QueryExpression", () => {
+Deno.test("Q.null() -> should return a Q", () => {
   const q = Q.null();
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.Null);
 });
 
-Deno.test("Q.notNull() -> should return a QueryExpression", () => {
+Deno.test("Q.notNull() -> should return a Q", () => {
   const q = Q.notNull();
-  assert(q instanceof QueryExpression);
+  assert(q instanceof Q);
   assertEquals(q.operator, QueryOperator.NotNull);
 });

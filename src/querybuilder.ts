@@ -4,7 +4,7 @@ import type {
   DatabaseValues,
 } from "./adapters/adapter.ts";
 import { QueryCompiler } from "./querycompiler.ts";
-import { Q, QueryExpression } from "./q.ts";
+import { Q } from "./q.ts";
 
 /**
  * Combine WHERE operators with OR or NOT
@@ -25,7 +25,7 @@ export type OrderDirection = "DESC" | "ASC";
  */
 export interface WhereBinding {
   column: string;
-  expression: QueryExpression;
+  expression: Q;
   type: WhereType;
 }
 
@@ -136,7 +136,7 @@ export class QueryBuilder {
     /** The table which the query is targeting */
     tableName: string,
     /** The database adapter to perform query */
-    private adapter: Adapter,
+    private adapter: Adapter
   ) {
     this.description = {
       tableName,
@@ -159,7 +159,7 @@ export class QueryBuilder {
 
   /**
    * Add basic WHERE clause to query
-   * 
+   *
    * @param column the table column name
    * @param value the expected value
    */
@@ -167,22 +167,17 @@ export class QueryBuilder {
 
   /**
    * Add basic WHERE clause to query with custom query expression.
-   * 
+   *
    * @param column the table column name
    * @param expresion a custom SQL expression to filter the records
    */
-  public where(column: string, expression: QueryExpression): QueryBuilder;
+  public where(column: string, expression: Q): QueryBuilder;
 
   /** Add basic WHERE clause to query */
-  public where(
-    column: string,
-    expression: DatabaseValues | QueryExpression,
-  ): QueryBuilder {
+  public where(column: string, expression: DatabaseValues | Q): QueryBuilder {
     this.description.wheres.push({
       column,
-      expression: expression instanceof QueryExpression
-        ? expression
-        : Q.eq(expression),
+      expression: expression instanceof Q ? expression : Q.eq(expression),
       type: WhereType.Default,
     });
 
@@ -191,7 +186,7 @@ export class QueryBuilder {
 
   /**
    * Add WHERE NOT clause to query
-   * 
+   *
    * @param column the table column name
    * @param value the expected value
    */
@@ -199,22 +194,17 @@ export class QueryBuilder {
 
   /**
    * Add WHERE NOT clause to query with custom query expression.
-   * 
+   *
    * @param column the table column name
    * @param expresion a custom SQL expression to filter the records
    */
-  public not(column: string, expression: QueryExpression): QueryBuilder;
+  public not(column: string, expression: Q): QueryBuilder;
 
   /** Add WHERE NOT clause to query */
-  public not(
-    column: string,
-    expression: DatabaseValues | QueryExpression,
-  ): QueryBuilder {
+  public not(column: string, expression: DatabaseValues | Q): QueryBuilder {
     this.description.wheres.push({
       column,
-      expression: expression instanceof QueryExpression
-        ? expression
-        : Q.eq(expression),
+      expression: expression instanceof Q ? expression : Q.eq(expression),
       type: WhereType.Not,
     });
 
@@ -223,7 +213,7 @@ export class QueryBuilder {
 
   /**
    * Add WHERE ... OR clause to query
-   * 
+   *
    * @param column the table column name
    * @param value the expected value
    */
@@ -231,22 +221,17 @@ export class QueryBuilder {
 
   /**
    * Add WHERE ... OR clause to query with custom query expression.
-   * 
+   *
    * @param column the table column name
    * @param expresion a custom SQL expression to filter the records
    */
-  public or(column: string, expression: QueryExpression): QueryBuilder;
+  public or(column: string, expression: Q): QueryBuilder;
 
   /** Add WHERE ... OR clause to query */
-  public or(
-    column: string,
-    expression: DatabaseValues | QueryExpression,
-  ): QueryBuilder {
+  public or(column: string, expression: DatabaseValues | Q): QueryBuilder {
     this.description.wheres.push({
       column,
-      expression: expression instanceof QueryExpression
-        ? expression
-        : Q.eq(expression),
+      expression: expression instanceof Q ? expression : Q.eq(expression),
       type: WhereType.Or,
     });
 
@@ -255,7 +240,7 @@ export class QueryBuilder {
 
   /**
    * Select table columns
-   * 
+   *
    * @param columns table columns to select
    */
   public select(...columns: (string | [string, string])[]): QueryBuilder {
@@ -265,7 +250,7 @@ export class QueryBuilder {
 
   /**
    * Set the "limit" value for the query.
-   * 
+   *
    * @param limit Maximum number of records
    */
   public limit(limit: number): QueryBuilder {
@@ -278,7 +263,7 @@ export class QueryBuilder {
 
   /**
    * Set the "offset" value for the query.
-   * 
+   *
    * @param offset Numbers of records to skip
    */
   public offset(offset: number): QueryBuilder {
@@ -298,13 +283,13 @@ export class QueryBuilder {
 
   /**
    * Add an "order by" clause to the query.
-   * 
+   *
    * @param column Table field
    * @param direction "ASC" or "DESC"
    */
   public order(
     column: string,
-    direction: OrderDirection = "ASC",
+    direction: OrderDirection = "ASC"
   ): QueryBuilder {
     this.description.orders.push({ column, order: direction });
     return this;
@@ -312,7 +297,7 @@ export class QueryBuilder {
 
   /**
    * Add SQL HAVING clause to query
-   * 
+   *
    * @param column the table column name
    * @param value the expected value
    */
@@ -320,22 +305,17 @@ export class QueryBuilder {
 
   /**
    * Add SQL HAVING clause to query with custom query expression.
-   * 
+   *
    * @param column the table column name
    * @param expresion a custom SQL expression to filter the records
    */
-  public having(column: string, expression: QueryExpression): QueryBuilder;
+  public having(column: string, expression: Q): QueryBuilder;
 
   /** Add SQL HAVING clause to query */
-  public having(
-    column: string,
-    expression: DatabaseValues | QueryExpression,
-  ): QueryBuilder {
+  public having(column: string, expression: DatabaseValues | Q): QueryBuilder {
     this.description.havings.push({
       column,
-      expression: expression instanceof QueryExpression
-        ? expression
-        : Q.eq(expression),
+      expression: expression instanceof Q ? expression : Q.eq(expression),
       type: WhereType.Default,
     });
 
@@ -354,7 +334,7 @@ export class QueryBuilder {
 
   /**
    * Sets the returning value for the query.
-   * 
+   *
    * @param columns Table column name
    */
   public returning(...columns: string[]): QueryBuilder {
@@ -368,7 +348,7 @@ export class QueryBuilder {
 
   /**
    * Insert a record to the table
-   * 
+   *
    * @param data A JSON Object representing columnname-value pairs. Example: { firstname: "John", age: 22, ... }
    */
   public insert(data: QueryValues | QueryValues[]): QueryBuilder {
@@ -383,11 +363,11 @@ export class QueryBuilder {
 
   /**
    * Perform `REPLACE` query to the table.
-   * 
+   *
    * It will look for `PRIMARY` and `UNIQUE` constraints.
    * If something matched, it gets removed from the table
    * and creates a new row with the given values.
-   * 
+   *
    * @param data A JSON Object representing columnname-value pairs. Example: { firstname: "John", age: 22, ... }
    */
   public replace(data: QueryValues): QueryBuilder {
@@ -402,7 +382,7 @@ export class QueryBuilder {
 
   /**
    * Update record on the database
-   * 
+   *
    * @param data A JSON Object representing columnname-value pairs. Example: { firstname: "John", age: 22, ... }
    */
   public update(data: QueryValues): QueryBuilder {
@@ -429,7 +409,7 @@ export class QueryBuilder {
 
   /**
    * Count records with given conditions
-   * 
+   *
    * @param column the column(s) you want to count
    * @param as the alias for the count result
    */
@@ -451,7 +431,7 @@ export class QueryBuilder {
 
   /**
    * Count records with unique values
-   * 
+   *
    * @param columns the unique column(s) you want to count
    * @param as the alias for the count result
    */
@@ -537,7 +517,7 @@ export class QueryBuilder {
 
   /**
    * Execute query and get the result
-   * 
+   *
    * @param adapter Custom database adapter
    */
   public async execute(adapter?: Adapter): Promise<DatabaseResult[]> {
@@ -558,7 +538,7 @@ export class QueryBuilder {
   public toSQL() {
     const { text, values } = new QueryCompiler(
       this.description,
-      this.adapter.dialect,
+      this.adapter.dialect
     ).compile();
     return { text, values };
   }
