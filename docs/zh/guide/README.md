@@ -1,6 +1,6 @@
-# Getting Started
+# 快速开始
 
-Here's an example of a Deno project that uses Cotton.
+这有一个使用 Cotton 创建的 Deno 项目。
 
 ```ts
 import { connect } from "https://deno.land/x/cotton@v0.7.2/mod.ts";
@@ -11,11 +11,11 @@ const db = await connect({
 });
 ```
 
-To use Cotton in your project, you can import `cotton` package from [deno.land/x](https://deno.land/x) in your file. We highly recommend you to use semantic versioning by explicitly tell Deno which version you want to use in the import URL.
+要在项目中使用 Cotton，你可以从文件中的[deno.land/x](https://deno.land/x）导入 `cotton` 包。 我们强烈建议你使用语义版本控制，方法是在导入 URL 中明确告诉 Deno 你要使用哪个版本。
 
-Typically, the first thing you want to do is to create a connection to a database. Here, we're using `connect` and pass our database configuration. You can read more about connection [here](connection.md).
+通常，你要做的第一件事是创建与数据库的连接。 在这里，我们使用 `connect` 并传递数据库配置。 你可以在[此处](connection.md)阅读更多有关连接的信息。
 
-Once our database is connected, do anything with it such as performing an SQL query.
+连接数据库后，就可以执行任何操作，例如执行SQL查询。
 
 ```ts
 const users = await db.query("SELECT * FROM users");
@@ -25,9 +25,9 @@ for (const user of users) {
 }
 ```
 
-You can learn more about Cotton through these links. Have fun! 😃
+你可以通过下面这些链接了解有关 Cotton 的更多信息。 祝用的开心！ 😃
 
-- [Creating a connection](connection)
-- [Query builder](query-builder.md)
-- [Object-relational mapper](model.md)
-- [Database migrations](migrations.md)
+- [创建连接](connection)
+- [查询构造器](query-builder.md)
+- [对象-关系映射](model.md)
+- [数据库迁移](migrations.md)
