@@ -3,7 +3,7 @@ home: true
 heroText: Cotton
 tagline: 用于 Deno 的 SQL 数据库工具包
 actionText: 快速开始 →
-actionLink: /guide/
+actionLink: /zh/guide/
 features:
   - title: 良好的测试覆盖
     details: 所有的功能都通过了多种类型的 SQL 数据库的测试。
