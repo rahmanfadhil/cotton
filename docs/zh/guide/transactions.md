@@ -1,6 +1,6 @@
-# Transactions
+# 事务
 
-You can perform transactions directly from your connection instance.
+你可以直接在你的连接实例上使用事务。
 
 ```ts
 const db = await connect({
@@ -14,4 +14,4 @@ await db.transaction(async () => {
 });
 ```
 
-If an error is thrown within the transaction callback, the transaction will automatically be rolled back. If the callback executes successfully, the transaction will automatically be committed. That way, you don't need to worry about manually rolling back or committing those transactions.
+如果事务中出现任何问题，你的事务将会自动回滚。如果回滚执行成功，事务将会被自动提交。这样，你就不用担心手动回滚和提交事务了。

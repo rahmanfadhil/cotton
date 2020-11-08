@@ -1,6 +1,6 @@
-# Models
+# 模型
 
-Cotton provides a type-safe way to work with your database using models. You can define a model by creating a plain class decorated with `@Model`.
+Cotton 提供了一种类型安全的方式来使用模型处理数据库。 你可以通过创建一个装饰有以下内容的普通类来定义模型：`@Model`。
 
 ```ts
 import { Model, Column } from "https://deno.land/x/cotton/mod.ts";
@@ -21,18 +21,18 @@ class User {
 }
 ```
 
-The `@Model` decorator takes an optional argument for the table name of your model. By default, if the class name is `User`, it will look up for `user` table in your database.
+`@Model` 装饰器接受一个可选参数作为模型的表名。 默认情况下，如果类名是 `User`，它将在数据库中查找 `user` 表。
 
-> A model must have a primary column. And at this point, Cotton only supports auto incremental primary keys.
+> 模型必须具有主列。 在这点上，Cotton 仅支持自动增量主键。
 
-Then, you define each columns by marking the class properties with `@Column`. Cotton is smart enough to determine the data type of that particular column using TypeScript types. However, you can still customize your column types by passing the `type` option like below.
+然后，通过用 `@Column` 标记类属性来定义每列。 Cotton 足够聪明，可以使用 `TypeScript` 类型来确定该特定列的数据类型。 但是，你仍然可以通过传递`type`选项来自定义列类型，如下所示。
 
 ```ts
 @Column({ type: DataType.String })
 email!: string;
 ```
 
-There are still a plenty of room for customization. You can provide a default value of a column with`default`, define a custom name for your column using `name`, and much more.
+仍有大量定制空间。 你可以使用 `default` 提供列的默认值，并使用 `name` 为列定义自定义名称，等等。
 
 ```ts
 @Column({ default: false })
@@ -45,9 +45,9 @@ createdAt!: Date;
 createdAt!: Date;
 ```
 
-## TypeScript configuration
+## TypeScript 配置
 
-Keep in mind that this feature requires a custom TypeScript configuration to tell Deno that we want to use TypeScript [decorators](https://www.typescriptlang.org/docs/handbook/decorators.html), which currently still an experimental feature.
+请记住，此功能需要自定义 `TypeScript` 配置，以告知 `Deno` 我们要使用`TypeScript` [decorators](https://www.typescriptlang.org/docs/handbook/decorators.html)，该功能目前仍是实验性功能。
 
 ```json
 // tsconfig.json
@@ -60,9 +60,9 @@ Keep in mind that this feature requires a custom TypeScript configuration to tel
 }
 ```
 
-## Model manager
+## 模型管理器
 
-In order to perform queries within a model, you can use the model manager provided by the database connection.
+为了在模型中执行查询，你可以使用数据库连接实例提供的模型管理器。
 
 ```ts
 const db = await connect({
@@ -73,7 +73,7 @@ const db = await connect({
 const manager = db.getManager();
 ```
 
-Once you get the manager instance, you can basically perform anything to that models. Let's start by creating a new user!
+一旦你获得模型管理器实例，你可以在模型上执行任何操作。 让我们来以创建一个用户开始。
 
 ```ts
 const user = new User();
@@ -83,14 +83,14 @@ user.createdAt = new Date();
 await manager.save(user);
 ```
 
-To update an existing model, you can perform `save` again. Cotton is smart enough to decide whether the model needs to be inserted or updated.
+为了更新已经存在的模型，你可以再次执行 `save` 操作。Cotton 会智能的决定是要更新还是插入数据。
 
 ```ts
 user.email = "b@c.com";
 await manager.save(user);
 ```
 
-You can also perform insert and update multiple models using `save` by passing an array as the argument.
+你也可以给 `save` 通过传入一个数组来执行多条数据的插入和更新。
 
 ```ts
 const user1 = new User();
@@ -111,9 +111,9 @@ await manager.save([
 ]);
 ```
 
-### Querying models
+### 查询模型
 
-Everything you need to query a model is in the `query` method.
+任何你想查询的内容都可以通过 `query` 来获取。
 
 ```ts
 const users = await manager.query(User).all();
@@ -123,13 +123,13 @@ for (const user of users) {
 }
 ```
 
-The `query` method returns an instance of `ModelQuery` which works like a query builder. You can also filter records by a certain conditions by chaining it with `where`, `or`, and `not`.
+`query` 方法返回 `ModelQuery` 的实例，该实例的工作方式类似于查询生成器。 你还可以通过将记录与 `where` 、`or` 和 `not` 连接起来，在一定条件下过滤记录。
 
 ```ts
 await manager.query(User).where("email", "a@b.com").all();
 ```
 
-To fetch a single record, you can use `first` instead of `all`.
+如果要获取第一个，可以用 `first`代替 `all`。
 
 ```ts
 const user = await manager.query(User).where("email", "a@b.com").first();
@@ -137,45 +137,45 @@ const user = await manager.query(User).where("email", "a@b.com").first();
 console.log(user); // User { email: 'a@b.com', age: 16, ... }
 ```
 
-## Counting models
+## 计数
 
-You can count how many models match given conditions using `count` method.
+你可以通过 `count` 方法统计到满足条件的数据。
 
 ```ts
 const count = await manager.query(User).where("isActive", true).count();
 ```
 
-## Updating models
+## 更新模型
 
-To update multiple models at once, you can use the `update` method and pass the data. This will not return the updated models, use `save` instead.
+要一次更新多个模型，可以使用 `update` 方法并传递数据。 这不会返回更新的模型，而是使用 `save`。
 
 ```ts
 await manager.query(User).where("isActive", true).update({ isActive: false });
 ```
 
-## Deleting models
+## 删除模型
 
-Manager API has `remove` methods which allows you to remove a model you fetched from the database.
+Manager API 具有 `remove` 方法，使你可以删除从数据库中的模型。
 
 ```ts
 await manager.remove(user);
 ```
 
-You can also remove multiple models by passing an array as the argument. This will remove all models in a single query.
+你还可以通过传递数组作为参数来删除多个模型。 这将在单个查询中删除所有模型。
 
 ```ts
 await manager.remove([user1, user2, user3]);
 ```
 
-To delete models that match given conditions, you can end your model query with `delete` method.
+要删除符合给定条件的模型，你可以使用 `delete` 方法删除。
 
 ```ts
 await manager.query(User).where("isActive", false).delete();
 ```
 
-### Relations
+### 关系
 
-Cotton allows you to setup model relations with ease. Currently, Cotton only supports one-to-many relations.
+Cotton 使你可以轻松设置模型关系。 当前，Cotton 仅支持一对多关系。
 
 ```ts
 @Model()
@@ -203,11 +203,11 @@ class Post {
 }
 ```
 
-As you can see, a user can have multiple posts, but the a post belongs to a single user.
+如你所见，一个用户可以有多个帖子，但是一个帖子属于一个用户。
 
-### Saving relations
+### 保存关系
 
-Saving relations can be done using `save` method alone.
+保存关系可以单独使用 `save` 方法来完成。
 
 ```ts
 const post1 = new Post();
@@ -224,7 +224,7 @@ user.posts = [post1, post2];
 await manager.save(user);
 ```
 
-You also can reverse it.
+你也可以将其反转。
 
 ```ts
 const user = new User();
@@ -242,20 +242,20 @@ post2.user = user;
 await manager.save(post2);
 ```
 
-### Fetching relations
+### 获取关系
 
-By default, `find` and `findOne` doesn't fetch your relations. To fetch them, you need to explicitly say which relations you want to include.
+默认情况下，`find` 和 `findOne` 不会获取你的关系。 要获取它们，你需要明确说明要包含的关系。
 
 ```ts
 const users = await manager.query(User).include("posts").all();
 const post = await manager.query(Post).include("user").first();
 ```
 
-## Base model
+## 基础模型
 
-If you find it difficult to use model manager, base model might be a perfect solution for you.
+如果发现难以使用模型管理器，则基本模型可能是你的理想解决方案。
 
-In a nutshell, base model is a model that extends the `BaseModel` class. This class provides you the exact same functionalities as the model manager, but you can call them directly from your model class.
+简而言之，基础模型是扩展 `BaseModel`类的模型。 该类为你提供与模型管理器完全相同的功能，但是你可以直接从模型类中调用它们。
 
 ```ts
 @Model("users")
@@ -271,23 +271,23 @@ class User extends BaseModel {
 }
 ```
 
-The most important thing you need to do when working with base models is registering those models to your database connection. Not registering your models before executing queries with it can cause fatal errors.
+使用基本模型时，你需要做的最重要的事情是将这些模型注册到数据库连接中。 在执行查询之前未注册模型会导致致命错误。
 
 ```ts
 const db = await connect({
   type: "sqlite",
-  // other configs...
+  // 其他配置...
   models: [User],
 });
 ```
 
-Here's how to can perform query to a base model.
+这是对基本模型执行查询的方法。
 
 ```ts
 const user = await User.query().where("id", 1).first();
 ```
 
-Inserting new item:
+插入新的条目：
 
 ```ts
 const user = new User();
@@ -296,7 +296,7 @@ user.age = 16;
 user.createdAt = new Date();
 await user.save();
 
-// Alternatively...
+// 或者...
 const user = await User.insert({
   email: "a@b.com",
   age: 16,
@@ -304,21 +304,21 @@ const user = await User.insert({
 });
 ```
 
-Removing an item:
+移除一个条目：
 
 ```ts
 const user = await User.query().where("id", 1).first();
 await user.remove();
 ```
 
-## What's the difference?
+## 他们之间的区别
 
-The most obvious difference between model manager and base model is that model manager is model agnostic. Which means it will work with any models you have.
+模型管理器和基本模型之间最明显的区别是模型管理器与模型无关。 这意味着它将与你拥有的任何模型一起使用。
 
-In model manager, your model is just a plain class that only act as a representation of your table schema in the database. In order to do interact with the database, you need to use your model manager. Some people find it safer than the base models because it seperates the business logic and the schema definition. You can see this pattern a lot in Java frameworks such as [Hibernate](https://hibernate.org).
+在模型管理器中，你的模型只是一个普通类，仅充当数据库中表模式的表示。 为了与数据库进行交互，你需要使用模型管理器。 某些人发现它比基本模型更安全，因为它将业务逻辑和模式定义分开。 你可以在Java框架， 例如[Hibernate](https://hibernate.org) 中看到很多这种模式。
 
-Base models on the other hand, your models act as both model manager and the schema. You can see this pattern in [Laravel's Eloquent](https://laravel.com/docs/7.x/eloquent) and [ActiveRecord](https://guides.rubyonrails.org/active_record_basics.html). A lot of people find this pattern easier to use because once you have access to the model class, you can basically do anything with it.
+另一方面，基于模型，你的模型既充当模型管理器又充当架构。 你可以在 [Laravel's Eloquent](https://laravel.com/docs/7.x/eloquent) 和 [ActiveRecord](https://guides.rubyonrails.org/active_record_basics.html) 中看到这种模式。 许多人发现此模式更易于使用，因为一旦访问了模型类，就可以使用它进行任何操作。
 
-## Which one should I use?
+## 我应该用哪一个？
 
-It's really up to you! I personally think it depends on where you came from. If you came from Java development and you already familiar with JPA, you probably want to use model manager. However, if you came from PHP, Ruby, or Node.js, base model probably looks more natural to you.
+完全取决于你！ 我个人认为这取决于你来自哪里。 如果你来自 Java 开发，并且已经熟悉 JPA ，则可能要使用模型管理器。 但是，如果你来自 PHP、Ruby 或 Node.js，则基本模型对你来说似乎更自然。
