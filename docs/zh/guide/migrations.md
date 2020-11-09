@@ -1,26 +1,26 @@
-# Migrations
+# 迁移
 
-The reason why we use _database toolkit_ instead of _ORM_ for our tagline is because Cotton offers more than just an ORM. We're offering a set of tools that helps you to manage your Deno apps that use a database. We want to make sure that you don't need to jump into multiple tools while developing your apps.
+我们的标语使用 _database toolkit_ 代替 _ORM_ 的原因是因为 Cotton 提供的不仅仅是 ORM。我们提供了一组工具，可帮助你管理使用数据库的 Deno 应用程序。我们希望确保你在开发应用程序时无需在多个工具中来回切换。
 
-In this section, we're going to show you how to use the migrations feature in Cotton.
+在本节中，我们将教你如何使用 Cotton 中的迁移功能。
 
-## What is migration?
+## 什么是迁移？
 
-In case you have no idea about what migrations are, think of it as a version control (like [Git](https://git-scm.com)) for your database. Let's say you're working with your team. Suddenly, you realised that your `users` table is missing an `email` column. At this point, you might say _"Well, I just need to tell all my friends to run this SQL query on their database so that the code will work!"_, right?
+如果你不知道什么是迁移，可以将其视为数据库的版本控制（例如[Git]（https://git-scm.com））。假设你正在与团队合作。突然，你意识到 `users` 表中缺少 `email` 列。 此时，你可能会说 _"好吧，我只需要告诉其他所有人在他们的数据库上运行此 SQL 查询语句，这样代码就可以工作！"_ 对吗？
 
-Well, the problem is that this thing can happen all the time, whether you're working on a small exercise project or a large-scale enterprise project. This is why you need to consider using migrations. When someone wants to change something on the database, all they have to do is add a new migration which will perform queries to the database.
+但问题在于，无论你是开发小型练习项目还是大型企业项目，这种事情会一直发生。这就是为什么你需要考虑使用迁移的原因。当某人想要更改数据库中的某些内容时，他们要做的就是添加新迁移，该迁移将对数据库执行查询。
 
-The cool thing about this feature is not only you can **apply** new migrations, but also **rollback** to the previous versions of your database. This is very helpful for debugging or downgrading your app when something went wrong.
+关于此功能的妙处，在于你不仅可以 **使用** 新的迁移，还可以 **回滚** 到数据库的先前版本。当出现问题时，这对于调试或回滚你的应用程序非常有用。
 
-## Getting started
+## 开始入门
 
-The first thing you need to do is install the Cotton CLI.
+你需要做的第一件事是安装 Cotton CLI。
 
 ```
 $ deno install --allow-net --allow-read --allow-write -n cotton https://deno.land/x/cotton@v0.7.2/cli.ts
 ```
 
-Once the installation is finished, you can type `cotton` in your terminal to verify your installation.
+安装完成后，你可以在终端中键入 `cotton` 以验证是否安装成功。
 
 ```
 $ cotton
@@ -45,15 +45,15 @@ Commands:
   migration:info    Get the status of all migrations
 ```
 
-As you can see, we have a bunch of commands which we can use to manage our migrations. Let's start by creating a new migration file.
+如你所见，我们有一堆命令可用于管理迁移。让我们从创建一个新的迁移文件开始。
 
-## Creating a migration
+## 创建迁移
 
 ```
 $ cotton migration:create --name CreateUserTable
 ```
 
-This will create a `migrations/` folder inside your current directory which contains your migration files. Each of those files has it's own timestamp which helps us determine the right execution order of those migrations.
+这条命令将在当前目录内创建一个包含迁移文件的 `migrations/` 文件夹。这些文件中都有其自己的时间戳，可以帮助我们确定这些迁移的正确执行顺序。
 
 ```
 $ tree migrations
@@ -61,7 +61,7 @@ migrations
 └── 20200717134438_CreateUserTable.ts
 ```
 
-Let's take a look at what's inside that migration file.
+让我们看一下迁移文件中的内容。
 
 ```ts
 import { Schema } from "https://deno.land/x/cotton/mod.ts";
@@ -75,9 +75,9 @@ export async function down(schema: Schema) {
 }
 ```
 
-The code is very straight forward. We have an `up` function to **apply** this migration to the database, and a `down` function to **revert** it back to the previous version.
+代码非常简单。 我们有一个 `up` 功能来 **应用** 此迁移到数据库，还有一个 `down` 功能来 **恢复** 到以前的版本。
 
-To apply existing migrations, all you have to do is run `cotton migration:up`.
+要应用现有的迁移，你所要做的就是运行 `cotton migration：up`。
 
 ```
 $ cotton migration:up
@@ -86,7 +86,7 @@ Migrating: 20200717134438_CreateUserTable
 Migrated:  20200717134438_CreateUserTable
 ```
 
-Going back to the previous version of your database super easy.
+返回数据库的先前版本也超级简单。
 
 ```
 $ cotton migration:down
@@ -95,15 +95,15 @@ Reverting: 20200717134438_CreateUserTable
 Reverted:  20200717134438_CreateUserTable
 ```
 
-By default, this will revert the last migration "batch", which can be consists of multiple migrations. However, you can specify how many migrations you want to revert by passing the `--steps` option.
+默认情况下，将还原到上一个迁移版本，该版本可以包含多个迁移。此外，你还可以通过传递 `--steps` 选项来指定要还原的迁移数量。
 
 ```
 $ cotton migration:down --steps 1
 ```
 
-## Migration info
+## 迁移日志
 
-You can see all of your available migrations via `migration:info` command. This will print out every single migrations and check whether it's already applied to the database or not.
+你可以通过 `migration:info` 命令查看所有可用的迁移。这将打印出每个迁移，并检查是否已将其应用于数据库。
 
 ```
 Applied  Migration
