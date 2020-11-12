@@ -14,7 +14,7 @@ const db = await connect({
 
 ## 连接到 SQLite
 
-连接到 SQLite 唯一要关心的是 `database`字段，它指向数据库文件的路径。
+连接到 SQLite 唯一要关心的是 `database` 字段，它指向数据库文件的路径。
 
 ```ts
 const db = await connect({
