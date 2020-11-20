@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>迁移 | Cotton</title>
+    <meta name="generator" content="VuePress 1.7.1">
+    
+    <meta name="description" content="用于Deno的SQL数据库工具包">
+    
+    <link rel="preload" href="/cotton/assets/css/0.styles.f4c427a8.css" as="style"><link rel="preload" href="/cotton/assets/js/app.54d0777c.js" as="script"><link rel="preload" href="/cotton/assets/js/2.2fb44020.js" as="script"><link rel="preload" href="/cotton/assets/js/18.3da5c444.js" as="script"><link rel="prefetch" href="/cotton/assets/js/10.1d8e68e6.js"><link rel="prefetch" href="/cotton/assets/js/11.86157dc3.js"><link rel="prefetch" href="/cotton/assets/js/12.90749d53.js"><link rel="prefetch" href="/cotton/assets/js/13.f7102474.js"><link rel="prefetch" href="/cotton/assets/js/14.9b376f76.js"><link rel="prefetch" href="/cotton/assets/js/15.e2cc74a8.js"><link rel="prefetch" href="/cotton/assets/js/16.f62b43bb.js"><link rel="prefetch" href="/cotton/assets/js/17.fe3a3d9a.js"><link rel="prefetch" href="/cotton/assets/js/19.c2f29a13.js"><link rel="prefetch" href="/cotton/assets/js/20.73e4a0a4.js"><link rel="prefetch" href="/cotton/assets/js/21.4cda6de2.js"><link rel="prefetch" href="/cotton/assets/js/22.c484d7b6.js"><link rel="prefetch" href="/cotton/assets/js/3.f5eeacb7.js"><link rel="prefetch" href="/cotton/assets/js/4.43232bb0.js"><link rel="prefetch" href="/cotton/assets/js/5.646028bf.js"><link rel="prefetch" href="/cotton/assets/js/6.2f616185.js"><link rel="prefetch" href="/cotton/assets/js/7.9f641ce0.js"><link rel="prefetch" href="/cotton/assets/js/8.de1d2e31.js"><link rel="prefetch" href="/cotton/assets/js/9.d38ba074.js">
+    <link rel="stylesheet" href="/cotton/assets/css/0.styles.f4c427a8.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/cotton/zh/" class="home-link router-link-active"><!----> <span class="site-name">Cotton</span></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <nav class="nav-links can-hide"><div class="nav-item"><a href="/cotton/zh/" class="nav-link">
+  主页
+</a></div><div class="nav-item"><a href="/cotton/zh/guide/" class="nav-link router-link-active">
+  指南
+</a></div><div class="nav-item"><a href="https://github.com/rahmanfadhil/cotton" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  GitHub
+  <span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a></div><div class="nav-item"><div class="dropdown-wrapper"><button type="button" aria-label="Select language" class="dropdown-title"><span class="title">选择语言</span> <span class="arrow down"></span></button> <button type="button" aria-label="Select language" class="mobile-dropdown-title"><span class="title">选择语言</span> <span class="arrow right"></span></button> <ul class="nav-dropdown" style="display:none;"><li class="dropdown-item"><!----> <a href="/cotton/guide/migrations.html" class="nav-link">
+  English
+</a></li><li class="dropdown-item"><!----> <a href="/cotton/zh/guide/migrations.html" aria-current="page" class="nav-link router-link-exact-active router-link-active">
+  简体中文
+</a></li></ul></div></div> <!----></nav></div></header> <div class="sidebar-mask"></div> <aside class="sidebar"><nav class="nav-links"><div class="nav-item"><a href="/cotton/zh/" class="nav-link">
+  主页
+</a></div><div class="nav-item"><a href="/cotton/zh/guide/" class="nav-link router-link-active">
+  指南
+</a></div><div class="nav-item"><a href="https://github.com/rahmanfadhil/cotton" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  GitHub
+  <span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a></div><div class="nav-item"><div class="dropdown-wrapper"><button type="button" aria-label="Select language" class="dropdown-title"><span class="title">选择语言</span> <span class="arrow down"></span></button> <button type="button" aria-label="Select language" class="mobile-dropdown-title"><span class="title">选择语言</span> <span class="arrow right"></span></button> <ul class="nav-dropdown" style="display:none;"><li class="dropdown-item"><!----> <a href="/cotton/guide/migrations.html" class="nav-link">
+  English
+</a></li><li class="dropdown-item"><!----> <a href="/cotton/zh/guide/migrations.html" aria-current="page" class="nav-link router-link-exact-active router-link-active">
+  简体中文
+</a></li></ul></div></div> <!----></nav>  <ul class="sidebar-links"><li><a href="/cotton/zh/guide/connection.html" class="sidebar-link">连接</a></li><li><a href="/cotton/zh/guide/query-builder.html" class="sidebar-link">查询构建器</a></li><li><a href="/cotton/zh/guide/transactions.html" class="sidebar-link">事务</a></li><li><a href="/cotton/zh/guide/model.html" class="sidebar-link">模型</a></li><li><a href="/cotton/zh/guide/migrations.html" aria-current="page" class="active sidebar-link">迁移</a><ul class="sidebar-sub-headers"><li class="sidebar-sub-header"><a href="/cotton/zh/guide/migrations.html#什么是迁移" class="sidebar-link">什么是迁移？</a></li><li class="sidebar-sub-header"><a href="/cotton/zh/guide/migrations.html#开始入门" class="sidebar-link">开始入门</a></li><li class="sidebar-sub-header"><a href="/cotton/zh/guide/migrations.html#创建迁移" class="sidebar-link">创建迁移</a></li><li class="sidebar-sub-header"><a href="/cotton/zh/guide/migrations.html#迁移日志" class="sidebar-link">迁移日志</a></li></ul></li><li><a href="/cotton/zh/guide/schema.html" class="sidebar-link">模式</a></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h1 id="迁移"><a href="#迁移" class="header-anchor">#</a> 迁移</h1> <p>我们的标语使用 <em>database toolkit</em> 代替 <em>ORM</em> 的原因是因为 Cotton 提供的不仅仅是 ORM。我们提供了一组工具，可帮助你管理使用数据库的 Deno 应用程序。我们希望确保你在开发应用程序时无需在多个工具中来回切换。</p> <p>在本节中，我们将教你如何使用 Cotton 中的迁移功能。</p> <h2 id="什么是迁移"><a href="#什么是迁移" class="header-anchor">#</a> 什么是迁移？</h2> <p>如果你不知道什么是迁移，可以将其视为数据库的版本控制（例如[Git]（https://git-scm.com））。假设你正在与团队合作。突然，你意识到 <code>users</code> 表中缺少 <code>email</code> 列。 此时，你可能会说 <em>&quot;好吧，我只需要告诉其他所有人在他们的数据库上运行此 SQL 查询语句，这样代码就可以工作！&quot;</em> 对吗？</p> <p>但问题在于，无论你是开发小型练习项目还是大型企业项目，这种事情会一直发生。这就是为什么你需要考虑使用迁移的原因。当某人想要更改数据库中的某些内容时，他们要做的就是添加新迁移，该迁移将对数据库执行查询。</p> <p>关于此功能的妙处，在于你不仅可以 <strong>使用</strong> 新的迁移，还可以 <strong>回滚</strong> 到数据库的先前版本。当出现问题时，这对于调试或回滚你的应用程序非常有用。</p> <h2 id="开始入门"><a href="#开始入门" class="header-anchor">#</a> 开始入门</h2> <p>你需要做的第一件事是安装 Cotton CLI。</p> <div class="language- extra-class"><pre class="language-text"><code>$ deno install --allow-net --allow-read --allow-write -n cotton https://deno.land/x/cotton@v0.7.2/cli.ts
+</code></pre></div><p>安装完成后，你可以在终端中键入 <code>cotton</code> 以验证是否安装成功。</p> <div class="language- extra-class"><pre class="language-text"><code>$ cotton
+
+Cotton CLI v0.1.0
+
+Usage:
+  cotton [command] [options]
+
+
+Options:
+  -h, --help
+    Prints help information
+  -c, --config
+    Set the location of your database configuration (default: &quot;ormconfig.json&quot;)
+
+
+Commands:
+  migration:create  Creates a new migration file
+  migration:up      Apply all available migrations
+  migration:down    Revert the last &quot;batch&quot; migrations
+  migration:info    Get the status of all migrations
+</code></pre></div><p>如你所见，我们有一堆命令可用于管理迁移。让我们从创建一个新的迁移文件开始。</p> <h2 id="创建迁移"><a href="#创建迁移" class="header-anchor">#</a> 创建迁移</h2> <div class="language- extra-class"><pre class="language-text"><code>$ cotton migration:create --name CreateUserTable
+</code></pre></div><p>这条命令将在当前目录内创建一个包含迁移文件的 <code>migrations/</code> 文件夹。这些文件中都有其自己的时间戳，可以帮助我们确定这些迁移的正确执行顺序。</p> <div class="language- extra-class"><pre class="language-text"><code>$ tree migrations
+migrations
+└── 20200717134438_CreateUserTable.ts
+</code></pre></div><p>让我们看一下迁移文件中的内容。</p> <div class="language-ts extra-class"><pre class="language-ts"><code><span class="token keyword">import</span> <span class="token punctuation">{</span> Schema <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&quot;https://deno.land/x/cotton/mod.ts&quot;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">export</span> <span class="token keyword">async</span> <span class="token keyword">function</span> <span class="token function">up</span><span class="token punctuation">(</span>schema<span class="token operator">:</span> Schema<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment">// Do something...</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">export</span> <span class="token keyword">async</span> <span class="token keyword">function</span> <span class="token function">down</span><span class="token punctuation">(</span>schema<span class="token operator">:</span> Schema<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment">// Do something...</span>
+<span class="token punctuation">}</span>
+</code></pre></div><p>代码非常简单。 我们有一个 <code>up</code> 功能来 <strong>应用</strong> 此迁移到数据库，还有一个 <code>down</code> 功能来 <strong>恢复</strong> 到以前的版本。</p> <p>要应用现有的迁移，你所要做的就是运行 <code>cotton migration：up</code>。</p> <div class="language- extra-class"><pre class="language-text"><code>$ cotton migration:up
+
+Migrating: 20200717134438_CreateUserTable
+Migrated:  20200717134438_CreateUserTable
+</code></pre></div><p>返回数据库的先前版本也超级简单。</p> <div class="language- extra-class"><pre class="language-text"><code>$ cotton migration:down
+
+Reverting: 20200717134438_CreateUserTable
+Reverted:  20200717134438_CreateUserTable
+</code></pre></div><p>默认情况下，将还原到上一个迁移版本，该版本可以包含多个迁移。此外，你还可以通过传递 <code>--steps</code> 选项来指定要还原的迁移数量。</p> <div class="language- extra-class"><pre class="language-text"><code>$ cotton migration:down --steps 1
+</code></pre></div><h2 id="迁移日志"><a href="#迁移日志" class="header-anchor">#</a> 迁移日志</h2> <p>你可以通过 <code>migration:info</code> 命令查看所有可用的迁移。这将打印出每个迁移，并检查是否已将其应用于数据库。</p> <div class="language- extra-class"><pre class="language-text"><code>Applied  Migration
+-------  ------------------------------
+Yes      20200717134438_CreateUserTable
+</code></pre></div></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="prev">
+      ←
+      <a href="/cotton/zh/guide/model.html" class="prev">
+        模型
+      </a></span> <span class="next"><a href="/cotton/zh/guide/schema.html">
+        模式
+      </a>
+      →
+    </span></p></div> </main></div><div class="global-ui"></div></div>
+    <script src="/cotton/assets/js/app.54d0777c.js" defer></script><script src="/cotton/assets/js/2.2fb44020.js" defer></script><script src="/cotton/assets/js/18.3da5c444.js" defer></script>
+  </body>
+</html>
