@@ -36,11 +36,11 @@ Deno.test("Relation: should define metadata", () => {
 
   const user: RelationDescription[] = Reflect.getMetadata(
     metadata.relations,
-    User.prototype
+    User.prototype,
   );
   const post: RelationDescription[] = Reflect.getMetadata(
     metadata.relations,
-    Post.prototype
+    Post.prototype,
   );
   assert(Array.isArray(user));
   assert(Array.isArray(post));
@@ -109,7 +109,7 @@ Deno.test("Column: throw an error if the column type is invalid!", () => {
       }
     },
     Error,
-    "Column 'name' must have a type!"
+    "Column 'name' must have a type!",
   );
 });
 

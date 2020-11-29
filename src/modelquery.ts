@@ -70,7 +70,7 @@ export class ModelQuery<T> {
   public where(column: string, expression: DatabaseValues | Q): this {
     this.builder.where(
       this.getColumnName(column),
-      expression as DatabaseValues
+      expression as DatabaseValues,
     );
     return this;
   }
@@ -147,7 +147,7 @@ export class ModelQuery<T> {
    */
   public order(
     column: Extract<keyof T, string>,
-    direction?: OrderDirection
+    direction?: OrderDirection,
   ): this {
     this.builder.order(this.getColumnName(column as string), direction);
     return this;
@@ -172,13 +172,13 @@ export class ModelQuery<T> {
         this.builder.leftJoin(
           relationTableName,
           relationTableName + "." + relation.targetColumn,
-          this.tableName + "." + primaryKeyInfo.name
+          this.tableName + "." + primaryKeyInfo.name,
         );
       } else if (relation.type === RelationType.BelongsTo) {
         this.builder.leftJoin(
           relationTableName,
           relationTableName + "." + relationPrimaryKeyInfo.name,
-          this.tableName + "." + relation.targetColumn
+          this.tableName + "." + relation.targetColumn,
         );
       }
 
@@ -232,7 +232,7 @@ export class ModelQuery<T> {
     // Check whether this query contains a HasMany relationship
     const isIncludingHasMany = getRelations(
       this.modelClass,
-      this.includes
+      this.includes,
     ).find((item) => item.type === RelationType.HasMany);
 
     let result: DatabaseResult[];
@@ -249,13 +249,15 @@ export class ModelQuery<T> {
       const alias = quote("distinctAlias", this.adapter.dialect);
       const primaryColumn = quote(
         tableName + "__" + primaryKeyInfo.name,
-        this.adapter.dialect
+        this.adapter.dialect,
       );
       const { text, values } = this.builder.toSQL();
-      const queryString = `SELECT DISTINCT ${alias}.${primaryColumn} FROM (${text.slice(
-        0,
-        text.length - 1
-      )}) ${alias} LIMIT 1;`;
+      const queryString = `SELECT DISTINCT ${alias}.${primaryColumn} FROM (${
+        text.slice(
+          0,
+          text.length - 1,
+        )
+      }) ${alias} LIMIT 1;`;
 
       // Execute the distinct query
       const recordIds = await this.adapter.query(queryString, values);
@@ -275,14 +277,13 @@ export class ModelQuery<T> {
 
     // Create the model instances
     if (result.length >= 1) {
-      const record =
-        this.includes.length >= 1
-          ? mapQueryResult(
-              this.modelClass,
-              result,
-              this.includes.length >= 1 ? this.includes : undefined
-            )[0]
-          : mapSingleQueryResult(this.modelClass, result[0]);
+      const record = this.includes.length >= 1
+        ? mapQueryResult(
+          this.modelClass,
+          result,
+          this.includes.length >= 1 ? this.includes : undefined,
+        )[0]
+        : mapSingleQueryResult(this.modelClass, result[0]);
       return createModel(this.modelClass, record, true);
     } else {
       return null;
@@ -305,9 +306,9 @@ export class ModelQuery<T> {
       mapQueryResult(
         this.modelClass,
         result,
-        this.includes.length >= 1 ? this.includes : undefined
+        this.includes.length >= 1 ? this.includes : undefined,
       ),
-      true
+      true,
     );
   }
 
@@ -339,7 +340,7 @@ export class ModelQuery<T> {
 
     if (!column) {
       throw new Error(
-        `Column '${propertyKey}' doesn't exist in model '${this.modelClass.name}'!`
+        `Column '${propertyKey}' doesn't exist in model '${this.modelClass.name}'!`,
       );
     }
 

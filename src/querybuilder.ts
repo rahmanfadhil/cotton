@@ -136,7 +136,7 @@ export class QueryBuilder {
     /** The table which the query is targeting */
     tableName: string,
     /** The database adapter to perform query */
-    private adapter: Adapter
+    private adapter: Adapter,
   ) {
     this.description = {
       tableName,
@@ -289,7 +289,7 @@ export class QueryBuilder {
    */
   public order(
     column: string,
-    direction: OrderDirection = "ASC"
+    direction: OrderDirection = "ASC",
   ): QueryBuilder {
     this.description.orders.push({ column, order: direction });
     return this;
@@ -538,7 +538,7 @@ export class QueryBuilder {
   public toSQL() {
     const { text, values } = new QueryCompiler(
       this.description,
-      this.adapter.dialect
+      this.adapter.dialect,
     ).compile();
     return { text, values };
   }

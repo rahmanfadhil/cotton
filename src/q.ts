@@ -23,7 +23,7 @@ export enum QueryOperator {
 export class Q {
   constructor(
     public operator: QueryOperator,
-    public value: DatabaseValues | DatabaseValues[]
+    public value: DatabaseValues | DatabaseValues[],
   ) {}
 
   // --------------------------------------------------------------------------------

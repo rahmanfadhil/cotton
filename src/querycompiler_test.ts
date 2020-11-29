@@ -33,7 +33,7 @@ testQueryCompiler(
       text: 'SELECT "users".* FROM "users" WHERE "users"."email" = $1;',
       values: ["a@b.com"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -60,7 +60,7 @@ testQueryCompiler(
       text: 'SELECT "users".* FROM "users" WHERE "users"."is_active" = TRUE;',
       values: [],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -87,7 +87,7 @@ testQueryCompiler(
       text: 'SELECT "users".* FROM "users" WHERE "users"."is_active" = FALSE;',
       values: [],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -114,7 +114,7 @@ testQueryCompiler(
       text: 'SELECT "users".* FROM "users" WHERE "users"."age" > $1;',
       values: [16],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -141,7 +141,7 @@ testQueryCompiler(
       text: 'SELECT "users".* FROM "users" WHERE "users"."birthday" = $1;',
       values: [formatDate(new Date("6 July, 2020"))],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -162,7 +162,7 @@ testQueryCompiler(
       text: 'SELECT "users"."id", "users"."email" FROM "users";',
       values: [],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -189,7 +189,7 @@ testQueryCompiler(
         'SELECT "users"."id" AS users_id, "posts"."title" AS posts_title FROM "users";',
       values: [],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -219,7 +219,7 @@ testQueryCompiler(
         'SELECT "users"."email", "users"."age", "users"."is_active" AS active FROM "users";',
       values: [],
     },
-  }
+  },
 );
 
 Deno.test(
@@ -241,11 +241,11 @@ Deno.test(
             groupBy: [],
             havings: [],
           },
-          "" as any
+          "" as any,
         ).compile();
       },
       Error,
-      "Alias must have two values!"
+      "Alias must have two values!",
     );
 
     assertThrows(
@@ -267,11 +267,11 @@ Deno.test(
             groupBy: [],
             havings: [],
           },
-          "" as any
+          "" as any,
         ).compile();
       },
       Error,
-      "Alias must have two values!"
+      "Alias must have two values!",
     );
 
     assertThrows(
@@ -290,13 +290,13 @@ Deno.test(
             groupBy: [],
             havings: [],
           },
-          "" as any
+          "" as any,
         ).compile();
       },
       Error,
-      "Alias must have two values!"
+      "Alias must have two values!",
     );
-  }
+  },
 );
 
 testQueryCompiler(
@@ -323,7 +323,7 @@ testQueryCompiler(
       text: 'SELECT "users".* FROM "users" WHERE "users"."role" IN ($1, $2);',
       values: ["guest", "author"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -351,7 +351,7 @@ testQueryCompiler(
         'SELECT "users".* FROM "users" WHERE "users"."id" IN ($1, $2, $3, $4);',
       values: [5, 7, 11, 12],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -378,7 +378,7 @@ testQueryCompiler(
       text: 'SELECT "users".* FROM "users" WHERE "users"."name" LIKE $1;',
       values: ["%john%"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -408,7 +408,7 @@ testQueryCompiler(
         'SELECT "users".* FROM "users" WHERE "users"."age" BETWEEN $1 AND $2;',
       values: [1, 5],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -435,7 +435,7 @@ testQueryCompiler(
       text: 'SELECT "users".* FROM "users" WHERE "users"."name" IS NULL;',
       values: [],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -462,7 +462,7 @@ testQueryCompiler(
       text: 'SELECT "users".* FROM "users" WHERE "users"."name" IS NOT NULL;',
       values: [],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -489,7 +489,7 @@ testQueryCompiler(
       text: 'SELECT "users".* FROM "users" WHERE NOT "users"."email" = $1;',
       values: ["a@b.com"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -524,7 +524,7 @@ testQueryCompiler(
         'SELECT "users".* FROM "users" WHERE "users"."name" = $1 AND "users"."email" = $2;',
       values: ["john", "a@b.com"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -559,7 +559,7 @@ testQueryCompiler(
         'SELECT "users".* FROM "users" WHERE "users"."name" = $1 OR "users"."email" = $2;',
       values: ["john", "a@b.com"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -594,7 +594,7 @@ testQueryCompiler(
         'SELECT "users".* FROM "users" WHERE "users"."name" = $1 AND NOT "users"."email" = $2;',
       values: ["john", "a@b.com"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -628,7 +628,7 @@ testQueryCompiler(
         'SELECT COUNT("users"."email"), COUNT("users"."first_name", "users"."last_name") AS "count" FROM "users";',
       values: [],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -662,7 +662,7 @@ testQueryCompiler(
         'SELECT COUNT(DISTINCT("users"."email")), COUNT(DISTINCT("users"."first_name", "users"."last_name")) AS "count" FROM "users";',
       values: [],
     },
-  }
+  },
 );
 
 // --------------------------------------------------------------------------------
@@ -707,7 +707,7 @@ testQueryCompiler(
         'SELECT "users".* FROM "users" GROUP BY "users"."email", "users"."age" HAVING "users"."email" = $1 AND "users"."age" > $2 AND NOT "users"."is_active" = TRUE;',
       values: ["a@b.com", 16],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -731,7 +731,7 @@ testQueryCompiler(
         'SELECT "users".* FROM "users" GROUP BY "users"."email", "users"."age";',
       values: [],
     },
-  }
+  },
 );
 
 // --------------------------------------------------------------------------------
@@ -768,7 +768,7 @@ testQueryCompiler(
         'SELECT "orders".*, "users"."id" FROM "orders" INNER JOIN "users" ON "orders"."user_id" = "users"."id";',
       values: [],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -801,7 +801,7 @@ testQueryCompiler(
         'SELECT "orders".*, "users"."id" FROM "orders" LEFT OUTER JOIN "users" ON "orders"."user_id" = "users"."id";',
       values: [],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -834,7 +834,7 @@ testQueryCompiler(
         'SELECT "orders".*, "users"."id" FROM "orders" RIGHT OUTER JOIN "users" ON "orders"."user_id" = "users"."id";',
       values: [],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -867,7 +867,7 @@ testQueryCompiler(
         'SELECT "orders".*, "users"."id" FROM "orders" FULL OUTER JOIN "users" ON "orders"."user_id" = "users"."id";',
       values: [],
     },
-  }
+  },
 );
 
 // --------------------------------------------------------------------------------
@@ -893,13 +893,13 @@ Deno.test(
             groupBy: [],
             havings: [],
           },
-          "" as any
+          "" as any,
         ).compile();
       },
       Error,
-      "Cannot perform delete without any constraints!"
+      "Cannot perform delete without any constraints!",
     );
-  }
+  },
 );
 
 testQueryCompiler(
@@ -927,7 +927,7 @@ testQueryCompiler(
       text: 'DELETE FROM "users" WHERE "users"."email" = $1;',
       values: ["a@b.com"],
     },
-  }
+  },
 );
 
 // --------------------------------------------------------------------------------
@@ -960,7 +960,7 @@ testQueryCompiler(
       text: 'INSERT INTO "users" ("email") VALUES ($1);',
       values: ["a@b.com"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -990,7 +990,7 @@ testQueryCompiler(
         'INSERT INTO "users" ("email", "age", "is_active", "birthday") VALUES ($1, $2, TRUE, $3);',
       values: ["a@b.com", 16, "2020-07-06 00:00:00"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -1021,7 +1021,7 @@ testQueryCompiler(
         'INSERT INTO "users" ("email", "age", "is_active", "birthday") VALUES ($1, $2, TRUE, $3) RETURNING "id", "name";',
       values: ["a@b.com", 16, "2020-07-06 00:00:00"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -1080,7 +1080,7 @@ testQueryCompiler(
         "2020-07-07 00:00:00",
       ],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -1116,7 +1116,7 @@ testQueryCompiler(
         'INSERT INTO "users" ("email", "age") VALUES ($1, NULL), (NULL, $2), ($3, $4);',
       values: ["b@c.com", 16, "a@b.com", 16],
     },
-  }
+  },
 );
 
 // --------------------------------------------------------------------------------
@@ -1149,7 +1149,7 @@ testQueryCompiler(
       text: 'REPLACE INTO "users" ("email") VALUES ($1);',
       values: ["a@b.com"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -1179,7 +1179,7 @@ testQueryCompiler(
         'REPLACE INTO "users" ("email", "age", "is_active", "birthday") VALUES ($1, $2, TRUE, $3);',
       values: ["a@b.com", 16, "2020-07-06 00:00:00"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -1210,7 +1210,7 @@ testQueryCompiler(
         'REPLACE INTO "users" ("email", "age", "is_active", "birthday") VALUES ($1, $2, TRUE, $3) RETURNING "id", "name";',
       values: ["a@b.com", 16, "2020-07-06 00:00:00"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -1269,7 +1269,7 @@ testQueryCompiler(
         "2020-07-07 00:00:00",
       ],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -1305,7 +1305,7 @@ testQueryCompiler(
         'REPLACE INTO "users" ("email", "age") VALUES ($1, NULL), (NULL, $2), ($3, $4);',
       values: ["b@c.com", 16, "a@b.com", 16],
     },
-  }
+  },
 );
 
 // --------------------------------------------------------------------------------
@@ -1346,7 +1346,7 @@ testQueryCompiler(
         'UPDATE "users" SET "email" = $1, "age" = $2, "is_active" = TRUE, "birthday" = $3 WHERE "users"."email" = $4;',
       values: ["b@c.com", 16, "2020-07-06 00:00:00", "a@b.com"],
     },
-  }
+  },
 );
 
 testQueryCompiler(
@@ -1384,5 +1384,5 @@ testQueryCompiler(
         'UPDATE "users" SET "email" = $1, "age" = $2, "is_active" = TRUE, "birthday" = $3 WHERE "users"."email" = $4 RETURNING "id", "name";',
       values: ["b@c.com", 16, "2020-07-06 00:00:00", "a@b.com"],
     },
-  }
+  },
 );
