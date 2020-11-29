@@ -36,11 +36,11 @@ Deno.test("Relation: should define metadata", () => {
 
   const user: RelationDescription[] = Reflect.getMetadata(
     metadata.relations,
-    User.prototype,
+    User.prototype
   );
   const post: RelationDescription[] = Reflect.getMetadata(
     metadata.relations,
-    Post.prototype,
+    Post.prototype
   );
   assert(Array.isArray(user));
   assert(Array.isArray(post));
@@ -72,30 +72,32 @@ Deno.test("Column: basic column", () => {
     created_at!: Date;
   }
 
-  assertEquals(
-    Reflect.getMetadata(metadata.columns, User.prototype),
-    [{
+  assertEquals(Reflect.getMetadata(metadata.columns, User.prototype), [
+    {
       propertyKey: "name",
       name: "name",
       type: DataType.String,
       isPrimaryKey: false,
-    }, {
+    },
+    {
       propertyKey: "age",
       name: "age",
       type: DataType.Number,
       isPrimaryKey: false,
-    }, {
+    },
+    {
       propertyKey: "is_active",
       name: "is_active",
       type: DataType.Boolean,
       isPrimaryKey: false,
-    }, {
+    },
+    {
       propertyKey: "created_at",
       name: "created_at",
       type: DataType.Date,
       isPrimaryKey: false,
-    }],
-  );
+    },
+  ]);
 });
 
 Deno.test("Column: throw an error if the column type is invalid!", () => {
@@ -107,7 +109,7 @@ Deno.test("Column: throw an error if the column type is invalid!", () => {
       }
     },
     Error,
-    "Column 'name' must have a type!",
+    "Column 'name' must have a type!"
   );
 });
 
@@ -117,15 +119,14 @@ Deno.test("Column: custom database column name", () => {
     name!: string;
   }
 
-  assertEquals(
-    Reflect.getMetadata(metadata.columns, User.prototype),
-    [{
+  assertEquals(Reflect.getMetadata(metadata.columns, User.prototype), [
+    {
       propertyKey: "name",
       name: "full_name",
       type: DataType.String,
       isPrimaryKey: false,
-    }],
-  );
+    },
+  ]);
 });
 
 Deno.test("Column: default value", () => {
@@ -145,34 +146,36 @@ Deno.test("Column: default value", () => {
     created_at!: Date;
   }
 
-  assertEquals(
-    Reflect.getMetadata(metadata.columns, User.prototype),
-    [{
+  assertEquals(Reflect.getMetadata(metadata.columns, User.prototype), [
+    {
       propertyKey: "name",
       default: "john",
       name: "name",
       type: DataType.String,
       isPrimaryKey: false,
-    }, {
+    },
+    {
       propertyKey: "age",
       default: 16,
       name: "age",
       type: DataType.String,
       isPrimaryKey: false,
-    }, {
+    },
+    {
       propertyKey: "is_active",
       default: true,
       name: "is_active",
       type: DataType.String,
       isPrimaryKey: false,
-    }, {
+    },
+    {
       propertyKey: "created_at",
       default: newDate,
       name: "created_at",
       type: DataType.Date,
       isPrimaryKey: false,
-    }],
-  );
+    },
+  ]);
 });
 
 Deno.test("Column: custom type", () => {
@@ -181,10 +184,12 @@ Deno.test("Column: custom type", () => {
     name!: string | null;
   }
 
-  assertEquals(Reflect.getMetadata(metadata.columns, User.prototype), [{
-    propertyKey: "name",
-    name: "name",
-    type: DataType.String,
-    isPrimaryKey: false,
-  }]);
+  assertEquals(Reflect.getMetadata(metadata.columns, User.prototype), [
+    {
+      propertyKey: "name",
+      name: "name",
+      type: DataType.String,
+      isPrimaryKey: false,
+    },
+  ]);
 });
