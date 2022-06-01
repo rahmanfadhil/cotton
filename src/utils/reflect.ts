@@ -740,12 +740,12 @@ export namespace Reflect {
     // feature test for Symbol support
     const supportsSymbol = typeof Symbol === "function";
     const toPrimitiveSymbol =
-      supportsSymbol && typeof Symbol.toPrimitive !== "undefined"
-        ? Symbol.toPrimitive
+      supportsSymbol && typeof (Symbol as any).toPrimitive !== "undefined"
+        ? (Symbol as any).toPrimitive
         : "@@toPrimitive";
     const iteratorSymbol =
-      supportsSymbol && typeof Symbol.iterator !== "undefined"
-        ? Symbol.iterator
+      supportsSymbol && typeof (Symbol as any).iterator !== "undefined"
+        ? (Symbol as any).iterator
         : "@@iterator";
     const supportsCreate = typeof Object.create === "function"; // feature test for Object.create support
     const supportsProto = { __proto__: [] } instanceof Array; // feature test for __proto__ support
